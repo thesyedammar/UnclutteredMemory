@@ -1,0 +1,57 @@
+VERDICT: C1-PROCEED C2-HOLD C3-HOLD
+SCORES: C1=[9,8,8,8] C2=[8,8,6,9] C3=[7,8,5,8]
+
+## 1. Scores
+
+**C1: Full-lifecycle Jev memory SDK + server + one-command eval**
+- Realness 9: The gap is explicitly evidenced: ~28 Jev-memory repos are all slices with no Honcho-shaped full lifecycle, and Honcho's own docs enumerate the exact waste modes (over-iteration, prefetch duplication, uncapped injection, zero-yield calls, count-based summaries) that this SDK is built to kill.
+- Jev-fit 8: All gates are choice or score judgments (admit, importance, dedupe, contradiction, supersede, rerank); budgets, packing, and the cap live entirely in code; per-task tuning of the 0.58 gate and 45pct band directly honors calibration-not-invariant.
+- GitHub-hugeness 8: Memory infrastructure is a proven star category (Mem0 ~48k, LangGraph 42.4k, Chroma 29.3k, Letta 24.7k) and none of them ships typed calibrated judgment, so this aims a missing primitive at the category head.
+- Buildability 8: Honcho's documented lifecycle (async batch write gate, one explicit-facts-only deriver call, summaries every 20/60 msgs, read context endpoint) is a template rather than a research bet; the labeled eval is the long pole.
+
+**C2: Universal Jev retrieval-rerank adapter + published bench**
+- Realness 8: Rerank attacks a verified failure mode, the 15-25pp lost-in-the-middle recall drop versus position 0, which every store shares.
+- Jev-fit 8: Choosing among candidates capped at 8 is Jev's native shape: no generation, no math, literal reading suffices, and the cap contains context rot.
+- GitHub-hugeness 6: An adapter inherits category size instead of creating it; stars accrue to host ecosystems and shims tag along, and a bench is a spike, not a compounding platform.
+- Buildability 9: A thin store wrapper plus a published bench is the fastest path to a shipped artifact of the three.
+
+**C3: Forgetting-as-a-service lease sidecar**
+- Realness 7: Stale and contradictory memory is a real pain implied by fact/graph memory beating naive RAG by 20-40pp on LOCOMO, but the lease mechanism is unproven and the poisoning motivation rests on secondary, unverified figures (MemGhost-style 87.5pct end-to-end, not verified on primaries).
+- Jev-fit 8: Supersede votes are pairwise choice judgments, and the ledger plus human override live in deterministic code: a clean constraint split.
+- GitHub-hugeness 5: Forgetting is a single gate inside a lifecycle; a security-adjacent delete sidecar is a narrow install.
+- Buildability 8: Small MCP surface and a simple ledger are easy; reaching into store internals it does not own is the real drag.
+
+## 2. Attacks
+
+**C1**
+- A1 (severity 4): Judge capture. Poisoned content inside the admit, contradiction, or supersede pool can steer the Jev judge itself; destructive gates (supersede) are the worst exposure. Fix: stamp every judge input with provenance and trust tier, quarantine low-trust admits behind review, and require paired-judge agreement before any destructive action.
+- A2 (severity 3): Threshold porting drift. Users will copy a tuned config (0.58/45pct) across tasks, and calibration is not invariant, so precision silently collapses. Fix: fingerprint the task context, refuse mismatched threshold files, and fall back to kill-switch defaults until retuned.
+- A3 (severity 3): Scope implosion. SDK plus server plus MCP plus labeled eval plus playground is five surfaces; the weakest gets starved. Fix: sequence admit, dedupe, and rerank behind the one-command eval first; park the playground.
+- A4 (severity 3): Latency stacking. Jev judgments cost 70-500ms each; sequential gate chains on a hot write path can exceed incumbent envelopes (incumbent p50s themselves unverified). Fix: fuse write-side gates into one batched multi-slot call, with the content-hash cache absorbing repeats.
+- A5 (severity 2): Eval circularity. Tuning gates until the labeled eval looks good is benchmark overfit dressed as calibration. Fix: freeze thresholds on held-out task families before any headline claim.
+
+**C2**
+- A1 (severity 4): One calibration cannot span any store; heterogeneous schemas and noise floors violate per-task tuning wholesale. Fix: per-store tuning profile at install time with automatic disable on drift.
+- A2 (severity 3): Context rot on fat candidate pools; universality invites huge pools that degrade judgment. Fix: hard cap in code with a deterministic prefilter before Jev sees anything.
+- A3 (severity 3): Bench credibility. Comparisons lean partly on unverified incumbent latency and gain figures, and losers will contest method. Fix: publish the harness and raw traces, keeping verified and unverified numbers visibly separated.
+- A4 (severity 2): Adapter drift; store APIs and metadata schemas move, so any store silently becomes a few supported stores. Fix: pinned contract tests per adapter in CI.
+- A5 (severity 3): Thin moat; stores can internalize a rerank call and strand the adapter. Fix: anchor value in the Jev calibration format and the bench standard, which hosts cannot replicate without adopting it.
+
+**C3**
+- A1 (severity 5): Destructive trust inversion. A steered or poisoned supersede vote tombstones genuine memories, and the threat model behind this product is documented only via secondary, unverified poisoning numbers. Fix: default-deny deletes; the ledger holds soft tombstones only, with human override as the sole write-back path.
+- A2 (severity 4): No upstream admission; without a write gate, the sidecar spends its life promoting garbage the host freely admitted, a zero-yield treadmill. Fix: require a minimal intake contract, or pair with C1's admit gate, before install.
+- A3 (severity 3): Recency ambiguity; Jev does no dates or math, but host metadata schemas vary wildly. Fix: code owns timestamp arbitration and passes it as a fact; Jev judges content conflict only.
+- A4 (severity 4): Adoption friction; teams resist an external sidecar holding delete powers, and trust starts at zero. Fix: launch advisory-only, scoring supersede suggestions with no write powers, then convert on measured precision.
+- A5 (severity 2): Ledger bloat; an append-only ledger becomes its own uncapped injection surface, the exact waste modefuncs this ecosystem warns about. Fix: cap, compact, and hash-chain ledger summaries on a count cadence like Honcho's.
+
+## 3. Open questions
+
+1. Does Jev catch paraphrased contradiction, or does literal reading miss semantic conflicts between reworded claims? This decides how much of the 20-40pp LOCOMO-style spread C1 can actually bank.
+2. What does per-task threshold tuning cost at one-command-eval time, given ~INR 0.002 per item and ~INR 4 per million input tokens, and is it cheap enough to survive real users?
+3. Who supplies ground-truth labels for admit and supersede, and can the eval stay honest under per-task tuning without a held-out design?
+
+## 4. Verdicts
+
+- **C1: PROCEED.** Every axis holds at 8 or above (realness 9, jev-fit 8, hugeness 8, buildability 8). It is the only candidate aimed at the verified structural gap (all slices, no full lifecycle), built on a documented Honcho template, and its worst attack (judge capture) has a concrete, cheap mitigation.
+- **C2: HOLD.** Strongest reason: hugeness at 6. An adapter and bench sit downstream of host ecosystems that accrue the stars and can internalize rerank; it compounds nothing on its own. It retains value as a C1 module, which is a redesign, so hold.
+- **C3: HOLD.** Strongest reason: hugeness at 5 compounded by the severity-5 destructive-trust attack; nobody grants delete powers to an unhosted sidecar running on unverified threat data. The advisory-only pivot is promising, but it changes the product, so hold and re-pitch rather than proceed.

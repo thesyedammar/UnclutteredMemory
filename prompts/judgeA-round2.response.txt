@@ -1,0 +1,71 @@
+VERDICT: J1-BUILD J2-PARK J3-PARK
+SCORES: J1=[9,8] J2=[9,6] J3=[8,8]
+
+J1: Adversarial Memory Firewall with Live Attack Bounce
+
+Mechanism: C1 already has write gates, read gates, budgets, and kill switch. J1 turns them into a visible memory firewall. Every write enters quarantine. Code extracts provenance: source agent, local key signature, task tag, timestamp, conflict set, and usage history. Jev judges label content for vote stuffing, instruction injection, contradiction, unsupported assertion, and task relevance. Code computes a trust score from provenance strength, judge disagreement, conflict density, source reputation, and per-task threshold. Low-trust memories are quarantined or killed. Read gate rechecks live memory before use. Kill switch revokes a shard and emits a signed incident receipt. Demo: dashboard runs a scripted attack feed. Poison payloads hit the write gate. Jev labels light up. Code score collapses. Kill switch fires. Agent answer stays clean. Then benign memory passes and improves the task. Viewer sees attack bounce off with signed rejection receipt.
+
+Why it stuns: a live poisoning attack visibly fails, then the same agent succeeds on clean memory.
+
+Jev-fit: write gate, read gate, kill switch, eval labels.
+
+Build cost: medium.
+
+Failure mode: Jev judge gets prompt-injected and accepts a poisoned shard. Guard: code blocks unsigned provenance, enforces caps, requires multiple Jev passes, and records audit receipts.
+
+Score:
+Wow: 9, attack-bounce demo is immediate and hard to fake.
+Feasibility: 8, C1 gates exist, so this is mostly attack corpus, quarantine UI, and receipts.
+
+Attacks:
+1. Literal vote poisoning still passes if the payload is semantically valid. Severity 4. Guard: code treats repeated votes as low entropy and decays source reputation.
+2. Provenance forgery if local keys leak. Severity 5. Guard: per-session derived keys, rotation, signed chain, and hardware-backed key option.
+3. Latency stacking from multiple Jev passes. Severity 3. Guard: fast-path code checks, async quarantine, budget caps, and verdict cache by content hash.
+
+Verdict: BUILD. Strongest reason: it converts C1's safety story into the jaw-dropping demo the builder wants, using mechanisms already in C1.
+
+J2: Cross-Agent Memory Market with Signed Provenance and Public Leaderboard
+
+Mechanism: Each memory shard carries a signed provenance chain: origin agent, task, Jev labels, eval receipt, and usage log. Code computes price and budget from expected reuse, precision estimate, novelty, and cost. Jev judges only semantic quality and conflict. A buyer agent gets a shard only if a local probe passes. Market settles in local credits. Public leaderboard ranks agents by downstream task delta minus memory cost on the C1 eval suite. Demo: two agents bid on a memory shard. A poisoned shard fails the buyer probe, price drops, seller reputation falls. A clean shard wins and the buyer solves the task. Viewer sees a live market reject bad memory and reward useful memory.
+
+Why it stuns: a public memory market visibly prices and rejects poisoned knowledge.
+
+Jev-fit: read gate, write gate, eval, budget caps.
+
+Build cost: large.
+
+Failure mode: market spam and collusion. Guard: staking, caps, kill switch, local-first allowlist.
+
+Score:
+Wow: 9, market drama plus public leaderboard is strong.
+Feasibility: 6, requires market, settlement, reputation, probes, and leaderboard.
+
+Attacks:
+1. Sybil sellers collude to inflate reputation. Severity 5. Guard: stake slashing, signed provenance, caps, and local allowlist.
+2. Buyer probe overfits to seller canary. Severity 4. Guard: code picks fresh probes from held-out task pool.
+3. Leaderboard gaming via task selection. Severity 4. Guard: pre-registered tasks, sealed canaries, signed submissions.
+
+Verdict: PARK. Strongest reason: high wow, but large scope and collusion risk make it phase 5 after J1 proves the core demo.
+
+J3: Self-Red-Teaming Memory with Precision Receipts on Every Read
+
+Mechanism: Every memory shard carries a local canary set tied to its task. On read, code samples a deterministic micro-probe from the canary set based on read ID and budget. The reading agent must answer the probe using retrieved memory. Jev judges only the answer against the canary. If pass, read returns memory plus signed precision receipt. If fail, memory is demoted or quarantined, and read returns refusal or fallback. Code owns sampling, thresholds per task, budget caps, and kill switch. Audit log records every read. Demo: terminal shows every read with green or red receipt. A stale memory fails its own canary and auto-evicts before it can poison the agent. Public benchmark: C1 eval suite runs receipt coverage and refusal accuracy.
+
+Why it stuns: memory proves its own precision on every read, not after an incident.
+
+Jev-fit: read gate, eval, kill switch.
+
+Build cost: medium.
+
+Failure mode: canary leakage or overfitting. Guard: rotating canaries, code-only access, per-task thresholds, signed logs.
+
+Score:
+Wow: 8, strong proof story, less visceral than attack bounce.
+Feasibility: 8, reuses C1 eval and read gate.
+
+Attacks:
+1. Canary leakage lets bad memory pass. Severity 4. Guard: rotate canaries, encrypt, split across code and judge.
+2. Probe cost stacks on every read. Severity 3. Guard: sample fraction, cache receipts, budget caps.
+3. Judge grades its own retrieval. Severity 3. Guard: canary answer is fixed, code checks exact match, Jev only as fallback.
+
+Verdict: PARK. Strongest reason: excellent phase 5 upgrade after J1 proves the demo, but building it with J1 now risks scope implosion.

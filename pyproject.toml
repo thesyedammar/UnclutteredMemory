@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jev-memory"
+version = "0.1.0"
+description = "Full-lifecycle agent memory: Jev-gated writes, Jev-reranked reads, signed provenance, provable claims"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "requests>=2.31",
+  "sqlite-vec>=0.1",
+]
+
+[project.scripts]
+jev = "jev_memory.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["jev_memory*"]

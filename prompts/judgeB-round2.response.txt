@@ -1,0 +1,67 @@
+VERDICT: J1-BUILD J2-BUILD J3-PARK
+SCORES: J1=[9,8] J2=[9,7] J3=[9,6]
+
+# Move J1: Kill-Class Poison Gauntlet (live)
+
+**Mechanism.** A scripted adversary bolted onto C1's one-command eval ships four attack families as pure-code mutators: (a) literal-vote stuffing, mass planting near-duplicate claims to fake consensus; (b) contradiction grafting, small edits to stored facts; (c) prompt-injected writes, benign conversation text ordering a `memory.save` of defamatory content; (d) budget busting, floods aimed at the packer. Every adversarial write crosses the normal Jev gates and code caps. Because the generator knows intent a priori, poison labels are free and judge-independent, which also patches the eval-circularity weak spot. Output metrics: poison survival rate, benign pass-through rate, p95 read latency. A HUD shows each attack, gate verdicts, threshold, pack decision, and ledger line. One command: `jev gauntlet --record`.
+
+**Why it stuns (one line).** On video, the exact literal-vote attack that scared Round 1 gets stuffed 200 votes deep and the store still holds the truth while a stock vector store adopts the slander.
+
+**Jev-fit.** Existing write gates, per-task thresholds displayed live, code-owned caps and the kill switch demonstrated on camera.
+
+**Build cost.** Small: the gates and harness exist; new work is the attack corpus, mutators, and HUD.
+
+**Killing failure.** Gates over-block and benign pass-through collapses, exposing the gate as a spam filter, or survival rate on an unseen attack class is high.
+
+**Scores.** Wow 9: this is the builder's stated bar, the bouncing attack, aimed at C1's ugliest weak spot. Feasibility 8: reuses shipped gates and eval plumbing; new code is corpus plus HUD.
+
+**Attacks.**
+1. Meta-fitting: the adversary is tuned against the same judge family, echoing eval circularity. Severity 4. Guard: freeze a held-out paraphraser before any threshold tuning, report survival on the unseen class only, publish both.
+2. Over-blocking: legitimate contested opinions die at the gate, making precision theater. Severity 3. Guard: benign pass-through rate is a co-equal published metric with a pre-set floor.
+3. Cherry-picking suspicion: viewers assume the corpus was fitted to pass. Severity 2. Guard: commit corpus, seeds, and thresholds to the repo before recording; one take.
+
+**Verdict: BUILD.** Cheapest path to the stated wow bar, and it converts literal-vote poisoning from a liability into the headline.
+
+# Move J2: Paise Parity on a public bench, with signed receipts
+
+**Mechanism.** Run one public human-labeled long-memory conversational QA bench (LoCoMo class) three ways: (1) a costly full-context big-model pipeline, (2) a big-model reranker selecting context, (3) C1 with local Jev judge gates and code-owned packing. Live cost meters tick in paise, computed from logged tokens plus measured wall-clock local inference; no estimates, and a sha256 receipt binds each run to its config, satisfying the no-fabricated-numbers constraint and making receipts a product feature, not a demo prop. Accuracy, p50/p95 latency, and measured cost ratio are all reported pre-registered, whatever they turn out to be.
+
+**Why it stuns (one line).** Two counters on one screen, same accuracy band, one balance bleeding rupees while the other counts paise.
+
+**Jev-fit.** The whole cost story is code-owned budgets plus gate-filtered precision; thresholds per task shown per run.
+
+**Build cost.** Medium: baseline plumbing, meter wiring, receipt signer; the eval harness itself exists.
+
+**Killing failure.** Local gates drown in bench noise and the accuracy gap is visible on stage, turning the demo into a loss.
+
+**Scores.** Wow 9: the second stated bar, paise-priced parity against a costly pipeline on a public bench. Feasibility 7: harness exists, risk lives in outcomes, not in build path.
+
+**Attacks.**
+1. Unfair-baseline accusation: temp, sampling, or cost accounting gamed. Severity 4. Guard: publish baseline runner code, signed receipts, hashed configs.
+2. Bench contamination: bench text leaks into model training, inflating the comparison. Severity 3. Guard: use the held-out split, score it last, disclose contamination status.
+3. Hardware confound: local paise costs vary wildly by machine. Severity 2. Guard: publish the exact hardware spec and count INR by measured wall clock.
+
+**Verdict: BUILD.** Mostly eval plumbing already in C1; cost receipts also productize the "code owns budgets" promise for every future user.
+
+# Move J3: Zero-trust reads, every memory item ships its own alibi
+
+**Mechanism.** On every write, the SDK emits a hash-chained receipt: content hash, judge verdict, score, threshold id, policy version, pack decision, previous receipt hash. The read path verifies the chain automatically; a tampered or orphaned record is quarantined and alarmed. A code-owned sample rate of silent re-judging at read time catches drift between stored verdicts and current thresholds. Tamper tooling ships in the SDK so anyone can break the store on camera.
+
+**Why it stuns (one line).** Flip one record offline, and the next read returns the poison plus a red tamper alarm, while the ungated baseline quotes it as gospel.
+
+**Jev-fit.** Read-side gates, versioned thresholds; chain logic and re-judge rate are code-owned.
+
+**Build cost.** Medium: chain, key handling, policy versioning, quarantine flow, sampled re-judge wiring.
+
+**Killing failure.** Receipt versioning sprawl: threshold churn makes old receipts misleading, and every repair becomes a versioning argument.
+
+**Scores.** Wow 9: the silent-poison alarm is a visceral moment no slice repo demos, and "memory that proves its own precision on every read" matches an allowed direction verbatim. Feasibility 6: key management, versioned receipts, and drift sampling are genuine engineering beyond C1's spine.
+
+**Attacks.**
+1. Stale verdicts: policy updates strand old receipts, undermining the "proves precision" claim. Severity 4. Guard: policy version stamped in every receipt; reads flag mismatches instead of silently trusting them.
+2. Alarm fatigue: legitimate edits trip tamper alarms. Severity 3. Guard: edits must be new chained writes, never silent mutation; admin repair flow re-signs with audit trail.
+3. Latency stacking from verification plus re-judges. Severity 2. Guard: hash checks are microseconds; sampled re-judge capped at a configurable single-digit-percent rate.
+
+**Verdict: PARK (phase 5).** Strongest reason: it is the right endgame but its wow overlaps J1's, and chaining, keys, and versioning are exactly the scope implosion Round 1 warned about. Later, J1's gauntlet ledger is the natural thing J3's chains seal, so park it as the integrity chapter, not the launch one.
+
+**Judge's summary.** J1 and J2 together hit both stated jaw-droppers with mostly existing machinery, attack a documented weak spot, and produce receipts that outlive the demo. J2's pre-registered-claims discipline matters most here: show the measured ratio whatever it is, and the honesty itself becomes part of the stun.

@@ -1,0 +1,96 @@
+VERDICT: C1-PROCEED C2-HOLD C3-HOLD
+SCORES: C1=[9,9,8,8] C2=[8,8,7,9] C3=[7,8,6,8]
+
+SCORING RATIONALE
+
+C1 realness 9: It targets the full-lifecycle gap, not another retrieval slice, with SDK, server, eval, and playground.  
+C1 jev-fit 9: Jev handles typed judgments, code owns budgets, packing, math, and kill switches.  
+C1 github-hugeness 8: Evals plus drop-in plugin shape win, and the digest shows no Honcho-shaped full lifecycle in the scanned repos.  
+C1 buildability 8: Large but tractable; SQLite, MCP, labeled eval, and playground are concrete, though scope is the main risk.
+
+C2 realness 8: Retrieval rerank is a real problem, especially with lost-in-the-middle drops of 15-25pp and 70pct+ drops under 50pct in the middle for 20 docs.  
+C2 jev-fit 8: Jev topical noul rerank fits typed judgment, but the adapter must avoid porting thresholds across stores or types.  
+C2 github-hugeness 7: A universal adapter is useful but thinner than the full lifecycle gap; it is a slice, not the missing system.  
+C2 buildability 9: Adapter plus published bench is easier to ship than a full server, SDK, and lifecycle.
+
+C3 realness 7: Forgetting and lease invalidation are real, but the sidecar is a narrow compliance and hygiene niche.  
+C3 jev-fit 8: Jev supersede votes fit choice judgments, provided code owns leases, TTL, authority, and ledger.  
+C3 github-hugeness 6: Forgetting-as-a-service is less likely to match the evals plus drop-in plugin star pattern than C1.  
+C3 buildability 8: MCP sidecar plus ledger is buildable, but enforcement and rollback are hard.
+
+Bar: PROCEED needs every axis 8 or higher. C1 meets the bar. C2 fails on github-hugeness. C3 fails on realness and github-hugeness.
+
+LOCKED CONSTRAINT FLAGS
+
+C1: Potential violation if 0.58 gate, 45pct band, and cap 8 ship as universal defaults across tasks and types. The proposal includes labeled eval, so a per-task calibration path can satisfy constraint 3. Flag only if defaults are ported without tuning.
+
+C2: Potential violation if the universal adapter publishes and applies one Jev noul threshold across Mem0, Honcho, Chroma, and SQLite. Thresholds must be tuned per task on labeled data, never ported across types. Also keep code owning packing and budgets.
+
+C3: Potential violation if Jev supersede votes directly end leases. Jev judges only; code must own lease math, TTL, packing, kill switch, and ledger. Human override is good but not sufficient if code does not enforce.
+
+CANDIDATE 1 ATTACKS
+
+A1, severity 4. Mechanism: C1 ships 0.58 gate, 45pct band, and cap 8 as defaults. Who breaks it: cross-domain users, multilingual teams, code versus prose workloads. Why it works: Jev calibration is not invariant across types, and locked constraint 3 forbids porting thresholds. Incentive: faster onboarding. Demo-day failure: labeled demo passes, live traffic false-admits because the threshold came from another type. Improvement: must-do per-task calibration wizard and refusal to use universal thresholds; nice-to-have threshold registry.
+
+A2, severity 4. Mechanism: Multiple Jev gates on write and read, each 70-500ms, plus server and MCP. Who breaks it: interactive agents and high-write workloads. Why it works: Jev latency and context rot compound, and poisoning activation remains a risk. Incentive: full lifecycle completeness sells. Demo-day failure: slow response or timeout under load. Improvement: must-do code-side budget packer, async batching, caps, and kill switch; nice-to-have adaptive sampling.
+
+A3, severity 5. Mechanism: Jev choice and noul literal reading on code-ordered pairs can be steered by injected memory content. Who breaks it: systems facing GhostWriter at ~98pct injection and ~60pct activation, or MemGhost at 87.5pct and 71.4pct. Why it works: adversarial steer risk plus no generation means Jev may read poisoned text literally. Incentive: attacker wants to overwrite memory. Demo-day failure: red team injects a supersede phrase and memory flips. Improvement: must-do provenance, signed writes, quarantine, code-owned supersede rules, and human override; nice-to-have anomaly detection.
+
+A4, severity 3. Mechanism: One-command eval may tune and test on the same labeled data. Who breaks it: adopters trusting the score. Why it works: thresholds tuned per task need held-out data. Incentive: better benchmark numbers. Demo-day failure: leaderboard passes, live task fails. Improvement: must-do train/test split and contamination checks; nice-to-have third-party eval.
+
+A5, severity 3. Mechanism: Honcho compatibility may drift from Honcho read semantics such as representation plus card first, then 40 or 60 summary and messages. Who breaks it: existing Honcho users migrating. Why it works: known waste includes over-iteration, prefetch duplication, uncapped injection, and count-based summaries. Incentive: compatibility claim. Demo-day failure: migration breaks context quality. Improvement: must-do conformance suite; nice-to-have adapter layer.
+
+CANDIDATE 2 ATTACKS
+
+A1, severity 4. Mechanism: Universal adapter and published bench may apply one Jev noul threshold across stores. Who breaks it: mixed corpora and multi-domain apps. Why it works: thresholds must be tuned per task and never ported across types. Incentive: one config for all stores. Demo-day failure: bench looks good, real store retrieval fails. Improvement: must-do per-store and per-type calibration; nice-to-have calibration UI.
+
+A2, severity 4. Mechanism: Store abstraction leaks because Mem0, Honcho, Chroma, and SQLite differ in ordering, metadata, and time semantics. Who breaks it: graph and temporal stores. Why it works: Jev literal reading and context rot can misrank when metadata is flattened. Incentive: broad support. Demo-day failure: wrong top result in the live store. Improvement: must-do typed adapter contract and caps; nice-to-have store-specific tests.
+
+A3, severity 3. Mechanism: Published bench may rely on vendor or secondary numbers such as Mem0 26pct gain, 80pct token cut, 90pct fewer versus full history, and latency ranges. Who breaks it: evaluators. Why it works: the digest marks these as NOT VERIFIED. Incentive: marketing. Demo-day failure: cannot reproduce the bench. Improvement: must-do reproducible harness and raw logs; nice-to-have independent replication.
+
+A4, severity 3. Mechanism: Only retrieval-rerank, so poisoning, contradiction, and supersede remain unsolved. Who breaks it: users expecting memory hygiene. Why it works: the gap is full lifecycle, and all scanned repos are slices. Incentive: narrow scope ships faster. Demo-day failure: poisoned fact remains after rerank. Improvement: must-do explicit scope and pairing with C1; nice-to-have lifecycle plugin.
+
+A5, severity 3. Mechanism: Jev rerank at 70-500ms sits on top of store latency: Mem0 80-200ms, Letta 150-400ms, Zep 300-800ms. Who breaks it: real-time agents. Why it works: added latency is user-visible. Incentive: better recall. Demo-day failure: slow query. Improvement: must-do content-hash cache, cap 8, and timeout; nice-to-have async path.
+
+CANDIDATE 3 ATTACKS
+
+A1, severity 5. Mechanism: New evidence triggers Jev supersede votes, and poisoned evidence can end leases. Who breaks it: systems facing GhostWriter at ~98pct injection and ~60pct activation, or MemGhost at 87.5pct and 71.4pct. Why it works: adversarial steer risk makes literal votes dangerous. Incentive: attacker deletes or masks facts. Demo-day failure: sidecar forgets a critical fact. Improvement: must-do multi-signal code policy, quarantine, and human override; nice-to-have delayed leases.
+
+A2, severity 4. Mechanism: Lease ending removes or masks facts, and a ledger alone does not restore lost knowledge. Who breaks it: compliance teams and users. Why it works: forgetting has high blast radius. Incentive: clean memory. Demo-day failure: wrong deletion cannot be undone. Improvement: must-do soft-delete, versioning, and restore; nice-to-have TTL audit.
+
+A3, severity 4. Mechanism: Apps write directly to the store and bypass the lease sidecar. Who breaks it: any non-MCP writer. Why it works: sidecar cannot enforce if it is not the sole gateway. Incentive: easy integration. Demo-day failure: stale fact persists despite lease expiry. Improvement: must-do store triggers or write-ahead interposition; nice-to-have SDK.
+
+A4, severity 4. Mechanism: Leases need time, scope, and authority, but Jev has no math or dates. Who breaks it: temporal facts. Why it works: code must own math, and Jev should judge only literal contradiction or supersede. Incentive: simple vote model. Demo-day failure: wrong lease expiry. Improvement: must-do code-owned TTL and authority, Jev only literal contradiction; nice-to-have policy DSL.
+
+A5, severity 3. Mechanism: Human override becomes a bottleneck when many leases are disputed. Who breaks it: high-contradiction domains. Why it works: every review needs a human. Incentive: safety. Demo-day failure: review backlog. Improvement: must-do tiered review; nice-to-have active learning.
+
+A6, severity 4. Mechanism: One adversarial phrase forgets a key fact, or a stale fact is not forgotten. Who breaks it: demo audience. Why it works: forgetting is highly visible and trust-sensitive. Incentive: show control. Demo-day failure: trust collapse. Improvement: must-do scripted red-team and rollback; nice-to-have live ledger.
+
+OPEN QUESTIONS
+
+Q1: For C1, are 0.58, 45pct, and cap 8 per-task tuned defaults, or universal defaults that would violate constraint 3?  
+Q2: For C1, how many Jev calls occur per write and read under the budget packer and kill switch?  
+Q3: For C2, is the published bench run on primary data or on vendor and secondary claims from the digest?  
+Q4: For C3, can the sidecar enforce leases when apps write directly to the store?  
+Q5: For all candidates, how are thresholds labeled, versioned, and prevented from crossing task types?
+
+VERDICT PER CANDIDATE
+
+C1: PROCEED. Strongest reason: it is the only candidate that fills the full-lifecycle gap while keeping Jev as judge and code as owner of budgets, math, packing, and kill switches.
+
+C2: HOLD. Strongest reason: github-hugeness is 7, below the required 8, and it remains a retrieval slice that does not solve poisoning, contradiction, or supersede.
+
+C3: HOLD. Strongest reason: realness is 7 and github-hugeness is 6, below the bar, and a bypassable forgetting sidecar has high blast radius.
+
+UNCERTAIN LIST
+
+GhostWriter ~98pct injection and ~60pct activation: secondary builder guide, primary tables not verified.  
+MemGhost 87.5pct on GPT-5.4/OpenClaw and 71.4pct on Claude Code SDK: secondary builder guide, primary tables not verified.  
+Mem0 ~26pct gain over RAG: vendor and secondary, not verified.  
+Mem0 80pct token cut and 90pct fewer versus full history: vendor and secondary, not verified.  
+Mem0, Letta, and Zep latency ranges: vendor and secondary, not verified.  
+Lost-in-the-middle 15-25pp drop and 70pct+ drops under 50pct in the middle: secondary explainer, not primary.  
+Honcho OSS session, deriver, summary, read context, and dialectic details: digest only, not primary verified.  
+Star counts such as Mem0 ~48k, LangGraph 42.4k, Chroma 29.3k, Letta 24.7k, Weaviate 16.8k, Zep 4.9k: approximate, not independently verified.  
+~28 Jev-memory repos scanned and no Honcho-shaped full lifecycle: scan result, not independently reproduced.  
+Jev calibration not invariant across types and adversarial steer risk: digest only, not primary verified.

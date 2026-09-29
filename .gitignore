@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# data and secrets
+*.db
+*.db-*
+.env
+.jev_key
+keys/
+
+# eval artifacts
+eval/out/
+eval/results/
+*.receipt.json
+
+# os
+.DS_Store
