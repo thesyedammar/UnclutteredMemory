@@ -1,9 +1,9 @@
-# jev-memory
+# UnclutteredMemory
 
 Full-lifecycle agent memory: Jev-gated writes, Jev-reranked reads, signed provenance, and proof you can run.
 
 Agent memory today saves everything, understands nothing about what matters, and stuffs too much into context.
-jev-memory is the layer where cheap typed Jev judgments gate every write and rank every read, code owns all
+UnclutteredMemory is the layer where cheap typed Jev judgments gate every write and rank every read, code owns all
 budgets and math, and a frozen labeled eval plus a poison gauntlet measure every claim.
 
 Status: phase 1 (SDK gates + calibration + frozen eval) in progress. Design frozen by two independent judges
@@ -23,10 +23,10 @@ Status: phase 1 (SDK gates + calibration + frozen eval) in progress. Design froz
 
 ## Commands
 
-jev run        run the frozen eval
-jev calibrate  tune thresholds on train split only
-jev redteam    fire the poison gauntlet, print survival rate
-jev gauntlet --record   record the demo video
+unclutter run        run the frozen eval
+unclutter calibrate  tune thresholds on train split only
+unclutter redteam    fire the poison gauntlet, print survival rate
+unclutter gauntlet --record   record the demo video
 
 ## Design
 
