@@ -9,8 +9,9 @@ Two case sets, two jobs:
   benchmark claim, and its numbers are reported as such.
 - eval/golden.jsonl is the GOLDEN set: hand-authored cases written as
   data (text plus expected label), authored against the documented gate
-  contract, sharing no code path with the stubs. The headline numbers
-  come from golden; the runner refuses to run without it.
+  contract, sharing no code path with the stubs. The
+  contract-conformance numbers come from golden; the runner refuses
+  to run without it.
 
 The judge here is the offline rule stub, never Jev; the report says so.
 Every offline decide() call runs through the heterogeneous strict +
@@ -21,9 +22,9 @@ The report stream is forced to UTF-8 with an explicit error handler
 (uncluttered_memory.console) and the success line is pinned byte for
 byte by tests.
 
-Exit codes: 1 on any golden or bulk case failing (headline is golden),
-2 on split, provenance, golden, or tuning contamination (unreadable
-artifacts fail closed), 3 on Jev rate limit.
+Exit codes: 1 on any golden or bulk case failing (the conformance
+number is golden), 2 on split, provenance, golden, or tuning
+contamination (unreadable artifacts fail closed), 3 on Jev rate limit.
 """
 from __future__ import annotations
 
@@ -74,6 +75,25 @@ GOLDEN_MIN_PER_SUITE = {
     "supersede": 12,
     "rerank": 8,
 }
+
+#: Frozen golden labels: eval/golden_labels_frozen.json maps every
+#: golden case id to its frozen expect, and eval/GOLDEN_CHANGELOG.md
+#: records the freeze hash plus one entry per later label change
+#: (case id, old label, new label, human reason, date). The direction
+#: of fit is fixed: the stub is changed to meet these labels, never
+#: the reverse. Enforced by tests/test_golden_freeze.py.
+GOLDEN_FROZEN_LABELS = (Path(__file__).resolve().parents[1] / "eval"
+                        / "golden_labels_frozen.json")
+GOLDEN_CHANGELOG = (Path(__file__).resolve().parents[1] / "eval"
+                    / "GOLDEN_CHANGELOG.md")
+
+#: Recorded independent-rater number: live jev-1.13-free votes against
+#: the golden labels, from docs/label-audit-20261002.md. Printed on
+#: every eval run beside the conformance number; it gates nothing and
+#: the conformance number gates nothing about it.
+RECORDED_LIVE_AGREEMENT = "10/24 = 41.7%"
+RECORDED_LIVE_AGREEMENT_DATE = "2026-10-02"
+RECORDED_LIVE_AGREEMENT_SOURCE = "docs/label-audit-20261002.md"
 
 PRICE_INR_PER_M = 4.0
 TOKENS_PER_ITEM = 475
@@ -448,7 +468,7 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
     """Run one suite. Returns (rows, latencies_ms).
 
     Stores created for the Store-backed suites are appended to
-    collect_stores when given, so run_eval can headline the summed
+    collect_stores when given, so run_eval can report the summed
     Store.error_count (coding-bug count) across the whole run.
     """
     rows, lat = [], []
@@ -587,7 +607,7 @@ def load_golden(path) -> tuple:
     """Load and validate the golden claim set. Returns (cases, error)."""
     p = Path(path)
     if not p.exists():
-        return [], ("no golden set at %s; the headline claim rests on "
+        return [], ("no golden set at %s; the conformance claim rests on "
                     "golden, so this is a hard error" % p)
     try:
         cases = load_cases(p)
@@ -721,10 +741,10 @@ def run_eval(cases_path=None, task: str = "general-qa",
     print("unclutter eval: bulk n=%d train=%d test=%d (%s)" %
           (len(cases), len(train), len(test), reg_note))
     if golden:
-        print("golden: n=%d hand-authored cases (headline claim; evaluated "
+        print("golden: n=%d hand-authored cases (conformance claim; evaluated "
               "whole, never split, never tuned on)" % len(golden))
     else:
-        print("golden: skipped (no golden path); bulk only, no headline "
+        print("golden: skipped (no golden path); bulk only, no conformance "
               "claim")
     print("cases sha256: %s" % file_sha256(cases_path))
     if golden:
@@ -732,7 +752,7 @@ def run_eval(cases_path=None, task: str = "general-qa",
     label_line = ("labels: bulk provenance=%s (rule-generated "
                   "self-consistency; no human labels)" % PROVENANCE)
     if golden:
-        label_line += ("; golden provenance=%s (the claim set)"
+        label_line += ("; golden provenance=%s (the conformance set)"
                        % GOLDEN_PROVENANCE)
     print(label_line)
     print("judge=rule-stub (offline heuristic, not Jev)"
@@ -743,7 +763,7 @@ def run_eval(cases_path=None, task: str = "general-qa",
     bulk_total = 0
     bulk_ok = 0
     if golden:
-        print("GOLDEN (hand-authored claim set, evaluated whole)")
+        print("GOLDEN (hand-authored conformance set, evaluated whole)")
         for suite in SUITES:
             rows = golden_results[suite]
             ok_n = sum(1 for r in rows if r[3])
@@ -805,8 +825,14 @@ def run_eval(cases_path=None, task: str = "general-qa",
                           % (suite, name, label, got, exp))
 
     if golden:
-        print("HEADLINE (golden, hand-authored): %d/%d ok, %d failures"
+        print("CONTRACT CONFORMANCE (golden, hand-authored): %d/%d ok, "
+              "%d failures (the system reproduces frozen human judgments; "
+              "NOT accuracy or memory quality)"
               % (golden_ok, golden_total, golden_fails))
+    print("independent-rater agreement (recorded live jev-1.13-free vs "
+          "golden labels, %s): %s (independent rater, NOT a gate; see %s)"
+          % (RECORDED_LIVE_AGREEMENT_DATE, RECORDED_LIVE_AGREEMENT,
+             RECORDED_LIVE_AGREEMENT_SOURCE))
     print("bulk self-consistency (synthetic-rule): %d/%d ok, %d failures"
           % (bulk_ok, bulk_total, bulk_fails))
     bug_count = total_error_count(eval_stores)

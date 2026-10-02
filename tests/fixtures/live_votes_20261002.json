@@ -1,0 +1,33 @@
+{
+ "agreement": "12/20 = 60.0%",
+ "agree_count": 12,
+ "date": "2026-10-02",
+ "floor_note": "ratchet floor 0.35 is the recorded importance-audit 0.417 minus margin",
+ "method": "deterministic 20-case spread over judged suites (admit, importance, contradict, supersede); stub = offline RuleJudge/strict+lenient pair, live = jev-1.13-free with paired live questions plus offline confirmation on relation cases",
+ "model": "jev-1.13-free",
+ "sample": "fixed 20-case spotcheck (see sample_cases in scripts/live_spotcheck.py, n=20)",
+ "source": "real live runs; refreshed by scripts/live_spotcheck.py on full completion when the API key is present",
+ "total": 20,
+ "votes": {
+  "g-admit-0001": "STORE",
+  "g-admit-0007": "STORE",
+  "g-admit-0013": "STORE",
+  "g-admit-0019": "DROP",
+  "g-admit-0025": "DROP",
+  "g-admit-0031": "DROP",
+  "g-admit-0037": "QUARANTINE",
+  "g-admit-0043": "DROP",
+  "g-admit-0049": "DROP",
+  "g-admit-0055": "DROP",
+  "g-contradict-0005": "KEEP",
+  "g-contradict-0011": "KEEP",
+  "g-contradict-0017": "KEEP",
+  "g-contradict-0023": "KEEP",
+  "g-importance-0006": 5,
+  "g-importance-0012": 2,
+  "g-importance-0018": 1,
+  "g-importance-0024": 1,
+  "g-supersede-0006": "TOMBSTONE",
+  "g-supersede-0012": "TOMBSTONE"
+ }
+}

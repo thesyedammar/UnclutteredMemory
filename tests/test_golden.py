@@ -1,9 +1,11 @@
 """Golden set integrity: hand-authored data, independent of the stub
 generator, and reported separately from the synthetic bulk.
 
-The headline numbers come from the golden set; the bulk set is a
-self-consistency check. These tests pin the floor, the provenance, the
-independence from eval/cases.py, and the headline wiring.
+The conformance numbers come from the golden set: contract
+conformance (the system reproduces frozen human judgments), NOT
+accuracy or memory quality. The bulk set is a self-consistency check.
+These tests pin the floor, the provenance, the independence from
+eval/cases.py, and the conformance wiring.
 """
 import json
 from collections import Counter
@@ -219,22 +221,25 @@ def test_golden_relation_claims_meet_the_strict_minimum():
     assert checked >= 20
 
 
-def test_run_eval_reports_golden_separately_with_headline(capsys):
+def test_run_eval_reports_golden_separately_with_conformance(capsys):
     rc = evalmod.run_eval(str(evalmod.CASES_FILE), task="general-qa",
                           registry_path=None, root=ROOT)
     assert rc == 0
     out = capsys.readouterr().out
-    assert "GOLDEN (hand-authored claim set" in out
+    assert "GOLDEN (hand-authored conformance set" in out
     assert "BULK (synthetic-rule; self-consistency only" in out
     assert "admit      golden" in out
-    assert "HEADLINE (golden, hand-authored):" in out
+    assert "CONTRACT CONFORMANCE (golden, hand-authored):" in out
+    assert "NOT accuracy or memory quality" in out
+    assert "independent-rater agreement (recorded live jev-1.13-free" in out
+    assert "10/24 = 41.7%" in out
     assert "golden provenance=hand-authored" in out
     assert "golden sha256:" in out
     assert out.rstrip().endswith(
         "PASS: golden 0 failures, bulk 0 failures")
 
 
-def test_failing_golden_case_drives_failure_and_headline(tmp_path, capsys):
+def test_failing_golden_case_drives_failure_and_conformance(tmp_path, capsys):
     cases = load_cases(GOLDEN)
     first = cases[0]
     first["expect"] = "DROP" if first["expect"] != "DROP" else "STORE"
@@ -245,12 +250,12 @@ def test_failing_golden_case_drives_failure_and_headline(tmp_path, capsys):
     assert rc == 1
     out = capsys.readouterr().out
     assert "[FAIL] GOLDEN" in out
-    assert ("HEADLINE (golden, hand-authored): %d/%d ok, 1 failures"
-            % (len(cases) - 1, len(cases))) in out
+    assert (("CONTRACT CONFORMANCE (golden, hand-authored): %d/%d ok, "
+             "1 failures" % (len(cases) - 1, len(cases)))) in out
     assert "FAIL: golden 1 failures, bulk 0 failures" in out
 
 
-def test_bulk_failure_fails_but_golden_stays_the_headline(tmp_path, capsys):
+def test_bulk_failure_fails_but_golden_stays_the_conformance_number(tmp_path, capsys):
     bad = [{"id": "b1", "suite": "admit", "kind": "x",
             "provenance": "synthetic-rule", "text": "thanks",
             "expect": "STORE"}]

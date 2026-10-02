@@ -17,9 +17,13 @@ raises ValueError when the two live questions match).
 
 INFORMATION ONLY. The agreement rate gates nothing: no test, no eval
 exit code, no CI depends on it. Without the API key the script skips
-cleanly with no network calls. On HTTP 429 it halts honestly with the
-rate-limit message; there is no fallback model and nothing is ever
-fabricated from a stub in place of a live answer.
+cleanly with no network calls. On full completion with the key
+present the script refreshes tests/fixtures/live_votes_20261002.json
+(recorded live votes plus metadata), which the offline ratchet test
+in tests/test_live_ratchet.py reads; --no-record (or --record none)
+disables the refresh for dry runs with non-live judges. On HTTP 429
+it halts honestly with the rate-limit message; there is no fallback
+model and nothing is ever fabricated from a stub in place of a live answer.
 
 Relation cases cost two live calls each (one per live question) plus
 offline strict plus lenient confirmation, which costs no calls.
@@ -58,6 +62,50 @@ from uncluttered_memory.jev_client import (BadKey, JevError,  # noqa: E402
 
 #: Only suites where a judge votes; dedupe and rerank are pure code.
 JUDGED_SUITES = ("admit", "importance", "contradict", "supersede")
+
+#: Checked-in record of the live run, refreshed by this script on
+#: every full completion when the API key is present. Pass
+#: --no-record for dry runs with non-live judges (a fake judge must
+#: never overwrite recorded live votes). Read offline by
+#: tests/test_live_ratchet.py, which fails when stub-vs-live
+#: agreement drops below the floor.
+FIXTURE_PATH = ROOT / "tests" / "fixtures" / "live_votes_20261002.json"
+
+
+def record_fixture(picks: list, live_by_id: dict, path=None):
+    """Write per-case live votes plus run metadata as JSON."""
+    import datetime
+    import json
+    dest = Path(path) if path else FIXTURE_PATH
+    agree = sum(1 for c in picks
+                if live_by_id.get(c["id"]) == stub_verdict(c))
+    total = len(picks)
+    payload = {
+        "agreement": "%d/%d = %.1f%%" % (
+            agree, total, 100.0 * agree / total if total else 0.0),
+        "agree_count": agree,
+        "date": datetime.date.today().isoformat(),
+        "floor_note": ("ratchet floor 0.35 is the recorded "
+                       "importance-audit 0.417 minus margin"),
+        "method": ("deterministic 20-case spread over judged suites "
+                   "(admit, importance, contradict, supersede); stub = "
+                   "offline RuleJudge/strict+lenient pair, live = "
+                   "jev-1.13-free with paired live questions plus "
+                   "offline confirmation on relation cases"),
+        "model": "jev-1.13-free",
+        "sample": ("fixed 20-case spotcheck (see sample_cases in "
+                   "scripts/live_spotcheck.py, n=20)"),
+        "source": ("real live runs; refreshed by "
+                   "scripts/live_spotcheck.py on full completion when "
+                   "the API key is present"),
+        "total": total,
+        "votes": {c["id"]: live_by_id[c["id"]] for c in picks},
+    }
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with open(dest, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=1)
+        f.write("\n")
+    return dest
 
 
 def sample_cases(cases: list, n: int = 20) -> list:
@@ -127,6 +175,12 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="live-spotcheck")
     parser.add_argument("--golden", default=str(GOLDEN_FILE))
     parser.add_argument("--n", type=int, default=20)
+    parser.add_argument("--record", default=str(FIXTURE_PATH),
+                        help="fixture refreshed on full completion; "
+                        "'none' disables the refresh")
+    parser.add_argument("--no-record", action="store_true",
+                        help="dry run: never touch the fixture "
+                        "(use with non-live judges)")
     args = parser.parse_args(argv)
 
     try:
@@ -155,6 +209,7 @@ def main(argv=None) -> int:
     live_a, live_b = live_relation_pair()
     agree = 0
     done = 0
+    live_by_id: dict = {}
     by_suite: dict = {}
     for case in picks:
         try:
@@ -176,6 +231,7 @@ def main(argv=None) -> int:
             print("spotcheck halted: %s" % e)
             return 2
         done += 1
+        live_by_id[case["id"]] = live
         same = stub == live
         agree += 1 if same else 0
         slot = by_suite.setdefault(case["suite"], [0, 0])
@@ -193,6 +249,17 @@ def main(argv=None) -> int:
             print("  %-10s agreement (information only): %d/%d %s"
                   % (suite, hit, total,
                      "agree" if hit == total else "differ present"))
+        if picks and done == len(picks) and (
+                not args.no_record
+                and args.record.lower() != "none"):
+            try:
+                dest = record_fixture(picks, live_by_id, args.record)
+            except OSError as e:
+                print("fixture not refreshed: cannot write %s (%s)"
+                      % (args.record, e))
+            else:
+                print("fixture refreshed: %s (stub-vs-live agreement "
+                      "%d/%d)" % (dest, agree, done))
     else:
         print("no cases were run; nothing to compare")
     return 0

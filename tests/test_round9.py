@@ -3,7 +3,7 @@
 - _identity_claim reads lowercase identity claims via casefold.
 - _importance_choice accepts s0..s4 and 1..5 explicitly, both ways.
 - Spotcheck importance uses one shared vote path; disagreement shows.
-- Store.error_count surfaces in CLI and eval headline; nonzero is loud.
+- Store.error_count surfaces in CLI and eval conformance; nonzero is loud.
 - Full CLI run on a temp DB, Recall.pack budget path, disk-backed DB.
 """
 import importlib.util
@@ -151,6 +151,8 @@ class _FakeLiveRel:
 
 def test_spotcheck_importance_disagreement_visible(monkeypatch, capsys):
     mod = _load_spotcheck()
+    before = (ROOT / "tests" / "fixtures"
+              / "live_votes_20261002.json").read_bytes()
     monkeypatch.setattr(mod, "JevJudgeClient", _FixedLiveJudge)
     monkeypatch.setattr(
         mod, "live_relation_pair",
@@ -159,7 +161,7 @@ def test_spotcheck_importance_disagreement_visible(monkeypatch, capsys):
                          {"a": "x", "b": "y"}, "coexist"),
             _FakeLiveRel("rel_confirm", "different slot wording here",
                          {"a": "p", "b": "q", "c": "r"}, "coexist")))
-    rc = mod.main(["--n", "20"])
+    rc = mod.main(["--n", "20", "--no-record"])
     assert rc == 0
     out = capsys.readouterr().out
     imp_lines = [ln for ln in out.splitlines() if ln.startswith("importance")]
@@ -167,9 +169,14 @@ def test_spotcheck_importance_disagreement_visible(monkeypatch, capsys):
     assert any("live=3" in ln for ln in imp_lines)
     assert any("differ" in ln for ln in imp_lines), out
     assert "importance agreement (information only)" in out
+    after = (ROOT / "tests" / "fixtures"
+             / "live_votes_20261002.json").read_bytes()
+    assert after == before, (
+        "a dry run with a non-live judge must never overwrite "
+        "recorded live votes")
 
 
-# (4) error_count surfaces in CLI and eval headline; nonzero is loud.
+# (4) error_count surfaces in CLI and eval conformance; nonzero is loud.
 
 def test_cli_override_prints_error_count(tmp_path, capsys):
     db = tmp_path / "memory.db"
@@ -211,7 +218,7 @@ def test_total_error_count_sums_stores():
     assert total_error_count([object()]) == 0
 
 
-def test_eval_headline_prints_coding_bug_count(capsys):
+def test_eval_conformance_prints_coding_bug_count(capsys):
     rc = run_eval()
     assert rc == 0
     out = capsys.readouterr().out

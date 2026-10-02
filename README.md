@@ -12,9 +12,11 @@ Memory that proves itself: a tiny typed judge at the door of agent memory.
 - `src/uncluttered_memory/calibrate.py` - per-task threshold registry fingerprinted to the task name, refuses mismatched files, UNCALIBRATED default, train-only tuning.
 - `src/uncluttered_memory/jev_client.py` - judge protocol with a native Jev client, plus the heterogeneous offline relation pair (StrictRelationJudge + LenientRelationJudge). StrictRelationJudge requires at least two shared content tokens beyond stopwords and numbers before it reads a marker as being about the same slot.
 - `eval/run.py` - one-command eval over two case sets: the hand-authored golden set (the claim) and the synthetic bulk set (self-consistency). Per-suite tables, admit precision/recall/F1, latency, cost-per-1k estimate, contamination scans that fail closed. Every contamination flag carries a machine-readable reason (which check fired, similarity score, offending excerpt) and the report prints it.
-- `eval/golden.jsonl` - 160 hand-authored cases written as data (text plus expected label), provenance `hand-authored`, sharing no code path with the stubs. This is where the headline numbers come from.
+- `eval/golden.jsonl` - 160 hand-authored cases written as data (text plus expected label), provenance `hand-authored`, sharing no code path with the stubs. This is where the contract-conformance numbers come from: the system reproduces frozen human judgments, NOT accuracy or memory quality.
+- `eval/golden_labels_frozen.json` - the frozen label map (case id to frozen label), pinned at the 2026-10-02 freeze.
+- `eval/GOLDEN_CHANGELOG.md` - the freeze record (file hash, census, policy). A golden label changes only for documented human error with an entry here; undocumented edits fail the suite (`tests/test_golden_freeze.py`).
 - `eval/cases.py` - deterministic generator for the bulk `eval/frozen.jsonl` only (provenance `synthetic-rule`). It never reads or writes the golden set.
-- `scripts/live_spotcheck.py` - information-only live sample of 20 golden cases against `jev-1.13-free`.
+- `scripts/live_spotcheck.py` - information-only live sample of 20 golden cases against `jev-1.13-free`. On full completion with the key present it refreshes `tests/fixtures/live_votes_20261002.json` (recorded live votes plus metadata), which the offline ratchet test reads; `--no-record` disables the refresh.
 
 Install and run:
 
@@ -27,9 +29,16 @@ Install and run:
 The live Jev test runs only when `HERMES_CUSTOM_OPENCODE_AI_API_KEY` is
 set; everything else is offline.
 
-## Eval: golden is the claim, bulk is self-consistency
+## Eval: golden is contract conformance, bulk is self-consistency
 
-Two case sets, two jobs, reported separately on every run:
+Two case sets, two jobs, reported separately on every run. The golden
+number is contract conformance: the system reproduces frozen human
+judgments. It is NOT accuracy and NOT memory quality. Beside it, every
+run prints the independent-rater number: recorded live
+`jev-1.13-free` votes against the golden labels, 10/24 = 41.7% on
+2026-10-02 (see `docs/label-audit-20261002.md`). Live Jev is an
+independent rater that agrees less than half the time and varies run
+to run; neither number gates the other.
 
 - **Golden (`eval/golden.jsonl`, provenance `hand-authored`).** Cases
   written by hand as data: a text and the label a careful reader of the
@@ -43,8 +52,11 @@ Two case sets, two jobs, reported separately on every run:
   contradict 12, supersede 12, rerank 8), and refuses any
   overlap with the bulk set. The current census is 160 cases: admit
   56, importance 24, dedupe 20, contradict 23, supersede 23, rerank
-  14, pinned exactly by `tests/test_golden.py`. The headline numbers
-  are the golden numbers.
+  14, pinned exactly by `tests/test_golden.py`. The conformance
+  numbers are the golden numbers, and the labels are frozen (see
+  `eval/GOLDEN_CHANGELOG.md`): the stub is changed to meet them,
+  a label changes only for documented human error with a changelog
+  entry, never to satisfy the scorer.
 - **Bulk (`eval/frozen.jsonl`, provenance `synthetic-rule`).** Templates
   and paraphrase variants whose labels are pinned to the documented
   stubs. This set is a self-consistency check of the frozen harness, not
@@ -74,14 +86,21 @@ offline scorer earns at least 3 marker-free vitals and at least 3
 marker-bearing trivials. The scoring signals are documented as
 compositional pairings in `gate.py`, not marker lists. A label set
 tuned against the stub would score high on the mirror-image split
-and fail the test, so such a failure means the labels must be
-rewritten until it cannot.
+and fail the test, so such a failure means the scoring signals must
+change, not the labels: labels are frozen and move only through a
+changelogged human-error correction (`eval/GOLDEN_CHANGELOG.md`),
+never to satisfy the scorer.
 
-The final status line names both, golden first, for example:
+The report prints two numbers on every run, golden first: contract
+conformance (`CONTRACT CONFORMANCE (golden, hand-authored): 160/160
+ok`) and the recorded independent-rater agreement (`independent-rater
+agreement (recorded live jev-1.13-free vs golden labels,
+2026-10-02): 10/24 = 41.7%`). Neither gates the other. The final
+status line names both failure counts, for example:
 `PASS: golden 0 failures, bulk 0 failures`. Exit code 1 means a golden
-or bulk case failed (the headline is golden), 2 means the split,
-provenance, golden, or contamination checks failed closed, 3 means the
-Jev free window rate-limited and the run halted.
+or bulk case failed (the conformance number is golden), 2 means the
+split, provenance, golden, or contamination checks failed closed,
+3 means the Jev free window rate-limited and the run halted.
 
 The report prints the case-file hash, the golden-file hash, the
 provenance of both sets, and its own measured numbers on every run.
@@ -159,9 +178,17 @@ a non-ASCII character.
 and asks live `jev-1.13-free` the same questions the offline stub
 answers, then prints the stub-vs-live agreement rate. The rate gates
 nothing: no test, eval, or CI depends on it. Without the API key the
-script skips cleanly with no network calls. On HTTP 429 it halts
+script skips cleanly with no network calls. On full completion with
+the key present it refreshes `tests/fixtures/live_votes_20261002.json`
+with the recorded live votes; the offline ratchet test
+(`tests/test_live_ratchet.py`) reads that fixture and fails when
+stub-vs-live agreement on the fixed 20-case sample drops below 0.35
+(the recorded importance-audit 0.417 minus margin), so live drift is
+a failing test instead of a footnote. On HTTP 429 it halts
 honestly with the rate-limit message, never falls back to another
-model, and never lets a stub answer in Jev's place.
+model, and never lets a stub answer in Jev's place. Pass
+`--no-record` for dry runs with non-live judges so fake votes never
+overwrite the recording.
 
 ## Lifecycle and store honesty
 
@@ -205,9 +232,11 @@ hash only, pinned by tests.
 
 No benchmark numbers are claimed for the bulk labels: they are
 rule-generated (provenance `synthetic-rule`), not human labels, and
-this README quotes none of the eval numbers. The headline numbers come
-from the hand-authored golden set and are printed with both file hashes
-on every run. Cost is marked ESTIMATE / NOT VERIFIED, and contamination
+this README quotes none of the eval numbers. The golden number is
+contract conformance (the system reproduces frozen human judgments),
+NOT accuracy or memory quality, printed with both file hashes
+on every run beside the recorded independent-rater agreement
+(10/24 = 41.7%). Cost is marked ESTIMATE / NOT VERIFIED, and contamination
 checks run before anything is scored (train/test disjointness by case
 hash and normalized text, golden disjoint from bulk, artifacts fail
 closed).
