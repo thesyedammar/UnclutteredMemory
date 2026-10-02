@@ -83,6 +83,40 @@ UNCERTAIN_LEVELS = (0.5, 2, 0.4)
 UNCERTAIN_CONF = 0.2
 HARD_MARKS = ("%", "stop-loss", "deadline", "allerg", "limit")
 
+# Offline importance rubric: 5/4 are earned from compositional signals
+# documented here, never from one marker substring alone.
+#
+# VITAL (5) means forgetting has a concrete cost: bodily harm, money or
+# housing at risk, a legal or immigration consequence, or a time-bound
+# duty tied to a real date. Evidence is a pairing, not a word: an
+# obligation noun (deadline, renewal, filing, expiry, cutoff, due date)
+# PLUS a date expression; a legal term (visa, passport, court, custody,
+# hearing, immigration) PLUS a date or a procedural noun (interview,
+# papers); a risk cap (stop-loss with a percent, or a limit with lots,
+# percent, or %); a jeopardy term (evict, forfeit, foreclose,
+# repossess, nonrefundable); an acute-care term (epinephrine,
+# anaphylaxis, insulin, inhaler, seizure, overdose, bacteria,
+# contamination, poison, or a standing allergy record, since
+# forgetting an allergy risks exposure); or a care term (pill, medication, dose,
+# prescription) inside a harm clause ("or she faints"). A bare marker
+# with no date, cost, or care pairing earns nothing: a deadline poster
+# hanging crooked is scenery, not a duty, so it reads 2.
+#
+# ROUTINE (4) means a reusable standing fact: a standing preference or
+# habit word (prefer, standup) or a standing rule (always, never); a
+# recurrence ("every" with a weekday, daypart, or visit; daily,
+# weekly, twice a year); a schedule verb (opens, closes, leaves,
+# meets, resets, clears) with a clock time (digits, o'clock, half
+# past, quarter to/past) or a named day; a named slot; a capacity or
+# rate (terabyte, seats, an hour, per visit); a kept-object location
+# (key, charger, adapter, notes, drive with hangs, lies, sits, lives,
+# waits, behind, under, inside, above); or a date of record
+# (birthday, anniversary with a month or day).
+#
+# Anything with a marker or digit but neither vital nor routine
+# structure is a marker-bearing observation and reads 2 with low
+# confidence, so the admit gate quarantines instead of storing it.
+
 
 def _laugh(low: str) -> bool:
     return LAUGH_RE.search(low) is not None
@@ -112,6 +146,107 @@ def _durable(low: str) -> bool:
     return any(w in low for w in DURABLE_MARK)
 
 
+_WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday",
+             "saturday", "sunday", "weekday", "weekdays")
+_MONTHS = ("january", "february", "march", "april", "may", "june",
+           "july", "august", "september", "october", "november",
+           "december", "spring", "summer", "autumn", "winter")
+_ORDINALS = ("first", "second", "third", "fourth", "fifth", "sixth",
+             "seventh", "eighth", "ninth", "tenth", "eleventh",
+             "twelfth", "thirteenth", "fourteenth", "fifteenth",
+             "sixteenth", "seventeenth", "eighteenth", "nineteenth",
+             "twentieth", "twenty-first", "thirtieth", "thirty-first",
+             "last")
+_TERM_END = ("end of quarter", "last day of term", "end of term")
+_NAMED_DAYS = _WEEKDAYS + _MONTHS + ("today", "tomorrow", "yesterday",
+                                    "tonight", "holiday", "holidays")
+
+_CLOCK_RE = re.compile(r"\d|o'clock|half past|quarter (to|past)")
+
+_OBLIGATION = ("deadline", "renewal", "filing", "expiry", "expire",
+               "cutoff", "due date", "enrollment")
+_LEGAL = ("visa", "passport", "court", "custody", "hearing",
+         "immigration", "asylum")
+_PROCEDURE = ("interview", "papers", "paperwork", "office", "notice")
+_JEOPARDY = ("evict", "forfeit", "foreclos", "repossess",
+            "nonrefundable", "overdraft")
+_ACUTE = ("epinephrine", "epipen", "anaphylaxis", "insulin", "inhaler",
+         "seizure", "overdose", "bacteria", "contaminat", "poison",
+         "allerg")
+_CARE = ("pill", "pills", "medication", "dose", "prescription",
+        "antibiotic")
+_HARM_CLAUSE_RE = re.compile(
+    r"\bor (she|he|they|it|you) "
+    r"(faint|faints|collapse|collapses|die|dies|seize|seizes|choke)\b")
+
+
+def _date_expr(low: str) -> bool:
+    if _CLOCK_RE.search(low) is not None:
+        return True
+    if any(w in low for w in _NAMED_DAYS):
+        return True
+    if any(w in low for w in _ORDINALS):
+        return True
+    return any(p in low for p in _TERM_END)
+
+
+def _vital(low: str) -> bool:
+    if any(w in low for w in _ACUTE):
+        return True
+    if any(w in low for w in _CARE) and _HARM_CLAUSE_RE.search(low):
+        return True
+    if any(w in low for w in _JEOPARDY):
+        return True
+    if (("stop-loss" in low or "stoploss" in low or "stop loss" in low)
+            and "%" in low):
+        return True
+    if (("limit" in low or " cap " in (" " + low + " ")) and
+            ("lots" in low or "percent" in low or "%" in low)):
+        return True
+    if any(w in low for w in _LEGAL) and (
+            _date_expr(low) or any(w in low for w in _PROCEDURE)):
+        return True
+    if any(w in low for w in _OBLIGATION) and _date_expr(low):
+        return True
+    return False
+
+
+_ROUTINE_WORDS = ("prefer", "standup", "always", "never", "slot",
+                  "daily", "weekly")
+_SCHEDULE_VERBS = ("opens", "closes", "leaves", "meets", "runs",
+                   "starts", "resets", "clears", "moved", "moves")
+_CAPACITY = ("terabyte", "terabytes", "gigabyte", "gigabytes",
+             "megabyte", "seat", "seats", "capacity", "an hour",
+             "per hour", "twice a", "per visit", "tenth visit")
+_KEPT_OBJECTS = ("key", "keys", "charger", "adapter", "wallet",
+                 "documents", "drive", "notes", "contact", "medication",
+                 "remote", "router")
+_LOCATIVE = ("hangs", "lies", "sits", "lives", "live", "waits",
+             "behind", "under", "inside", "above")
+_RECORD = ("birthday", "anniversary")
+
+
+def _routine(low: str) -> bool:
+    if any(w in low for w in _ROUTINE_WORDS):
+        return True
+    if "every" in low and (
+            _date_expr(low) or "visit" in low or "trip" in low
+            or "morning" in low or "evening" in low):
+        return True
+    if any(v in low for v in _SCHEDULE_VERBS) and (
+            _CLOCK_RE.search(low) is not None
+            or any(w in low for w in _NAMED_DAYS)):
+        return True
+    if any(w in low for w in _CAPACITY):
+        return True
+    if (any(w in low for w in _KEPT_OBJECTS)
+            and any(w in low for w in _LOCATIVE)):
+        return True
+    if any(w in low for w in _RECORD) and _date_expr(low):
+        return True
+    return False
+
+
 class RuleJudge(JudgeClient):
     """Offline heuristic keyed by text features, never by exact strings.
 
@@ -129,12 +264,12 @@ class RuleJudge(JudgeClient):
         if _sensitive(low):
             return GateVote(*SENSITIVE_LEVELS, sensitive=SENSITIVE_SIGNAL,
                             conf=SENSITIVE_CONF)
-        if _durable(low):
-            imp = (DURABLE_HARD_IMPORTANCE
-                   if any(w in low for w in HARD_MARKS)
-                   else DURABLE_SOFT_IMPORTANCE)
-            return GateVote(DURABLE_DURABLE, imp, DURABLE_STOP,
-                            conf=DURABLE_CONF)
+        if _vital(low):
+            return GateVote(DURABLE_DURABLE, DURABLE_HARD_IMPORTANCE,
+                            DURABLE_STOP, conf=DURABLE_CONF)
+        if _routine(low):
+            return GateVote(DURABLE_DURABLE, DURABLE_SOFT_IMPORTANCE,
+                            DURABLE_STOP, conf=DURABLE_CONF)
         return GateVote(*UNCERTAIN_LEVELS, conf=UNCERTAIN_CONF)
 
 

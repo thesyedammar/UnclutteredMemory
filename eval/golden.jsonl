@@ -54,30 +54,30 @@
 {"id": "g-admit-0054", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the printer jams when the tray is full", "expect": "QUARANTINE"}
 {"id": "g-admit-0055", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the lollipop jar is empty", "expect": "QUARANTINE"}
 {"id": "g-admit-0056", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the chandelier hangs above the stairs", "expect": "QUARANTINE"}
-{"id": "g-importance-0001", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the compliance deadline is the 15th", "expect": 5}
-{"id": "g-importance-0002", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "stop-loss at 6% for the swing trade", "expect": 5}
-{"id": "g-importance-0003", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the peanut allergy note stays on the profile", "expect": 5}
-{"id": "g-importance-0004", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the position limit is 10 lots", "expect": 5}
-{"id": "g-importance-0005", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the passport renewal deadline is in April", "expect": 5}
-{"id": "g-importance-0006", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "keep the daily loss limit at 2 percent", "expect": 5}
-{"id": "g-importance-0007", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "standup is at 9:20 every weekday", "expect": 4}
-{"id": "g-importance-0008", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "I prefer the 7am slot for deep work", "expect": 4}
-{"id": "g-importance-0009", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the meeting room is 4B", "expect": 4}
-{"id": "g-importance-0010", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "always take the later bus on Fridays", "expect": 4}
-{"id": "g-importance-0011", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "never accept the first offer", "expect": 4}
-{"id": "g-importance-0012", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the venue holds 200 people", "expect": 4}
-{"id": "g-importance-0013", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "we meet on 5th street at the cafe", "expect": 4}
-{"id": "g-importance-0014", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the backup drive holds 4 terabytes", "expect": 4}
-{"id": "g-importance-0015", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "prefer the morning slot for reviews", "expect": 4}
-{"id": "g-importance-0016", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the kettle boils at 100 degrees", "expect": 4}
-{"id": "g-importance-0017", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "ok", "expect": 1}
-{"id": "g-importance-0018", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "thanks", "expect": 1}
-{"id": "g-importance-0019", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "that worked lol", "expect": 1}
-{"id": "g-importance-0020", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "I am Zuko", "expect": 1}
-{"id": "g-importance-0021", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "otp 362514", "expect": 2}
-{"id": "g-importance-0022", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "card 554433", "expect": 2}
-{"id": "g-importance-0023", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "the chimes ring above the doorway", "expect": 2}
-{"id": "g-importance-0024", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "the rowboat waits by the jetty", "expect": 2}
+{"id": "g-importance-0001", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "carry the epinephrine pen on every school trip", "expect": 5}
+{"id": "g-importance-0002", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "grandma takes the heart pill with breakfast or she faints", "expect": 5}
+{"id": "g-importance-0003", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the visa interview falls on the first Monday of spring", "expect": 5}
+{"id": "g-importance-0004", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the mortgage papers must be signed before the eviction notice takes effect", "expect": 5}
+{"id": "g-importance-0005", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the grant proposal deadline is the last Friday of June", "expect": 5}
+{"id": "g-importance-0006", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "boil the well water before drinking, the test found bacteria", "expect": 5}
+{"id": "g-importance-0007", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "standup moved to half past nine on weekdays", "expect": 4}
+{"id": "g-importance-0008", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "I prefer the window seat on overnight trains", "expect": 4}
+{"id": "g-importance-0009", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the night bus leaves at half past eleven", "expect": 4}
+{"id": "g-importance-0010", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the backup drive holds four terabytes", "expect": 4}
+{"id": "g-importance-0011", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the sitter charges eight dollars an hour after six", "expect": 4}
+{"id": "g-importance-0012", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "always lock the side gate when the shop shuts", "expect": 4}
+{"id": "g-importance-0013", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "we meet at the corner bakery every Sunday morning", "expect": 4}
+{"id": "g-importance-0014", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the spare room key hangs behind the kitchen clock", "expect": 4}
+{"id": "g-importance-0015", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the dentist suggests a cleaning twice a year", "expect": 4}
+{"id": "g-importance-0016", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the corner shop gives a free loaf with every tenth visit", "expect": 4}
+{"id": "g-importance-0017", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "lol the deadline dance meme killed me", "expect": 1}
+{"id": "g-importance-0018", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "never gonna give this song up lol", "expect": 1}
+{"id": "g-importance-0019", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "I am Deadline Dan", "expect": 1}
+{"id": "g-importance-0020", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "okey", "expect": 1}
+{"id": "g-importance-0021", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "the stop-loss form needs otp 774811 for login", "expect": 2}
+{"id": "g-importance-0022", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "my card pin ends with 9910 and the limit notice came today", "expect": 2}
+{"id": "g-importance-0023", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "the deadline poster by the elevator is crooked", "expect": 2}
+{"id": "g-importance-0024", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "the new cafe on fifth street has green awnings", "expect": 2}
 {"id": "g-dedupe-0001", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "pack the picnic hamper", "candidate": "pack  the picnic hamper", "expect": "DUP"}
 {"id": "g-dedupe-0002", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "paint the garden shed", "candidate": " paint the garden shed ", "expect": "DUP"}
 {"id": "g-dedupe-0003", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "fold the winter coats", "candidate": "fold\tthe\twinter coats", "expect": "DUP"}

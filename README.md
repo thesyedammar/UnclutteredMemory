@@ -46,6 +46,25 @@ Two case sets, two jobs, reported separately on every run:
   stubs. This set is a self-consistency check of the frozen harness, not
   a benchmark claim, and the report labels it that way.
 
+Golden independence, stated plainly. The admit, dedupe, contradict,
+supersede, and rerank golden suites are fully independent of the
+stubs: their labels were written from the gate contract, they share
+no code path with `eval/cases.py`, and a test proves the two sets
+share no text. The importance suite was not: an earlier version
+mirrored the stub buckets (every 5 carried a hard marker token),
+so the hand-authored claim was overstated there. That suite has
+been rewritten from human judgment of what is actually worth
+remembering, deliberately breaking the buckets: vital facts with
+no marker words, trivial facts carrying marker words, and
+near-boundary judgments. Three checks pin it:
+`tests/test_importance_independence.py` proves labels live in the
+data file (stripping every marker token leaves stored labels
+unchanged while a stub-mimicking marker predictor misses widely)
+and proves the offline scorer earns at least 3 marker-free vitals
+and at least 3 marker-bearing trivials; the scoring signals are
+documented as compositional pairings in `gate.py`, not marker
+lists.
+
 The final status line names both, golden first, for example:
 `PASS: golden 0 failures, bulk 0 failures`. Exit code 1 means a golden
 or bulk case failed (the headline is golden), 2 means the split,
