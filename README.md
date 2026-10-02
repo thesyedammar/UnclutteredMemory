@@ -2,6 +2,37 @@
 
 Memory that proves itself: a tiny typed judge at the door of agent memory.
 
+## Quickstart
+
+    pip install -e .
+    python3 -m pytest tests/          # offline suite, no key needed
+    unclutter run                     # frozen eval: conformance + self-consistency
+    python3 playground/demo.py        # six-line offline tour of every verdict
+    unclutter serve --db memory.db --port 8765   # HTTP over the real store
+
+The live Jev check runs only when `HERMES_CUSTOM_OPENCODE_AI_API_KEY`
+is set; everything else is offline.
+
+## Honesty: what the numbers are
+
+- **Contract conformance (golden, hand-authored): 160/160.** How
+  often the offline stub's reading matches the frozen human reading
+  of the gate contract. NOT accuracy, NOT memory quality.
+- **Paid rubric (`jev-1.13`, live): importance 20/24 = 83.3%,
+  admit 40/56 = 71.4%.** Live-vs-label on the golden set with the
+  rubric prompt (see `docs/calibration-20261002-114232-rubric.md`).
+  Paid-key runs only; never a repo default.
+- **Free tier (`jev-1.13-free`, live): 10/24 = 41.7%.**
+  Independent-rater agreement with the golden labels, varies run to
+  run (see `docs/label-audit-20261002.md`). Information only; it
+  gates nothing.
+- **Limits.** Recall matches surface wording, not deep paraphrase;
+  the strongest importance-independence bound (feature pairs/triples)
+  is exceeded on the current labels and flagged for human review
+  (`eval/GOLDEN_CHANGELOG.md`); cost figures are ESTIMATE / NOT
+  VERIFIED. No benchmark numbers are claimed for the synthetic bulk
+  set (self-consistency only).
+
 - `src/uncluttered_memory/gate.py` - one batch of typed judge questions, code enforces drop / quarantine / store. Unseen input fails closed to quarantine, never an exception. RuleJudge is an offline heuristic stub keyed by text features; it is not Jev. Every decision cutoff (confidence, play, sensitive, stop, durable, importance) is a parameter whose default lives in `thresholds.py`.
 - `src/uncluttered_memory/thresholds.py` - the one home for every decision-threshold default and every RuleJudge vote level. Logic paths read cutoffs from here; no other module hardcodes a numeric decision boundary or vote literal. The per-task registry can override `admit.durable` only.
 - `src/uncluttered_memory/console.py` - report streams are forced to UTF-8 with a named error handler (`backslashreplace`), so a cp1252 console or pipe never mangles a report line.

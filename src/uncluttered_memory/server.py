@@ -48,7 +48,7 @@ from .gate import Gate
 from .inject import Injector
 from .jev_client import JevError, RateLimited
 from .recall import Recall
-from .store import Store, content_hash, token_jaccard
+from .store import Store, token_jaccard
 
 _LOG = logging.getLogger(__name__)
 
@@ -352,8 +352,3 @@ def serve(host: str, port: int, store: Store, judge, kill_file=None,
     app = MemoryApp(store, judge, limiter=limiter, kill_file=kill_file)
     handler = type("BoundHandler", (_Handler,), {"app": app})
     return ThreadingHTTPServer((host, port), handler)
-
-
-def content_tag(text: str) -> str:
-    """Stable input hash for logs without storing the text itself."""
-    return content_hash(text)
