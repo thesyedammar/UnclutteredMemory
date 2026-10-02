@@ -164,3 +164,19 @@ RECALL_PACK_BUDGET_CHARS = 4000
 # subjects and address/number near-misses read as unrelated and the
 # pair vetoes the destructive act.
 RELATION_SHARED_TOKENS_MIN = 2
+
+# Server rate caps (MemoryServer, per rolling minute window).
+#
+# Two budgets, both enforced per server instance: at most
+# RATE_LIMIT_CALLS_PER_MIN requests and at most
+# RATE_LIMIT_CHARS_PER_MIN request-body chars per rolling 60 seconds.
+# Chars are the same cheap token proxy as the packing budgets (about
+# 4 chars per token), so 200000 chars is roughly 50000 tokens per
+# minute. A request over either budget is refused with a 429-style
+# refusal and one structured log line; nothing is stored, recalled,
+# or quarantined by the refused call. Both are constructor
+# parameters on RateLimiter, so tests set tiny budgets without
+# touching this file.
+RATE_LIMIT_CALLS_PER_MIN = 120
+RATE_LIMIT_CHARS_PER_MIN = 200000
+RATE_LIMIT_WINDOW_SECS = 60

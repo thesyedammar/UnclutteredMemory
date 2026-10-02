@@ -96,7 +96,11 @@ def token_jaccard(a: str, b: str) -> float:
 
 class Store:
     def __init__(self, path=":memory:"):
-        self.db = sqlite3.connect(path)
+        # check_same_thread=False: the HTTP server reads this same
+        # connection from handler threads. All server entry goes
+        # through MemoryApp.handle, which serializes calls on its own
+        # lock, so the connection is never used concurrently.
+        self.db = sqlite3.connect(path, check_same_thread=False)
         #: Explicit counter of unexpected exceptions raised inside
         #: admit(). Judge halts quarantine and do not count; coding
         #: bugs count here, are logged, and propagate.

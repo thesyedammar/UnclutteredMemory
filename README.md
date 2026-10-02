@@ -315,12 +315,27 @@ of stored texts within cap, a pack string within budget). Raising
 paraphrase catch rate without breaking frozen golden labels is future
 work, tracked as a residual in `docs/master-plan.md`.
 
-## Not built yet: red-team gauntlet and MCP server
+## Server and MCP transport (P3, built)
 
-`unclutter redteam` (poison gauntlet, P2) and `unclutter gauntlet`
-(recorded demo, P7) are stubs, not features. Each prints
-`not built until its phase` and exits 2, pinned by
-`tests/test_cli.py`. There is no red-team fixture, no gauntlet
-recorder, and no MCP or HTTP server in this repo. Server and MCP
-transport is a later phase per `research/track-S3-server.md` and
-`docs/master-plan.md`, and nothing in this README claims otherwise.
+`src/uncluttered_memory/server.py` is a stdlib-only HTTP server over
+the real Store/Gate: `POST /admit`, `POST /recall`, `POST /inject`,
+`GET /status`, every call requiring a `user` it is scoped to.
+Per-minute call and char budgets refuse with HTTP 429 plus one
+structured log line (defaults in `thresholds.py`); env
+`UNCLUTTER_KILL_SWITCH=1` or a kill file refuses every endpoint with
+HTTP 503. When the judge halts (the JevError family, including 429),
+the admit path quarantines and answers 429 with `quarantined: true`;
+a gate-decided quarantine answers 200. There is no fallback model on
+this path. `mcp/tools.json` defines the admit/recall/inject/review
+tools and `mcp/adapter.py` serves them over stdio. Serve it with:
+
+    unclutter serve --db memory.db --port 8765   # offline RuleJudge
+
+## Not built yet: gauntlet recorder
+
+`unclutter gauntlet` (recorded demo, P7) is a stub, not a feature. It
+prints `not built until its phase` and exits 2, pinned by
+`tests/test_cli.py`. There is no gauntlet recorder in this repo.
+Server and MCP transport was a later phase per
+`research/track-S3-server.md` and `docs/master-plan.md`, and it has
+now landed as P3 above; nothing else in this README claims otherwise.

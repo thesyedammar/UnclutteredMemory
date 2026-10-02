@@ -175,6 +175,32 @@ def do_quarantine_deny(args) -> int:
     return report_error_count(store)
 
 
+def do_serve(args) -> int:
+    """Serve the real Store/Gate over HTTP (offline RuleJudge).
+
+    The default judge is the offline RuleJudge stub, stated plainly:
+    serving with live Jev needs explicit wiring, which this command
+    does not do. Per-user scoping, rate caps, and the kill switch
+    are enforced per request by MemoryApp.
+    """
+    from uncluttered_memory.gate import RuleJudge as _RuleJudge
+    from uncluttered_memory.server import serve as _serve
+    db = Path(args.db)
+    if str(db.parent) not in ("", "."):
+        db.parent.mkdir(parents=True, exist_ok=True)
+    store = Store(str(db))
+    httpd = _serve(args.host, args.port, store, _RuleJudge(),
+                   kill_file=args.kill_file)
+    print("unclutter serve: %s:%d over %s (offline RuleJudge; "
+          "kill switch env %s)" % (args.host, args.port, args.db,
+                                   "UNCLUTTER_KILL_SWITCH"))
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    return report_error_count(store)
+
+
 def do_redteam() -> int:
     """Fire the poison gauntlet: five attacks, all must fail closed."""
     from eval.gauntlet import run_gauntlet
@@ -260,6 +286,13 @@ def main(argv=None) -> int:
                         help="human reason, logged to the reviews table")
     sub.add_parser("redteam", help="fire the poison gauntlet (P2)")
     sub.add_parser("gauntlet", help="record the gauntlet demo (P7)")
+    p_srv = sub.add_parser("serve", help="serve Store/Gate over HTTP (P3)")
+    p_srv.add_argument("--db", default="uncluttered.db",
+                       help="SQLite store path (default: ./uncluttered.db)")
+    p_srv.add_argument("--host", default="127.0.0.1")
+    p_srv.add_argument("--port", type=int, default=8765)
+    p_srv.add_argument("--kill-file", default=None,
+                       help="path whose existence refuses every request")
     args = parser.parse_args(argv)
     if args.command == "run":
         argv = ["--task", args.task]
@@ -280,6 +313,8 @@ def main(argv=None) -> int:
         return do_quarantine_deny(args)
     if args.command == "redteam":
         return do_redteam()
+    if args.command == "serve":
+        return do_serve(args)
     print("unclutter %s: not built until its phase" % args.command)
     return 2
 
