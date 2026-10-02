@@ -205,3 +205,22 @@ RELATION_SHARED_TOKENS_MIN = 2
 RATE_LIMIT_CALLS_PER_MIN = 120
 RATE_LIMIT_CHARS_PER_MIN = 200000
 RATE_LIMIT_WINDOW_SECS = 60
+
+# Per-user memory cap (live facts per user scope).
+#
+# The master plan calls for per-user caps on the write path. The cap
+# counts live (non-tombstoned) facts rows in one user scope. A fresh
+# insert that would grow a full scope past the cap is refused: a
+# direct put() raises MemoryCapExceeded (nothing is stored live), and
+# admit() holds the item in quarantine with reason
+# "per-user-memory-cap" instead of storing it, so the item waits for
+# human review instead of vanishing. Near-duplicate merges and
+# exact-text hits add no row and never trip the cap; each user scope
+# is counted separately. Store takes the cap as a constructor
+# parameter defaulting to this value (None means unbounded), so tests
+# set tiny caps without touching this file.
+PER_USER_MEMORY_CAP = 10000
+
+# Quarantine reason recorded when an admit is held for review only
+# because the user scope is at its memory cap.
+MEMORY_CAP_QUARANTINE_REASON = "per-user-memory-cap"

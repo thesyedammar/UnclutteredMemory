@@ -273,6 +273,26 @@ def test_unknown_path_and_bad_json(live_server):
         assert e.code == 400
 
 
+def test_get_non_served_paths_404_with_guidance(live_server):
+    """GET serves /status and /review only; everything else is a 404.
+
+    Covers both sides of the old `404 if op else 404` expression: the
+    empty path (GET /) and a non-empty unknown path (GET /admit). Both
+    must answer 404 with the guidance message, and the two served
+    paths must keep working.
+    """
+    base, _store = live_server
+    _post, get = _client(base)
+    for path in ("/", "/admit", "/nope", "/status/extra"):
+        status, body = get(path)
+        assert status == 404, (path, body)
+        assert "GET serves /status and /review only" in body["error"]
+    status, body = get("/status?user=u")
+    assert status == 200 and body["user"] == "u"
+    status, body = get("/review?user=u")
+    assert status == 200 and body["count"] == 0
+
+
 def test_fake_judge_low_conf_quarantines_over_http():
     class _LowConf(JudgeClient):
         def vote(self, text, neighbors, facts):

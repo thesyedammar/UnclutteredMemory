@@ -16,6 +16,62 @@ from uncluttered_memory.store import Store
 REPO = Path(__file__).resolve().parents[2]
 EVAL_RUN = REPO / "eval" / "run.py"
 
+#: Directory names (repo-relative) whose files the eval contamination
+#: scan treats as tuning artifacts. Calibration output must never
+#: land here by default: the next `unclutter run` scans this tree and
+#: refuses to score when a file touches the test split.
+SCANNED_TREE_TOPS = ("thresholds",)
+SCANNED_EVAL_PREFIX = "thresholds"
+
+
+def default_calibration_out(task: str) -> str:
+    """Default calibration output: the operator cwd, outside the tree.
+
+    The file is a local tuning artifact, so it belongs to the working
+    directory that ran the calibration, not to the repo. The repo
+    thresholds/ and eval/thresholds* paths are scanned as tuning
+    artifacts by the next eval run, so the default never points
+    there. calibrate and conformal share the name on purpose: the
+    conformal command merges its per-gate cutoffs into an existing
+    registry for the same task.
+    """
+    return str(Path.cwd() / (task + ".thresholds.json"))
+
+
+def is_scanned_output_path(out, root=None) -> bool:
+    """True when a calibration output path sits inside the scanned tree.
+
+    Covers repo thresholds/ (any extension) and eval/thresholds*
+    (the JSON registry plus the YAML/TOML/text siblings the scan
+    also walks). Relative paths resolve against the cwd. Used to
+    warn loudly when the operator aims --out at scanned ground.
+    """
+    root = Path(root or REPO)
+    p = Path(out)
+    if not p.is_absolute():
+        p = Path.cwd() / p
+    try:
+        rel = p.resolve().relative_to(root.resolve())
+    except ValueError:
+        return False
+    parts = rel.parts
+    if parts and parts[0] in SCANNED_TREE_TOPS:
+        return True
+    if (len(parts) >= 2 and parts[0] == "eval"
+            and parts[1].startswith(SCANNED_EVAL_PREFIX)):
+        return True
+    return False
+
+
+def warn_if_scanned_output(out) -> None:
+    """Loud warning when calibration output sits in the scanned tree."""
+    if is_scanned_output_path(out):
+        print("WARNING: calibration output %s is inside the scanned "
+              "tuning-artifact tree (thresholds/ or eval/thresholds*); "
+              "the next `unclutter run` scans that tree and refuses to "
+              "score when a file touches the test split. Prefer the "
+              "default location outside the tree." % out)
+
 
 def _eval():
     spec = importlib.util.spec_from_file_location("unclutter_eval_run", EVAL_RUN)
@@ -32,7 +88,8 @@ def do_calibrate(task: str, out) -> int:
     train_admit = [c for c in train if c.get("suite") == "admit"]
     test_admit = [c for c in test if c.get("suite") == "admit"]
     judge = RuleJudge()
-    out = out or str(REPO / "thresholds" / (task + ".json"))
+    out = out or default_calibration_out(task)
+    warn_if_scanned_output(out)
     reg = calmod.calibrate_gate(
         train_admit, task, out,
         lambda c: judge.vote(c["text"], [], []).durable)
@@ -71,7 +128,8 @@ def do_conformal(task: str, out, gate: str = "admit",
     else:
         print("conformal error: gate must be admit or importance")
         return 2
-    out = out or str(REPO / "thresholds" / (task + ".json"))
+    out = out or default_calibration_out(task)
+    warn_if_scanned_output(out)
     reg = calmod.calibrate_confidence(pool, task, out, _get_conf,
                                       _is_correct,
                                       target_coverage=target, gate=gate)
@@ -227,13 +285,21 @@ def main(argv=None) -> int:
     p_run.add_argument("--task", default="general-qa")
     p_cal = sub.add_parser("calibrate", help="tune thresholds on train split only")
     p_cal.add_argument("--task", default="general-qa")
-    p_cal.add_argument("--out", default=None)
+    p_cal.add_argument("--out", default=None,
+                       help="output path; default lands in the current "
+                       "working directory (outside the repo scan tree), "
+                       "never in thresholds/ or eval/thresholds* which the "
+                       "next run scans as tuning artifacts")
     p_conf = sub.add_parser(
         "conformal",
         help="tune per-gate confidence cutoffs on train split only "
         "(abstention reported)")
     p_conf.add_argument("--task", default="general-qa")
-    p_conf.add_argument("--out", default=None)
+    p_conf.add_argument("--out", default=None,
+                        help="output path; default lands in the current "
+                        "working directory (outside the repo scan tree), "
+                        "never in thresholds/ or eval/thresholds* which "
+                        "the next run scans as tuning artifacts")
     p_conf.add_argument("--gate", default="admit",
                         choices=("admit", "importance"))
     p_conf.add_argument("--target", type=float,

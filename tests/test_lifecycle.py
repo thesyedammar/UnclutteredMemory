@@ -237,16 +237,40 @@ def test_supersede_missing_id_without_user_raises_and_writes_nothing():
     assert s.live(user="alice") == []
 
 
-def test_supersede_missing_id_with_explicit_user_lands_in_scope():
-    """Missing id plus an explicit user stores in that caller scope."""
+def test_supersede_missing_id_with_explicit_user_refused_loudly():
+    """Missing id plus an explicit user used to insert silently.
+
+    A typo in the id must not read as success: the call raises
+    OrphanSupersedeError (a KeyError) carrying the missing id and
+    the caller user, and nothing lands in any scope.
+    """
+    from uncluttered_memory.store import OrphanSupersedeError
     s = Store()
     alice_old = s.put("alice kept fact", "email", user="alice")
-    new = s.supersede(9999, "bob fresh fact", "chat", user="bob")
-    assert [t for _, t, *_ in s.live(user="bob")] == ["bob fresh fact"]
+    with pytest.raises(OrphanSupersedeError) as ei:
+        s.supersede(9999, "bob fresh fact", "chat", user="bob")
+    assert isinstance(ei.value, KeyError)
+    assert ei.value.missing_id == 9999
+    assert ei.value.caller_user == "bob"
+    assert s.live(user="bob") == []
     assert [t for _, t, *_ in s.live(user="alice")] == ["alice kept fact"]
-    assert "bob fresh fact" not in [t for _, t, *_ in s.live(user="alice")]
     assert s.get(alice_old)[4] is None
-    assert new in [r[0] for r in s.live(user="bob")]
+    assert s.tombstoned() == []
+
+
+def test_supersede_typo_id_never_lands_anywhere(tmp_path):
+    """The typo-id scenario end to end, persisted across reopen."""
+    from uncluttered_memory.store import OrphanSupersedeError
+    db = tmp_path / "memory.db"
+    s = Store(str(db))
+    real = s.put("the meeting is at 3pm", "user", user="u")
+    with pytest.raises(OrphanSupersedeError):
+        s.supersede(real + 100, "the meeting is at 4pm", "chat", user="u")
+    # nothing inserted: reopening the file shows only the real fact
+    s2 = Store(str(db))
+    assert [t for _, t, *_ in s2.live(user="u")] == ["the meeting is at 3pm"]
+    assert s2.tombstoned() == []
+    assert s2.quarantined() == []
 
 
 def test_put_resurrection_shares_restore_path(monkeypatch):

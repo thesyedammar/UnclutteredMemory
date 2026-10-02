@@ -104,15 +104,25 @@ class RateLimiter:
                     max(0, self.chars_per_min - used_chars)}
 
     def check(self, n_chars: int) -> tuple:
-        """Consume budget. Returns (ok, retry_after_secs)."""
+        """Consume budget. Returns (ok, retry_after_secs).
+
+        The backoff is computed from the true oldest entry still
+        inside the window: the minimum timestamp across every
+        recorded call and every recorded char charge. An earlier
+        version read only the first entry of each list, which
+        understates the wait whenever histories are not
+        time-ordered. With no entries in the window (a single
+        request larger than the whole char budget) there is no
+        oldest entry, so the full window is reported.
+        """
         with self._lock:
             now = self._clock()
             self._prune(now)
             used_chars = sum(n for _, n in self._chars)
             if (len(self._calls) >= self.calls_per_min
                     or used_chars + n_chars > self.chars_per_min):
-                times = self._calls[:1] + [t for t, _ in self._chars[:1]]
-                oldest = min(times) if times else now
+                entries = list(self._calls) + [t for t, _ in self._chars]
+                oldest = min(entries) if entries else now
                 return False, max(1, int(self.window - (now - oldest)) + 1)
             self._calls.append(now)
             self._chars.append((now, n_chars))
@@ -336,7 +346,7 @@ class _Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         op = parsed.path.strip("/")
         if op not in ("status", "review"):
-            self._send(404 if op else 404,
+            self._send(404,
                        {"error": "GET serves /status and /review only "
                                  "(POST for admit, recall, inject)"})
             return

@@ -14,6 +14,45 @@ from .jev_client import JevError
 _LOG = logging.getLogger(__name__)
 
 
+class MemoryCapExceeded(Exception):
+    """A fresh insert would grow a full user scope past its memory cap.
+
+    Not a coding bug: Store.admit catches this, holds the item in
+    quarantine with reason "per-user-memory-cap", and never counts it
+    in error_count. Direct put() callers get this loud refusal (with
+    the user, the cap, and the live count attached) instead of a
+    silent drop. Nothing is stored live by the refused call.
+    """
+
+    def __init__(self, user: str, cap: int, live: int):
+        super().__init__(
+            "per-user memory cap exceeded for user %r: %d live rows "
+            "at cap %d; nothing stored live" % (user, live, cap))
+        self.user = user
+        self.cap = cap
+        self.live = live
+
+
+class OrphanSupersedeError(KeyError):
+    """supersede named an id that names no fact.
+
+    A missing id plus an explicit user used to insert silently into
+    the caller scope, so a typo in the id read as success. Now the
+    call raises (a KeyError, so old callers catching KeyError still
+    catch it) and writes nothing; the caller must re-issue the write
+    as an explicit put() once the id is confirmed. Carries the
+    missing id and the caller user the insert would have used.
+    """
+
+    def __init__(self, old_id: int, user=None):
+        super().__init__(
+            "supersede refused: no fact %r (caller user %r); not "
+            "inserted anywhere, re-issue as an explicit put once "
+            "the id is confirmed" % (old_id, user))
+        self.missing_id = old_id
+        self.caller_user = user
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS facts (
   id INTEGER PRIMARY KEY,
@@ -105,12 +144,19 @@ def token_jaccard(a: str, b: str) -> float:
 
 
 class Store:
-    def __init__(self, path=":memory:"):
+    def __init__(self, path=":memory:",
+                 per_user_memory_cap: "int | None" = th.PER_USER_MEMORY_CAP):
         # check_same_thread=False: the HTTP server reads this same
         # connection from handler threads. All server entry goes
         # through MemoryApp.handle, which serializes calls on its own
         # lock, so the connection is never used concurrently.
         self.db = sqlite3.connect(path, check_same_thread=False)
+        #: Live-row budget per user scope. A fresh insert that would
+        #: grow a full scope past this raises MemoryCapExceeded (put)
+        #: or quarantines with reason "per-user-memory-cap" (admit).
+        #: None means unbounded. Defaults to thresholds, and every
+        #: test override passes a tiny value explicitly.
+        self._per_user_memory_cap = per_user_memory_cap
         #: Explicit counter of unexpected exceptions raised inside
         #: admit(). Judge halts quarantine and do not count; coding
         #: bugs count here, are logged, and propagate.
@@ -130,6 +176,29 @@ class Store:
                             (content_hash(text), fid))
         self.db.execute("UPDATE facts SET user='local' WHERE user IS NULL")
         self.db.commit()
+
+    def _live_count(self, user: str) -> int:
+        """Live (non-tombstoned) facts rows in one user scope."""
+        row = self.db.execute(
+            "SELECT COUNT(*) FROM facts"
+            " WHERE tombstoned_by IS NULL AND user=?",
+            (user,)).fetchone()
+        return int(row[0]) if row else 0
+
+    def _check_memory_cap(self, user: str) -> None:
+        """Refuse a fresh insert into a full scope, loudly.
+
+        Merges and exact-text hits add no row and never reach here;
+        only a genuinely new live row is gated. Raises
+        MemoryCapExceeded with the user, the cap, and the live
+        count; nothing is written by the refused call.
+        """
+        cap = self._per_user_memory_cap
+        if cap is None:
+            return
+        n = self._live_count(user)
+        if n >= cap:
+            raise MemoryCapExceeded(user, cap, n)
 
     def _clear_tombstone_and_conflict_marks(self, fact_id: int) -> None:
         """Shared clean path for restore() and put() resurrection.
@@ -207,7 +276,9 @@ class Store:
         the exact key.
 
         No silent-swallow path: every put either returns a live id or
-        inserts a new live row.
+        inserts a new live row, except a fresh insert into a user
+        scope already at its per-user memory cap, which raises
+        MemoryCapExceeded and stores nothing live.
 
         Judge provenance (gate_action, importance, judge,
         decided_at) rides as optional keywords, normally supplied by
@@ -268,6 +339,7 @@ class Store:
                                    overwrite_nulls=False)
             self.db.commit()
             return best_id
+        self._check_memory_cap(user)
         cur = self.db.execute(
             "INSERT INTO facts(text, text_hash, source, user, created,"
             " gate_action, importance, judge, decided_at)"
@@ -311,10 +383,13 @@ class Store:
         - known id: the row owner scope applies; an explicit caller
           user that differs from the row owner raises ValueError
           (cross-user supersede is refused, nothing is written).
-        - missing id with an explicit user: the new text is stored
-          in that caller scope and the new id is returned.
-        - missing id without a user: KeyError(old_id); no row is
-          silently inserted into the default scope.
+        - missing id: OrphanSupersedeError (a KeyError) whether or
+          not the caller passed a user; nothing is inserted anywhere.
+          The old fallback that stored the text in the caller scope
+          is gone: a typo in the id used to read as success. The
+          caller must re-issue the write as an explicit put() once
+          the id is confirmed. The error carries the missing id and
+          the caller user.
 
         Judge provenance keywords (gate_action, importance, judge,
         decided_at) forward to both put() paths, so a judged
@@ -323,9 +398,7 @@ class Store:
         old = self.db.execute("SELECT text, user FROM facts WHERE id=?",
                               (old_id,)).fetchone()
         if old is None:
-            if user is None:
-                raise KeyError(old_id)
-            return self.put(new_text, source, user)
+            raise OrphanSupersedeError(old_id, user)
         old_text, row_user = old
         if user is not None and user != row_user:
             raise ValueError(
@@ -580,6 +653,14 @@ class Store:
         "admit.put" or "admit.quarantine", then propagate. The op
         names which write step raised.
 
+        MemoryCapExceeded is the one exception that is neither a
+        judge halt nor a coding bug: a STORE decision against a user
+        scope already at its per-user memory cap holds the item in
+        quarantine with reason "per-user-memory-cap" and returns
+        QUARANTINE, with no error_count increment. Merges add no row
+        and never trip the cap, so a near-duplicate of a stored fact
+        still merges at cap instead of quarantining.
+
         On STORE the gate verdict is stored on the facts row with
         the voted importance, the judge identity, and the decision
         time (gate_action, importance, judge, decided_at); get()
@@ -589,6 +670,8 @@ class Store:
         def _counted(op: str, fn):
             try:
                 return fn()
+            except MemoryCapExceeded:
+                raise
             except Exception as e:
                 self.error_count += 1
                 _LOG.error(json.dumps({
@@ -615,10 +698,15 @@ class Store:
             }, sort_keys=True))
             raise
         if d.action == "STORE":
-            _counted("admit.put", lambda: self.put(
-                text, source, user, gate_action=d.action,
-                importance=d.importance, judge=d.judge,
-                decided_at=time.time()))
+            try:
+                _counted("admit.put", lambda: self.put(
+                    text, source, user, gate_action=d.action,
+                    importance=d.importance, judge=d.judge,
+                    decided_at=time.time()))
+            except MemoryCapExceeded:
+                _counted("admit.quarantine", lambda: self.quarantine(
+                    text, th.MEMORY_CAP_QUARANTINE_REASON, source, user))
+                return "QUARANTINE"
         elif d.action == "QUARANTINE":
             _counted("admit.quarantine", lambda: self.quarantine(
                 text, ";".join(d.reasons), source, user))

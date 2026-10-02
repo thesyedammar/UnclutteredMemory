@@ -31,16 +31,21 @@ is set; everything else is offline.
   is exceeded on the current labels and flagged for human review
   (`eval/GOLDEN_CHANGELOG.md`); cost figures are ESTIMATE / NOT
   VERIFIED. No benchmark numbers are claimed for the synthetic bulk
-  set (self-consistency only).
+  set (self-consistency only). The relation paraphrase battery
+  (`tests/test_paraphrase_battery.py`) catches 92/92 = 100% of 92
+  hand-written natural rewordings of the golden relation cases, with
+  a floor pinned at 90%; rewrites that drop the marker family or fall
+  below two shared content tokens are documented misses, pinned in
+  the same file.
 
 - `src/uncluttered_memory/gate.py` - one batch of typed judge questions, code enforces drop / quarantine / store. Unseen input fails closed to quarantine, never an exception. RuleJudge is an offline heuristic stub keyed by text features; it is not Jev. Every decision cutoff (confidence, play, sensitive, stop, durable, importance) is a parameter whose default lives in `thresholds.py`.
 - `src/uncluttered_memory/thresholds.py` - the one home for every decision-threshold default and every RuleJudge vote level. Logic paths read cutoffs from here; no other module hardcodes a numeric decision boundary or vote literal. The per-task registry can override `admit.durable` only.
 - `src/uncluttered_memory/console.py` - report streams are forced to UTF-8 with a named error handler (`backslashreplace`), so a cp1252 console or pipe never mangles a report line.
-- `src/uncluttered_memory/store.py` - SQLite with two-stage dedupe (exact normalized content hash first, then token-set Jaccard at `DEDUP_JACCARD` = 0.85 over live same-user rows; the dead exact-text fallback branch was removed), judge provenance per row (`gate_action`, `importance`, `judge`, `decided_at`, all NULL on a ghostwriter direct insert), soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, and per-user scoping. `Store.admit` quarantines only judge-halt exceptions (the JevError family: rate limit, bad key, transport, malformed judge answer); any other exception is a coding bug that increments an explicit `error_count`, emits one structured log line (time, op, input hash, error type), and propagates instead of vanishing as a quarantine.
+- `src/uncluttered_memory/store.py` - SQLite with two-stage dedupe (exact normalized content hash first, then token-set Jaccard at `DEDUP_JACCARD` = 0.85 over live same-user rows; the dead exact-text fallback branch was removed), judge provenance per row (`gate_action`, `importance`, `judge`, `decided_at`, all NULL on a ghostwriter direct insert), soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, per-user scoping, and a per-user memory cap (`PER_USER_MEMORY_CAP`, constructor-parametrized): a fresh insert into a full scope is refused loudly, `put` raising `MemoryCapExceeded` and `admit` holding the item in quarantine with reason `per-user-memory-cap` (never counted as a coding bug; merges and exact-text hits add no row and never trip the cap). `Store.admit` quarantines only judge-halt exceptions (the JevError family: rate limit, bad key, transport, malformed judge answer); any other exception is a coding bug that increments an explicit `error_count`, emits one structured log line (time, op, input hash, error type), and propagates instead of vanishing as a quarantine. `Store.supersede` never inserts on a missing id: an unknown id raises `OrphanSupersedeError` (a `KeyError`) and writes nothing anywhere, so a typo in the id cannot read as success.
 - `src/uncluttered_memory/supersede.py` - code-ordered candidate pairs, relation vote via the judge protocol (supersede / coexist / conflict_unresolved / unrelated). Only an agreed supersede soft-tombstones the old fact; an agreed clash marks both facts conflict_unresolved and keeps both live, never a tombstone. Named-human override for restore / retire / tombstone, each documented in the CLI help (`unclutter override --help`) and tested end to end.
 - `src/uncluttered_memory/recall.py` - the read path: gate, band, and cap are parameters defaulting to `thresholds.py`; code packs.
 - `src/uncluttered_memory/inject.py` - card-first packing, whole-card truncation, exact-duplicate card texts packed once (first, best-scored occurrence wins), hard budget from `thresholds.py`.
-- `src/uncluttered_memory/calibrate.py` - per-task threshold registry fingerprinted to the task name, refuses mismatched files, UNCALIBRATED default, train-only tuning.
+- `src/uncluttered_memory/calibrate.py` - per-task threshold registry fingerprinted to the task name, refuses mismatched files, UNCALIBRATED default, train-only tuning. The CLI `calibrate` and `conformal` commands default their output to the operator's current working directory (`<task>.thresholds.json`), outside the repo scan tree; pointing `--out` inside `thresholds/` or `eval/thresholds*` prints a loud warning, because the next `unclutter run` scans that tree as tuning artifacts and fails closed on a bad file there (`tests/test_calibration_footgun.py`).
 - `src/uncluttered_memory/jev_client.py` - judge protocol with a native Jev client, plus the heterogeneous offline relation pair (StrictRelationJudge + LenientRelationJudge). StrictRelationJudge requires at least two shared content tokens beyond stopwords and numbers before it reads a marker as being about the same slot.
 - `eval/run.py` - one-command eval over two case sets: the hand-authored golden set (the claim) and the synthetic bulk set (self-consistency). Per-suite tables, admit precision/recall/F1, latency, cost-per-1k estimate, contamination scans that fail closed. Every contamination flag carries a machine-readable reason (which check fired, similarity score, offending excerpt) and the report prints it.
 - `eval/golden.jsonl` - 160 hand-authored cases written as data (text plus expected label), provenance `hand-authored`, sharing no code path with the stubs. This is where the contract-conformance numbers come from: the number measures stub-vs-frozen-human-reading (how often the offline stub's reading matches the frozen human reading of the gate contract), NOT accuracy and NOT memory quality.
@@ -365,6 +370,16 @@ path and must return without raising and with sane output shape (a list
 of stored texts within cap, a pack string within budget). Raising
 paraphrase catch rate without breaking frozen golden labels is future
 work, tracked as a residual in `docs/master-plan.md`.
+
+The relation path is bounded too:
+`tests/test_paraphrase_battery.py` carries two hand-written paraphrase
+pairs per golden contradict/supersede case (92 pairs) and measures how
+often the offline pair reaches the same disposition as the frozen
+label. Measured rate: 92/92 = 100%, floor pinned at 90% so a
+regression fails the suite; two boundary rewrites the pair is
+documented NOT to catch (a deep tombstone rewrite that drops the
+strong update marker, and a marker-free conflict rewrite) are pinned
+in the same file, so the limit is stated in code, not just prose.
 
 ## Server and MCP transport (P3, built)
 

@@ -3,9 +3,26 @@
 The project style forbids U+2014 in every tracked text file. This test
 fails loudly if one appears, so the violation is caught here instead
 of slipping into docs or code comments.
+
+File discovery has two paths and both are loud on failure:
+
+1. In a git checkout, `git ls-files` gives the tracked set, which is
+   the right scope (untracked scratch files are not part of the
+   shipped project).
+2. Outside a git checkout (an exported tarball, a copied tree, a CI
+   step with no git binary), the scan falls back to a filesystem
+   walk of the repo tree with the same skip rules. The fallback
+   states in the output that it is scanning the filesystem, not git.
+
+If neither path works (no git and no readable tree), the scan raises:
+a silently passing scan would make the style rule look enforced when
+nothing was read. Both paths and the loud-failure path are tested
+here.
 """
 import pathlib
 import subprocess
+
+import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 EM_DASH = "\u2014"
@@ -16,19 +33,51 @@ SKIP_SUFFIXES = (".pyc", ".png", ".jpg", ".jpeg", ".gif", ".ico",
 SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules"}
 
 
-def _tracked_files():
-    out = subprocess.check_output(["git", "ls-files", "-z"],
-                                  cwd=REPO)
+def _git_tracked_files():
+    """Tracked files via git, or None when this is not a git checkout."""
+    try:
+        out = subprocess.check_output(
+            ["git", "ls-files", "-z"], cwd=REPO,
+            stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.CalledProcessError):
+        return None
     return [p for p in out.decode("utf-8").split("\0") if p]
 
 
-def test_no_em_dash_in_tracked_files():
+def _filesystem_files():
+    """Filesystem walk of the repo tree, same skip rules. None on failure."""
+    try:
+        files = []
+        for path in sorted(REPO.rglob("*")):
+            if not path.is_file():
+                continue
+            if path.suffix in SKIP_SUFFIXES:
+                continue
+            if any(part in SKIP_DIRS for part in path.parts):
+                continue
+            files.append(str(path.relative_to(REPO)))
+        return files
+    except OSError:
+        return None
+
+
+def _list_files():
+    """(files, source). Raises when neither discovery path works."""
+    files = _git_tracked_files()
+    if files is not None:
+        return files, "git ls-files"
+    files = _filesystem_files()
+    if files is None:
+        raise RuntimeError(
+            "em-dash scan could not list files: not a git checkout and "
+            "the filesystem walk failed; failing loudly instead of "
+            "passing unscanned")
+    return files, "filesystem walk (no git checkout)"
+
+
+def _scan(files):
     offenders = []
-    for rel in _tracked_files():
-        if rel.endswith(SKIP_SUFFIXES):
-            continue
-        if any(part in SKIP_DIRS for part in rel.split("/")):
-            continue
+    for rel in files:
         path = REPO / rel
         if not path.is_file():
             continue
@@ -39,5 +88,48 @@ def test_no_em_dash_in_tracked_files():
         for i, line in enumerate(text.splitlines(), 1):
             if EM_DASH in line:
                 offenders.append("%s:%d" % (rel, i))
+    return offenders
+
+
+def test_no_em_dash_in_tracked_files():
+    files, source = _list_files()
+    assert files, "em-dash scan listed zero files via %s; refusing to " \
+                  "pass unscanned" % source
+    offenders = _scan(files)
     assert offenders == [], \
-        "em dash found in tracked files: %s" % ", ".join(offenders)
+        "em dash found in files (via %s): %s" % (source, ", ".join(offenders))
+
+
+def test_git_checkout_path_is_used_when_available():
+    files, source = _list_files()
+    # This repo is a git checkout, so the tracked-file path applies.
+    assert source == "git ls-files"
+    assert "src/uncluttered_memory/store.py" in files
+
+
+def test_filesystem_fallback_when_git_unavailable(monkeypatch):
+    def no_git(*a, **k):
+        raise OSError("git not found")
+
+    monkeypatch.setattr(subprocess, "check_output", no_git)
+    files, source = _list_files()
+    assert source.startswith("filesystem walk")
+    assert "src/uncluttered_memory/store.py" in files
+    # The fallback respects the skip rules: no __pycache__ noise.
+    assert not any("__pycache__" in f for f in files)
+
+
+def test_loud_failure_when_neither_path_works(monkeypatch):
+    import sys
+    mod = sys.modules[__name__]
+    monkeypatch.setattr(mod, "_git_tracked_files", lambda: None)
+    monkeypatch.setattr(mod, "_filesystem_files", lambda: None)
+    with pytest.raises(RuntimeError, match="failing loudly"):
+        _list_files()
+
+
+def test_scan_flags_an_em_dash_when_one_exists(tmp_path):
+    bad = tmp_path / "bad.txt"
+    bad.write_text("clean line\na line with %s in it\n" % EM_DASH,
+                   encoding="utf-8")
+    assert _scan([str(bad)]) == ["%s:2" % bad]
