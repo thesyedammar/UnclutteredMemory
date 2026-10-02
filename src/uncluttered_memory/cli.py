@@ -1,55 +1,61 @@
-"""Frozen-eval runner: returns 0 only if every frozen case decides as labeled."""
+"""Unclutter CLI: run the frozen eval, tune on the train split only."""
 from __future__ import annotations
 
 import argparse
-import json
-import sys
+import importlib.util
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from uncluttered_memory import calibrate as calmod
+from uncluttered_memory.gate import RuleJudge
 
-from uncluttered_memory.gate import FakeJudge, Gate, GateVote  # noqa: E402
-
-CASES_FILE = Path(__file__).resolve().parents[2] / "eval" / "frozen.jsonl"
-
-OFFLINE_VOTES = {
-    "My stop-loss is 8%": GateVote(durable=0.93, importance=5, stop=0.05),
-    "Buy the whole exchange lol": GateVote(durable=0.2, importance=1, stop=0.1, play=0.94),
-    "ok": GateVote(durable=0.05, importance=1, stop=0.1),
-    "I am Batman": GateVote(durable=0.3, importance=1, stop=0.2, play=0.85),
-    "Rahul's number is 98xxx": GateVote(durable=0.6, importance=2, stop=0.1, sensitive=0.9),
-}
+REPO = Path(__file__).resolve().parents[2]
+EVAL_RUN = REPO / "eval" / "run.py"
 
 
-def run() -> int:
-    gate = Gate(FakeJudge(OFFLINE_VOTES))
-    fails = 0
-    with open(CASES_FILE) as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            case = json.loads(line)
-            got = gate.decide(case["text"]).action
-            mark = "ok" if got == case["expect"] else "FAIL"
-            if got != case["expect"]:
-                fails += 1
-            print(f"[{mark}] {case['text']!r}: got {got}, expect {case['expect']}")
-    print(f"{'PASS' if not fails else 'FAIL'}: {fails} failures")
-    return 1 if fails else 0
+def _eval():
+    spec = importlib.util.spec_from_file_location("unclutter_eval_run", EVAL_RUN)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def do_calibrate(task: str, out) -> int:
+    mod = _eval()
+    cases = mod.load_cases(mod.CASES_FILE)
+    train, test = mod.split_cases(cases)
+    judge = RuleJudge()
+    out = out or str(REPO / "thresholds" / (task + ".json"))
+    reg = calmod.calibrate_gate(
+        train, task, out,
+        lambda c: judge.vote(c["text"], [], []).durable)
+    print("wrote %s task=%s admit.durable=%.2f train_n=%d train_f1=%.3f"
+          " (test split untouched, n=%d)" %
+          (out, task, reg["report"]["threshold"], len(train),
+           reg["report"]["f1"], len(test)))
+    return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(prog="unclutter", description="UnclutteredMemory CLI")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("run", help="run the frozen eval")
-    sub.add_parser("calibrate", help="tune thresholds on train split only (P1)")
+    p_run = sub.add_parser("run", help="run the frozen eval")
+    p_run.add_argument("--registry", default=None)
+    p_run.add_argument("--task", default="general-qa")
+    p_cal = sub.add_parser("calibrate", help="tune thresholds on train split only")
+    p_cal.add_argument("--task", default="general-qa")
+    p_cal.add_argument("--out", default=None)
     sub.add_parser("redteam", help="fire the poison gauntlet (P2)")
     sub.add_parser("gauntlet", help="record the gauntlet demo (P7)")
     args = parser.parse_args()
     if args.command == "run":
-        return run()
-    print(f"unclutter {args.command}: not built until its phase")
+        argv = ["--task", args.task]
+        if args.registry:
+            argv += ["--registry", args.registry]
+        return _eval().main(argv)
+    if args.command == "calibrate":
+        return do_calibrate(args.task, args.out)
+    print("unclutter %s: not built until its phase" % args.command)
     return 2
 
 

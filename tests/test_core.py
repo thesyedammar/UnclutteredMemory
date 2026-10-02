@@ -1,7 +1,5 @@
-import sys
-
-sys.path.insert(0, "src")
-
+"""P0 core tests, kept on branch-keyed stubs. The eval and P1 tests use
+feature-keyed RuleJudge: these remain only to lock signature behavior."""
 from uncluttered_memory.gate import FakeJudge, Gate, GateVote
 from uncluttered_memory.inject import Injector
 from uncluttered_memory.recall import Recall

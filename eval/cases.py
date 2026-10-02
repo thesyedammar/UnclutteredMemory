@@ -1,4 +1,3 @@
-"""Frozen eval cases. Format locked: tuning on these is a hard error."""
 import json
 
 CASES = [
