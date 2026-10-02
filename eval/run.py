@@ -249,8 +249,9 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
     one reported: exact-text; content-hash (the artifact embeds the
     content hash of an eval text); normalized-text (casefold,
     punctuation stripped, whitespace collapsed); token-overlap at or
-    above CONTAMINATION_SIM (with the best Jaccard score found); then
-    split-field (metadata says split=test or tuned_on=test). An
+    token-overlap at or above CONTAMINATION_SIM (with the best Jaccard score found); then
+    split-field (metadata says split/test, tuned_on/test, trained_on/test,
+    train_on/test, or fitted_on/test). An
     unreadable or malformed artifact is a hard ArtifactError listing
     the file: the scan fails closed and never silently skips a target.
     """
@@ -303,11 +304,15 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
                         best = (ov, s)
             if best[0] >= CONTAMINATION_SIM:
                 flag = artifact_flag(p, "token-overlap", best[0], best[1])
-        if flag is None and isinstance(data, dict) and (
-                data.get("split") == "test" or data.get("tuned_on") == "test"):
-            field = ("split=test" if data.get("split") == "test"
-                     else "tuned_on=test")
-            flag = artifact_flag(p, "split-field", None, field)
+        if flag is None and isinstance(data, dict):
+            hit = None
+            for _field in ("split", "tuned_on", "trained_on",
+                           "train_on", "fitted_on"):
+                if data.get(_field) == "test":
+                    hit = "%s=test" % _field
+                    break
+            if hit is not None:
+                flag = artifact_flag(p, "split-field", None, hit)
         if flag is not None:
             bad.append(flag)
     return bad
@@ -380,6 +385,7 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
                       and s.get(old_id)[4] is None
                       and s.get(new_id)[4] is None
                       and s.get(old_id)[7] is None
+                      and s.get(new_id)[7] is None
                       and s.tombstoned() == []
                       and s.conflicts() == [])
         elif suite == "supersede":

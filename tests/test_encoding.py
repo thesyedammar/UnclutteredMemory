@@ -68,3 +68,21 @@ def test_configure_console_forces_utf8_and_named_errors(monkeypatch):
     fake.flush()
     assert fake.buffer.getvalue().endswith(
         "caf\u00e9 \u2265".encode("utf-8"))
+
+
+def test_configure_console_warns_when_stream_has_no_reconfigure(
+        monkeypatch):
+    """The degrade path is loud: it names the cp1252-mangle risk."""
+    import io
+    out = io.StringIO()
+    err = io.StringIO()
+    assert not hasattr(out, "reconfigure")
+    assert not hasattr(err, "reconfigure")
+    monkeypatch.setattr(sys, "stdout", out)
+    monkeypatch.setattr(sys, "stderr", err)
+    configure_console()
+    blob = err.getvalue()
+    assert "no reconfigure" in blob
+    assert "platform default" in blob
+    assert "cp1252" in blob
+    assert "mangle" in blob

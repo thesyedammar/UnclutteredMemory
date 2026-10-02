@@ -14,13 +14,24 @@ ERRORS = "backslashreplace"
 
 
 def configure_console() -> None:
-    """Force UTF-8 with the named error handler on stdout and stderr."""
+    """Force UTF-8 with the named error handler on stdout and stderr.
+
+    Streams without reconfigure keep working but fall back to the
+    platform default encoding: a loud stderr warning names the
+    cp1252-mangle risk instead of failing silently mid-report.
+    """
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:
-            # Streams without reconfigure keep working; the report
-            # degrades to the platform default rather than raising
-            # mid-report.
+            try:
+                sys.stderr.write(
+                    "WARNING uncluttered_memory.console: stream "
+                    "encoding=%r has no reconfigure; report falls back "
+                    "to the platform default and a cp1252 console may "
+                    "mangle non-ASCII output\n"
+                    % (getattr(stream, "encoding", None),))
+            except Exception:
+                pass
             continue
         try:
             reconfigure(encoding=ENCODING, errors=ERRORS)

@@ -378,6 +378,7 @@ def test_rate_limited_message_formats_retry_after_minutes():
 
 def test_model_allowlist_is_pinned():
     """Only jev-1.13-free may appear as a model name in the package."""
+    import ast
     import pathlib
     import tokenize
     bad = []
@@ -389,7 +390,7 @@ def test_model_allowlist_is_pinned():
                 if tok.string[:1] not in "'\"":
                     continue
                 try:
-                    flat = " ".join(eval(tok.string).split())
+                    flat = " ".join(ast.literal_eval(tok.string).split())
                 except Exception:
                     continue
                 if flat == "jev-1.13-free":
@@ -459,7 +460,55 @@ def test_run_eval_reports_metrics(tmp_path, capsys):
     assert "importance train" in out and "rerank     test" in out
     assert "provenance=synthetic-rule" in out and "cases sha256" in out
     assert "cost per 1k" in out and "latency" in out
+    assert "ESTIMATE" in out and "NOT VERIFIED" in out
     assert "rule-stub" in out
+
+
+def test_run_eval_cost_line_is_marked_estimate(tmp_path, capsys):
+    """The cost line is an estimate, pinned so it cannot go bare."""
+    cases = [{"suite": "admit", "kind": "filler",
+              "provenance": "synthetic-rule",
+              "text": "ok", "expect": "DROP"}]
+    p = tmp_path / "frozen.jsonl"
+    with open(p, "w") as f:
+        for c in cases:
+            f.write(json.dumps(c) + "\n")
+    rc = run_eval(str(p), task="general-qa", registry_path=None, root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "cost per 1k writes: ESTIMATE" in out
+    assert "NOT VERIFIED" in out
+
+
+def test_evaluate_contradict_keep_checks_both_conflict_marks(monkeypatch):
+    """A counterpart-only conflict mark must NOT score ok on KEEP."""
+    from uncluttered_memory.gate import Gate, RuleJudge
+    case = {"id": "k1", "suite": "contradict", "kind": "unrelated",
+            "provenance": "synthetic-rule",
+            "old": "the kettle is blue",
+            "new": "the ledger closes friday",
+            "expect": "KEEP"}
+    monkeypatch.setattr(
+        supmod, "decide",
+        lambda o, n, a, b: supmod.SupersedeDecision(
+            "unrelated", True, "KEEP", ["unrelated-agreed"]))
+    gate = Gate(RuleJudge())
+    rows, _ = evalmod.evaluate_suite("contradict", [case], gate)
+    assert rows[0][1] == "KEEP"
+    assert rows[0][3] is True
+    real_apply = supmod.apply
+
+    def dirty_apply(store, old_id, new_id, decision, *a, **k):
+        out = real_apply(store, old_id, new_id, decision, *a, **k)
+        store.db.execute("UPDATE facts SET conflict_with=? WHERE id=?",
+                         (old_id, new_id))
+        store.db.commit()
+        return out
+
+    monkeypatch.setattr(supmod, "apply", dirty_apply)
+    rows, _ = evalmod.evaluate_suite("contradict", [case], gate)
+    assert rows[0][1] == "KEEP"
+    assert rows[0][3] is False
 
 
 def test_run_eval_rejects_missing_provenance(tmp_path, capsys):

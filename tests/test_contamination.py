@@ -102,6 +102,33 @@ def test_tuned_on_field_flagged_with_reason(tmp_path):
     assert flags[0]["excerpt"] == "tuned_on=test"
 
 
+def test_trained_on_field_flagged_with_reason(tmp_path):
+    p = write(tmp_path, "a.json", {"task": "general-qa",
+                                   "trained_on": "test"})
+    flags = find_bad_artifacts(TEST_CASES, [str(p)])
+    assert len(flags) == 1
+    assert flags[0]["check"] == "split-field"
+    assert flags[0]["excerpt"] == "trained_on=test"
+
+
+def test_train_on_field_flagged_with_reason(tmp_path):
+    p = write(tmp_path, "a.json", {"task": "general-qa",
+                                   "train_on": "test"})
+    flags = find_bad_artifacts(TEST_CASES, [str(p)])
+    assert len(flags) == 1
+    assert flags[0]["check"] == "split-field"
+    assert flags[0]["excerpt"] == "train_on=test"
+
+
+def test_fitted_on_field_flagged_with_reason(tmp_path):
+    p = write(tmp_path, "a.json", {"task": "general-qa",
+                                   "fitted_on": "test"})
+    flags = find_bad_artifacts(TEST_CASES, [str(p)])
+    assert len(flags) == 1
+    assert flags[0]["check"] == "split-field"
+    assert flags[0]["excerpt"] == "fitted_on=test"
+
+
 def test_nested_artifact_strings_scanned(tmp_path):
     p = write(tmp_path, "a.json",
               {"items": [{"memo": "My stop-loss is 8 percent"}]})
