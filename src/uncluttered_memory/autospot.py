@@ -174,7 +174,11 @@ def run_after_put(store, new_id: int, new_text: str, user: str,
     Returns a plain summary: flagged, dropped_by_cap, checked,
     tombstoned, conflicts, kept, halted, rate_limited, outcomes.
     Every outcome names old_id, new_id, relation, action, applied,
-    and the reason each applied row carries.
+    and the reason each applied row carries. Pairs never voted
+    (rate budget spent, or a judge halt stopped the run) are
+    itemized too with action KEEP and applied False, so outcomes
+    always account for every flagged pair: no skipped pair is
+    inferable only by arithmetic.
     """
     candidates, dropped = find_candidates(store, new_id, new_text, user,
                                           min_jaccard=min_jaccard,
@@ -186,13 +190,21 @@ def run_after_put(store, new_id: int, new_text: str, user: str,
     if not candidates:
         return summary
     off_a, off_b = _resolve_offline(relation_pair)
-    for old_id, old_text, _score in candidates:
+    pairs = list(candidates)
+    for idx, (old_id, old_text, _score) in enumerate(pairs):
         if live_pair is not None:
             if rate_limiter is not None:
                 ok, _retry = rate_limiter.check(len(old_text)
                                                + len(new_text))
                 if not ok:
                     summary["rate_limited"] = True
+                    for rest_id, _t, _s in pairs[idx:]:
+                        summary["kept"].append(rest_id)
+                        summary["outcomes"].append(
+                            {"old_id": rest_id, "new_id": new_id,
+                             "relation": "unrelated", "action": "KEEP",
+                             "applied": False,
+                             "reason": "rate-budget-exhausted"})
                     break
             try:
                 dec = live_confirmed_decide(old_text, new_text,
@@ -205,6 +217,13 @@ def run_after_put(store, new_id: int, new_text: str, user: str,
                     {"old_id": old_id, "new_id": new_id,
                      "relation": "unrelated", "action": "KEEP",
                      "applied": False, "reason": "judge-rate-limited"})
+                for rest_id, _t, _s in pairs[idx + 1:]:
+                    summary["kept"].append(rest_id)
+                    summary["outcomes"].append(
+                        {"old_id": rest_id, "new_id": new_id,
+                         "relation": "unrelated", "action": "KEEP",
+                         "applied": False,
+                         "reason": "judge-halted-skipped"})
                 break
             except JevError:
                 summary["halted"] = True

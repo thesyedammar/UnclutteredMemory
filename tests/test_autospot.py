@@ -350,6 +350,31 @@ def test_live_rate_limit_halts_and_keeps_both_live():
     assert s.get(old_id)[7] is None
 
 
+def test_halt_itemizes_pairs_never_voted():
+    from uncluttered_memory.jev_client import JevRelationJudge
+    s = Store(auto_spot=False)
+    first_id = s.put(OFFICE_OLD, "t", auto_spot=False)
+    second_id = s.put("the office relocated to 3 Main St", "t",
+                      auto_spot=False)
+    new_id = s.put(OFFICE_MOVED, "t", auto_spot=False)
+
+    class _HaltedLive(JevRelationJudge):
+        def relation(self, old_text, new_text):
+            raise RateLimited("free window spent")
+
+    limited = (_HaltedLive(variant="direct"),
+               _HaltedLive(variant="slot"))
+    summary = autospot.run_after_put(s, new_id, OFFICE_MOVED, "local",
+                                    live_pair=limited)
+    assert summary["halted"] is True and summary["checked"] == 0
+    assert len(summary["outcomes"]) == 2
+    assert summary["outcomes"][0]["reason"] == "judge-rate-limited"
+    assert summary["outcomes"][1]["reason"] == "judge-halted-skipped"
+    assert summary["outcomes"][1]["applied"] is False
+    assert {first_id, second_id} == set(summary["kept"])
+    assert s.tombstoned() == [] and s.conflicts() == []
+
+
 def test_exhausted_rate_budget_stops_live_votes_without_network():
     s = Store(auto_spot=False)
     old_id = s.put(OFFICE_OLD, "t", auto_spot=False)
@@ -364,6 +389,10 @@ def test_exhausted_rate_budget_stops_live_votes_without_network():
             live_pair=(live_a, live_b), rate_limiter=spent)
     assert summary["rate_limited"] is True
     assert summary["checked"] == 0
+    assert len(summary["outcomes"]) == 1
+    assert summary["outcomes"][0]["reason"] == "rate-budget-exhausted"
+    assert summary["outcomes"][0]["applied"] is False
+    assert summary["kept"] == [old_id]
     assert s.tombstoned() == [] and s.get(old_id)[4] is None
 
 
