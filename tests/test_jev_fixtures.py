@@ -205,7 +205,7 @@ def test_stop_agreed_margin_keeps_durable_confidence_and_stores():
     j = JevJudgeClient(api_key="k")
     with replay("jev_gate_stop_agreed.json"):
         v = j.vote("the plan is settled", [], [])
-    assert v.conf == pytest.approx(0.9 - abs(0.85 - 0.5) * 0.05)
+    assert v.conf == pytest.approx(th.durable_confidence(0.85))
     assert v.conf >= th.MIN_CONF
     with replay("jev_gate_stop_agreed.json"):
         d = Gate(j).decide("the plan is settled")

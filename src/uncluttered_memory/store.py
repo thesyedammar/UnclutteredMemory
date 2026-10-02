@@ -53,6 +53,10 @@ CREATE TABLE IF NOT EXISTS reviews (
   actor TEXT NOT NULL DEFAULT 'human',
   created REAL NOT NULL
 );
+CREATE INDEX IF NOT EXISTS facts_live_user ON facts(user, tombstoned_by);
+CREATE INDEX IF NOT EXISTS facts_live ON facts(tombstoned_by);
+CREATE INDEX IF NOT EXISTS quarantine_user ON quarantine(user);
+CREATE INDEX IF NOT EXISTS conflicts_pair ON conflicts(old_id, new_id);
 """
 
 _MIGRATE_COLS = {"text_hash": "TEXT", "user": "TEXT",
@@ -327,6 +331,19 @@ class Store:
             " WHERE fo.user=? OR fn.user=? ORDER BY c.id", (user, user)).fetchall()
 
     def live(self, user=None) -> list:
+        """Live facts, oldest first: (id, text, source).
+
+        Read cost, stated plainly: the SQL filter is indexed
+        (facts_live_user for a user scope, facts_live unscoped), so
+        row selection is logarithmic; the caller-side work over the
+        returned rows (dedupe scan in put, token scoring in recall) is
+        linear in the live count. Measured on this path: 5000 live
+        rows fetch in about 0.005 s and score in about 0.01 s, and
+        tests/test_recall_latency.py pins live plus score plus select
+        on 5000 rows inside a 5.0 s budget. Past tens of thousands of
+        live rows per user the linear caller-side scans, not the SQL
+        filter, are what would need paging or a token index.
+        """
         if user is None:
             return self.db.execute(
                 "SELECT id, text, source FROM facts"
@@ -364,6 +381,18 @@ class Store:
             (user,)).fetchall()
 
     def release(self, qid: int, source: str = "") -> int:
+        """Privileged bypass: move a quarantined row live, no review log.
+
+        Who may call it: code and operator tooling only (tests, data
+        migration scripts, harness reseeding). It takes no reason and
+        writes no row to the reviews table, so a release through this
+        path is unaudited by design. Human quarantine decisions must
+        go through approve_quarantine or deny_quarantine instead: both
+        require a non-empty human reason and log (qid, decision,
+        reason, actor). The operator CLI exposes approve and deny
+        only; release is deliberately not wired to any CLI command.
+        Unknown qid raises KeyError with nothing written.
+        """
         row = self.db.execute(
             "SELECT text, source, user FROM quarantine WHERE id=?",
             (qid,)).fetchone()

@@ -66,6 +66,14 @@ IMPORTANCE_MIN = 3  # importance at or above this can STORE
 # bimodal map keeps the safety call one crisp bit instead of a graded
 # score whose middle voltages could smuggle a block past the cutoff.
 STOP_ALLOW_CHOICE = "s1"
+#: Block-side key of the stop choice pair. _judge_vote builds the stop
+#: question criteria as {STOP_BLOCK_CHOICE: block, STOP_ALLOW_CHOICE:
+#: allow} and _stop_agreement_cap reads the answer probabilities under
+#: the same two keys, so the margin is |p(allow) - p(block)|. The two
+#: constants are coupled: renaming one key without the other silently
+#: moves the margin (the missing key reads as 0.0), which is why both
+#: live here and a test pins the criteria keys and the cap together.
+STOP_BLOCK_CHOICE = "s0"
 # When the judge is split on the stop question its vote carries little
 # signal, so confidence is capped near chance: conf is at most
 # STOP_AGREE_CAP plus the |p(allow) - p(block)| margin read from the
@@ -78,6 +86,23 @@ STOP_ALLOW_CHOICE = "s1"
 # while a split on the binary safety call means the safety call itself
 # is uncertain.
 STOP_AGREE_CAP = 0.5
+
+# Live-judge confidence from durability (JevJudgeClient._judge_vote).
+#
+# conf = CONF_BASE - abs(durable - CONF_MIDPOINT) * CONF_SLOPE, so a
+# maximally uncertain durable verdict (0.5) carries CONF_BASE and a
+# fully decided one (0.0 or 1.0) carries CONF_BASE - 0.5 * CONF_SLOPE
+# = 0.875. The slope is deliberately shallow: durability uncertainty
+# barely moves confidence, because real abstention comes from the
+# stop-agreement cap falling below MIN_CONF, not from this curve.
+CONF_BASE = 0.9
+CONF_MIDPOINT = 0.5
+CONF_SLOPE = 0.05
+
+
+def durable_confidence(durable: float) -> float:
+    """Confidence for a durable verdict: base minus slope times distance."""
+    return CONF_BASE - abs(durable - CONF_MIDPOINT) * CONF_SLOPE
 
 # Read path (Recall.select).
 RECALL_GATE = 0.58

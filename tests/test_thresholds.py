@@ -7,6 +7,9 @@ echoing the effective value.
 """
 import inspect
 from pathlib import Path
+from unittest import mock
+
+import pytest
 
 from uncluttered_memory import thresholds as th
 from uncluttered_memory.gate import FakeJudge, Gate, GateVote
@@ -183,6 +186,71 @@ def test_recall_select_every_cutoff_is_a_parameter():
     many = [(str(i), 0.9) for i in range(12)]
     assert len(r.select(many, cap=3)) == 3
     assert len(r.select(many)) == th.RECALL_CAP
+
+
+def test_thresholds_module_owns_the_live_confidence_curve():
+    # The conf formula used to live inline in jev_client._judge_vote
+    # as 0.9 - abs(durable - 0.5) * 0.05. It now lives here.
+    assert th.CONF_BASE == 0.9
+    assert th.CONF_MIDPOINT == 0.5
+    assert th.CONF_SLOPE == 0.05
+    assert th.durable_confidence(0.5) == pytest.approx(0.9)
+    assert th.durable_confidence(0.0) == pytest.approx(0.875)
+    assert th.durable_confidence(1.0) == pytest.approx(0.875)
+    assert th.durable_confidence(0.85) == pytest.approx(
+        0.9 - abs(0.85 - 0.5) * 0.05)
+
+
+def test_no_numeric_boundary_in_jev_client_source():
+    # No numeric decision boundary may live outside thresholds.py:
+    # jev_client must read every vote-level float from th.*. The only
+    # float literals allowed inline are transport plumbing (the 429
+    # cooldown, full/zero confidence defaults, missing-answer sentinels),
+    # never tuned levels.
+    import ast
+    src = (SRC / "jev_client.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    floats = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, float):
+            floats.add(node.value)
+    assert floats <= {30.0, 0.0, 1.0, -1.0}, floats
+    assert "th.durable_confidence" in src
+    assert "th.STOP_BLOCK_CHOICE" in src
+    assert "0.9 - abs" not in src
+
+
+def test_stop_key_coupling_is_pinned_and_loud():
+    # The stop choice pair is one coupled unit: the question criteria
+    # and the agreement cap must read the same two keys. A rename of
+    # either key changes the cap instead of silently keeping old wiring.
+    import uncluttered_memory.jev_client as jmod
+    assert th.STOP_ALLOW_CHOICE == "s1"
+    assert th.STOP_BLOCK_CHOICE == "s0"
+    assert th.STOP_BLOCK_CHOICE != th.STOP_ALLOW_CHOICE
+    captured = {}
+    j = jmod.JevJudgeClient(api_key="k")
+
+    def fake_evaluate(state, questions):
+        captured.update(questions)
+        return {"dur": {"noul": 0.85},
+                "imp": {"choice": "s3"},
+                "sens": {"noul": 0.1},
+                "stop": {"choice": "s1",
+                         "probabilities": {"s1": 0.9, "s0": 0.05}}}
+
+    j.evaluate = fake_evaluate
+    j.vote("the plan is settled", [], [])
+    assert set(captured["stop"]["criteria"]) == {
+        th.STOP_BLOCK_CHOICE, th.STOP_ALLOW_CHOICE}
+    cap = jmod.JevJudgeClient._stop_agreement_cap(
+        {"probabilities": {"s1": 0.9, "s0": 0.05}})
+    assert cap == pytest.approx(th.STOP_AGREE_CAP + abs(0.9 - 0.05))
+    with mock.patch.object(th, "STOP_BLOCK_CHOICE", "s9"):
+        renamed = jmod.JevJudgeClient._stop_agreement_cap(
+            {"probabilities": {"s1": 0.9, "s0": 0.05}})
+    assert renamed == pytest.approx(th.STOP_AGREE_CAP + 0.9)
+    assert renamed != pytest.approx(cap)
 
 
 def test_char_budget_proxy_is_documented_and_pinned():

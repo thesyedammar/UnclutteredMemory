@@ -61,6 +61,53 @@ def test_reason_required_and_unknown_qid_refused(tmp_path):
     assert s.live() == []
 
 
+def test_release_is_privileged_bypass_with_no_review_row(tmp_path):
+    """Store.release moves the row live with no reason and no audit row.
+
+    It is the privileged bypass for code and operator tooling (tests,
+    migration, harness reseeding), never the human review flow.
+    """
+    db = _seeded_db(tmp_path)
+    s = Store(str(db))
+    fid = s.release(1)
+    assert [t for _, t, _ in s.live()] == ["the visa interview is on monday"]
+    assert [qid for qid, _, _ in s.quarantined()] == [2]
+    assert s.reviews() == []
+    assert s.get(fid)[1] == "the visa interview is on monday"
+
+
+def test_release_vs_approve_contrast(tmp_path):
+    """release needs no reason and logs nothing; approve needs a reason
+    and logs it. Human quarantine decisions must use approve/deny."""
+    import inspect
+    assert "reason" not in inspect.signature(Store.release).parameters
+    assert "reason" in inspect.signature(Store.approve_quarantine).parameters
+    db = _seeded_db(tmp_path)
+    s = Store(str(db))
+    s.release(1)
+    assert s.reviews() == []
+    with pytest.raises(ValueError):
+        s.approve_quarantine(2, "   ")
+    assert s.reviews() == []
+    fid = s.approve_quarantine(2, "checked, keep it", actor="human")
+    assert s.get(fid)[1] == "lol nice"
+    reviews = s.reviews()
+    assert len(reviews) == 1
+    _, qid, decision, reason, actor = reviews[0]
+    assert (qid, decision, reason, actor) == (
+        2, "approve", "checked, keep it", "human")
+
+
+def test_release_unknown_qid_refused_with_nothing_written(tmp_path):
+    db = _seeded_db(tmp_path)
+    s = Store(str(db))
+    with pytest.raises(KeyError):
+        s.release(999)
+    assert len(s.quarantined()) == 2
+    assert s.reviews() == []
+    assert s.live() == []
+
+
 def test_cli_review_lists_the_queue(tmp_path, capsys):
     db = _seeded_db(tmp_path)
     rc = climod.main(["review", "--db", str(db)])
