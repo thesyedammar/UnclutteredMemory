@@ -9,6 +9,39 @@ Every decision cutoff is a parameter of Gate.decide whose default
 lives in thresholds.py; no numeric decision boundary is hardcoded in
 this module's logic paths. The reason strings echo the effective
 cutoff so an override is visible in the decision record.
+
+Branch precedence in Gate.decide is a policy decision, not an
+accident. The checks run in a fixed order and the first match wins:
+confidence, then play, then sensitive, then stop, then durable plus
+importance, else the not-durable drop. Why that order:
+
+- Confidence first: a judge vote below the confidence cutoff
+  abstains before any content branch is read; unseen or unsure input
+  fails closed to quarantine and never reaches store or drop.
+- Play second: the play verdict is high-precision by construction
+  (word-boundary laugh tokens, whole-line identity claims), so its
+  drop is safe to apply first. Junk is disposed of by the junk rule
+  even when the line also trips durable or stop signals, and a drop
+  leaks nothing.
+- Sensitive third: privacy outranks review. A private-data line
+  must not be stored and must not sit in the quarantine queue
+  either, so it takes the one disposition that keeps nothing (drop),
+  which is why it outranks stop: quarantine would still retain the
+  text in its table.
+- Stop fourth: the binary block-or-pass call is the strongest deny
+  among the remaining branches. An over-held line waits in
+  quarantine for review while a wrongly admitted one is already
+  stored, so a block is never overridden by durable or importance
+  signals.
+- Durable last: store is the only admitting branch, so it runs after
+  every deny has had its chance. A line reaching it has survived
+  play, sensitive, and stop with no negative verdict.
+
+tests/test_gate_precedence.py pins the exact action and reason string
+for multi-signal input: every pair of branches firing at once, the
+headline three and four signal cases, and the boundary comparisons.
+The same precedence rationale is stated with its numeric cutoffs in
+thresholds.py.
 """
 from __future__ import annotations
 
@@ -301,6 +334,17 @@ class Gate:
                min_conf: float = th.MIN_CONF,
                play_drop: float = th.PLAY_DROP,
                sensitive_drop: float = th.SENSITIVE_DROP) -> GateDecision:
+        """One vote in, one disposition out; the first matching branch wins.
+
+        The check order (confidence, play, sensitive, stop, durable
+        plus importance, else drop) is documented policy: see the
+        module docstring and thresholds.py for the rationale, and
+        tests/test_gate_precedence.py for the multi-signal pins.
+        Every cutoff is a parameter whose default lives in
+        thresholds.py, and the reason string echoes the effective
+        value of the branch that fired, so an override and the
+        owning branch are both visible in the decision record.
+        """
         v = self.judge.vote(text, neighbors or [], facts or [])
         if v.conf < min_conf:
             return GateDecision("QUARANTINE", ["uncertain-low-conf"])

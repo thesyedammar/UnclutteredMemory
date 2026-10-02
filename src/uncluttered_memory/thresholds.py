@@ -8,6 +8,45 @@ per-task registry can override admit.durable only; everything else is
 code-owned.
 """
 
+# Gate.decide branch precedence, stated plainly. The checks run in
+# this fixed order and the first match wins:
+#   1. conf < MIN_CONF            -> QUARANTINE (abstention, fail closed)
+#   2. play > PLAY_DROP           -> DROP
+#   3. sensitive > SENSITIVE_DROP -> DROP
+#   4. stop >= STOP_BLOCK         -> QUARANTINE
+#   5. durable >= DURABLE_MIN and importance >= IMPORTANCE_MIN -> STORE
+#   6. anything else              -> DROP (not-durable-or-trivial)
+#
+# Why this order, branch by branch:
+# - Confidence first: a judge that cannot answer never reaches a
+#   content branch; abstention always quarantines.
+# - Play second: the play verdict is high-precision by construction
+#   (word-boundary laugh tokens, whole-line identity claims), so its
+#   drop is safe to apply first. Junk is disposed of by the junk rule
+#   even when the line also trips durable or stop signals, and a drop
+#   leaks nothing.
+# - Sensitive third: privacy outranks review. A private-data line
+#   must not be stored and must not sit in the quarantine queue
+#   either, so it takes the one disposition that keeps nothing
+#   (drop), which is why it outranks stop: quarantine would still
+#   retain the text in its table.
+# - Stop fourth: the binary block-or-pass call is the strongest deny
+#   among the remaining branches. An over-held line waits in
+#   quarantine for review while a wrongly admitted one is already
+#   stored, so a block is never overridden by durable or importance;
+#   deny wins every conflict with admit.
+# - Durable last: STORE is the only admitting branch, so it runs
+#   after every deny has had its chance. A line reaching it has
+#   survived play, sensitive, and stop with no negative verdict.
+#
+# The reason strings in gate.py echo the effective cutoff of the
+# branch that fired ("play>0.7", "sensitive>0.7", "stop>=0.58",
+# "uncertain-low-conf", "durable+important", "not-durable-or-trivial"),
+# so a multi-signal input records which rule owned the outcome.
+# tests/test_gate_precedence.py pins the outcome and the reason string
+# for every pair of branches firing at once, the headline multi-signal
+# cases, and the boundary comparisons.
+
 # Write gate (Store.admit -> Gate.decide).
 MIN_CONF = 0.6  # judge confidence below this abstains -> QUARANTINE
 PLAY_DROP = 0.7  # play above this -> DROP

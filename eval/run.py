@@ -826,8 +826,9 @@ def run_eval(cases_path=None, task: str = "general-qa",
 
     if golden:
         print("CONTRACT CONFORMANCE (golden, hand-authored): %d/%d ok, "
-              "%d failures (the system reproduces frozen human judgments; "
-              "NOT accuracy or memory quality)"
+              "%d failures (stub-vs-frozen-human-reading: how often the "
+              "offline stub's reading matches the frozen human reading of "
+              "the gate contract; NOT accuracy or memory quality)"
               % (golden_ok, golden_total, golden_fails))
     print("independent-rater agreement (recorded live jev-1.13-free vs "
           "golden labels, %s): %s (independent rater, NOT a gate; see %s)"

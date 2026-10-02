@@ -12,7 +12,7 @@ Memory that proves itself: a tiny typed judge at the door of agent memory.
 - `src/uncluttered_memory/calibrate.py` - per-task threshold registry fingerprinted to the task name, refuses mismatched files, UNCALIBRATED default, train-only tuning.
 - `src/uncluttered_memory/jev_client.py` - judge protocol with a native Jev client, plus the heterogeneous offline relation pair (StrictRelationJudge + LenientRelationJudge). StrictRelationJudge requires at least two shared content tokens beyond stopwords and numbers before it reads a marker as being about the same slot.
 - `eval/run.py` - one-command eval over two case sets: the hand-authored golden set (the claim) and the synthetic bulk set (self-consistency). Per-suite tables, admit precision/recall/F1, latency, cost-per-1k estimate, contamination scans that fail closed. Every contamination flag carries a machine-readable reason (which check fired, similarity score, offending excerpt) and the report prints it.
-- `eval/golden.jsonl` - 160 hand-authored cases written as data (text plus expected label), provenance `hand-authored`, sharing no code path with the stubs. This is where the contract-conformance numbers come from: the system reproduces frozen human judgments, NOT accuracy or memory quality.
+- `eval/golden.jsonl` - 160 hand-authored cases written as data (text plus expected label), provenance `hand-authored`, sharing no code path with the stubs. This is where the contract-conformance numbers come from: the number measures stub-vs-frozen-human-reading (how often the offline stub's reading matches the frozen human reading of the gate contract), NOT accuracy and NOT memory quality.
 - `eval/golden_labels_frozen.json` - the frozen label map (case id to frozen label), pinned at the 2026-10-02 freeze.
 - `eval/GOLDEN_CHANGELOG.md` - the freeze record (file hash, census, policy). A golden label changes only for documented human error with an entry here; undocumented edits fail the suite (`tests/test_golden_freeze.py`).
 - `eval/cases.py` - deterministic generator for the bulk `eval/frozen.jsonl` only (provenance `synthetic-rule`). It never reads or writes the golden set.
@@ -32,8 +32,10 @@ set; everything else is offline.
 ## Eval: golden is contract conformance, bulk is self-consistency
 
 Two case sets, two jobs, reported separately on every run. The golden
-number is contract conformance: the system reproduces frozen human
-judgments. It is NOT accuracy and NOT memory quality. Beside it, every
+number is contract conformance: it measures
+stub-vs-frozen-human-reading, how often the offline stub's reading
+matches the frozen human reading of the gate contract. It is NOT
+accuracy and NOT memory quality. Beside it, every
 run prints the independent-rater number: recorded live
 `jev-1.13-free` votes against the golden labels, 10/24 = 41.7% on
 2026-10-02 (see `docs/label-audit-20261002.md`). Live Jev is an
@@ -90,6 +92,30 @@ and fail the test, so such a failure means the scoring signals must
 change, not the labels: labels are frozen and move only through a
 changelogged human-error correction (`eval/GOLDEN_CHANGELOG.md`),
 never to satisfy the scorer.
+
+A fifth check, the strongest of them, is EXCEEDED on the current
+labels, stated plainly. An exhaustive conjunction search over all
+feature pairs (231) and triples (1540) of the full 22-signal set,
+trained on the even rows and scored on the held-out odd rows, reaches
+9/12 = 0.75 (best pair) and 10/12 = 0.833 (best triple), both above
+the 0.7 bound and above the fixed-seed label-permutation null (best
+pair 9/12 four times in 1000 permutations, best triple never above
+9/12), so the exceedance is genuine structure, not selection noise.
+Root cause: the direction of fit is fixed (the stub is changed to
+meet the frozen labels) and the stub reproduces every importance
+label exactly, which makes the labels a function of the tuned
+scorer's signals by construction; any learner strong enough to
+approximate the tuned scorer's categories (vital, routine) exceeds
+the bound at pair resolution. This does not show the labels were
+derived from the stub at authoring time, and it does not show the
+labels are wrong; it does mean the independence claim is NOT made at
+pair or triple resolution, and per the changelog flow the exceedance
+reveals pair-level derivability of the frozen labels from the tuned
+scorer's signals and the labels need human review
+(`eval/GOLDEN_CHANGELOG.md`). The two checks are strict xfails
+(`tests/test_importance_independence.py`): they fail today, and they
+flip to failures if a changelogged review ever makes the bound hold,
+so nothing resolves silently.
 
 The report prints two numbers on every run, golden first: contract
 conformance (`CONTRACT CONFORMANCE (golden, hand-authored): 160/160
@@ -161,6 +187,17 @@ without touching logic. Reason strings echo the effective value (for
 example `stop>=0.58`, or `stop>=0.9` when overridden). A test pins the
 parametrization and checks that the logic modules contain no hardcoded
 decision cutoff.
+
+The branch order in `Gate.decide` (confidence, play, sensitive, stop,
+durable plus importance, else drop) is documented policy, not an
+accident: confidence fails closed before any content branch is read,
+play disposes of high-precision junk first, sensitive takes the one
+disposition that retains nothing, stop is the strongest deny among the
+remaining branches, and the only admitting branch runs last so every
+deny gets the first chance. The rationale is stated in `gate.py` and
+`thresholds.py`, and `tests/test_gate_precedence.py` pins the exact
+action and reason string for every pair of branches firing at once,
+the headline multi-signal inputs, and the boundary comparisons.
 
 ## Console encoding
 
@@ -247,10 +284,15 @@ by tests.
 No benchmark numbers are claimed for the bulk labels: they are
 rule-generated (provenance `synthetic-rule`), not human labels, and
 this README quotes none of the eval numbers. The golden number is
-contract conformance (the system reproduces frozen human judgments),
-NOT accuracy or memory quality, printed with both file hashes
-on every run beside the recorded independent-rater agreement
-(10/24 = 41.7%). Cost is marked ESTIMATE / NOT VERIFIED, and contamination
+contract conformance (stub-vs-frozen-human-reading: how often the
+offline stub's reading matches the frozen human reading of the gate
+contract), NOT accuracy and NOT memory quality, printed with both file
+hashes on every run beside the recorded independent-rater agreement
+(10/24 = 41.7%). The strongest independence bound (the pair/triple
+conjunction search) is exceeded on the current labels and flagged for
+human review; the independence claim is scoped to the resolutions
+where the bound holds (see the eval section). Cost is marked ESTIMATE /
+NOT VERIFIED, and contamination
 checks run before anything is scored (train/test disjointness by case
 hash and normalized text, golden disjoint from bulk, artifacts fail
 closed).

@@ -7,33 +7,53 @@ actually worth remembering, deliberately breaking the buckets: vital
 facts with no marker words, trivial facts carrying marker words, and
 near-boundary judgments.
 
-The independence claim rests ONLY on the marker-feature tests below,
-at two resolutions. The coarse test shows a classifier that sees
-only three marker signals (hard mark present, durable mark present,
-digit present), trained on half the suite, cannot reproduce the
-held-out labels (accuracy under 0.7). The mirror-image test shows
-the same holds when the classifier sees the FULL stub feature set:
-every list and signal the offline scorer reads (filler and length,
-laugh and identity-claim, sensitive pairings, each vital pairing,
-each routine pairing, hard and durable marks, digits), extracted
-with the scorer's own lists and predicates, trained on one half and
-scored on the held-out half with the same memorization learner
-(training majority per feature vector, training global majority
-for unseen vectors). The interleaved split is fixed so the bound
-cannot be gamed by reordering rows, and the 0.7 bound fails
-closed: a label set derived from stub features would score high
-on held out rows, so derivation cannot pass it.
+The independence claim is scoped to the resolutions where the bound
+holds and rests only on the label-side tests below, never on the
+scorer-competence checks. The coarse test shows a classifier that
+sees only three marker signals (hard mark present, durable mark
+present, digit present), trained on half the suite, cannot reproduce
+the held-out labels (accuracy under 0.7). The mirror-image test
+shows the same holds when the classifier sees the FULL stub feature
+set: every list and signal the offline scorer reads (filler and
+length, laugh and identity-claim, sensitive pairings, each vital
+pairing, each routine pairing, hard and durable marks, digits),
+extracted with the scorer's own lists and predicates, trained on one
+half and scored on the held-out half with the same memorization
+learner (training majority per feature vector, training global
+majority for unseen vectors). The interleaved split is fixed so the
+bound cannot be gamed by reordering rows.
+
+A stronger search is also run, and it EXCEEDS the bound: an
+exhaustive conjunction search over all feature pairs (231) and
+triples (1540) of the full 22-signal set, trained on the even rows
+and scored on the held-out odd rows, reaches 9/12 = 0.75 (best pair)
+and 10/12 = 0.833 (best triple), above the 0.7 bound and above the
+fixed-seed label-permutation null, so the exceedance is genuine
+structure, not selection noise. The exceedance is expected once the
+direction of fit is honored: the stub is changed to meet the frozen
+labels, so the labels are a function of the tuned scorer's signals
+by construction, and any learner strong enough to approximate the
+tuned scorer's categories (vital, routine) exceeds the bound at pair
+resolution. It is not evidence that the labels were derived from the
+stub at authoring time, but it does mean the independence claim is
+NOT made at pair or triple resolution, and per the changelog flow
+the labels need human review. Method, result, and policy are
+documented on the two strict-xfail conjunction-search tests at the
+bottom of this file and in the README.
 
 A stub-mimicking marker predictor that reads only marker features
 misses widely. If the labels were a recoding of the markers, the
 mimic would agree with them; it does not. The scorer-competence
-checks at the bottom of this file use RuleJudge as the scorer, so
-they prove a stub matches the labels on hard cells; they are kept as
-competence checks and are explicitly NOT independence evidence.
+checks in this file use RuleJudge as the scorer, so they prove a
+stub matches the labels on hard cells; they are kept as competence
+checks and are explicitly NOT independence evidence.
 """
+import itertools
 import json
 import re
 from pathlib import Path
+
+import pytest
 
 from uncluttered_memory.gate import (DURABLE_MARK, HARD_MARKS, Gate,
                                      RuleJudge)
@@ -154,6 +174,43 @@ def _stub_features(text: str) -> tuple:
             kept, record, hard, durable, digit)
 
 
+def _conjunction_search(size: int):
+    """Best held-out accuracy over every conjunction of `size` signals.
+
+    Exhaustive search over all subsets of the 22-signal set of the
+    given size. Each subset is a conjunction: the learner memorizes
+    the training majority label of every observed bit pattern,
+    falls back to the training global majority for unseen patterns,
+    is trained on the even rows (sorted by id), and is scored on the
+    held-out odd rows. Returns (best_correct, best_subset,
+    held_count). Deterministic: no randomness, no test-set peeking
+    in the fit; the search reports the best subset's held-out
+    accuracy, the strongest reading of the bound.
+    """
+    cases = sorted(_load_importance(), key=lambda c: c["id"])
+    total = len(cases)
+    assert total > 0, "no importance cases in the golden set"
+    train = [(c["id"], _stub_features(c["text"]), c["expect"])
+             for i, c in enumerate(cases) if i % 2 == 0]
+    held = [(c["id"], _stub_features(c["text"]), c["expect"])
+            for i, c in enumerate(cases) if i % 2 == 1]
+    n_feat = len(train[0][1])
+    fallback = _majority([expect for _, _, expect in train])
+    best_good, best_subset = -1, None
+    for subset in itertools.combinations(range(n_feat), size):
+        by_pattern: dict = {}
+        for _, f, expect in train:
+            by_pattern.setdefault(tuple(f[k] for k in subset),
+                                  []).append(expect)
+        mapping = {k: _majority(v) for k, v in by_pattern.items()}
+        good = sum(1 for _, f, expect in held
+                   if mapping.get(tuple(f[k] for k in subset),
+                                  fallback) == expect)
+        if good > best_good:
+            best_good, best_subset = good, subset
+    return best_good, best_subset, len(held)
+
+
 def test_importance_marker_features_cannot_reproduce_labels():
     """Independence evidence (coarse, falsifiable): marker features do
     not determine the labels.
@@ -204,9 +261,13 @@ def test_importance_full_stub_features_cannot_reproduce_labels():
     signals against dozens of compositional scorer signals); this
     test rules out derivation from the full scorer signal set at
     the same strict bound. A label set tuned against the stub
-    would score high here and FAIL this test; if it ever does,
-    the labels must be rewritten until it cannot, because the
-    independence claim would be false.
+    would score high here and FAIL this test; a failure means the
+    independence claim must be scoped, never that labels are
+    rewritten to satisfy the scorer (labels are frozen and move
+    only through a changelogged human review). The stronger
+    pair/triple conjunction search at the bottom of this file
+    already exceeds its bound on the current labels; see its
+    docstring for the root cause and the policy.
     """
     cases = sorted(_load_importance(), key=lambda c: c["id"])
     total = len(cases)
@@ -274,3 +335,91 @@ def test_scorer_competence_marker_bearing_trivials():
     good = [c["id"] for c in trivial
             if gate.judge.vote(c["text"], [], []).importance == c["expect"]]
     assert len(good) >= 3, (trivial, good)
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "pair-conjunction bound exceeded: best pair scores 9/12 = 0.75; "
+    "the frozen labels carry pair-level structure relative to the "
+    "tuned scorer's signals; human label review required per "
+    "eval/GOLDEN_CHANGELOG.md"))
+def test_importance_pair_conjunction_search_stays_under_bound():
+    """Adversarial bound at pair resolution: EXCEEDED, documented.
+
+    Method: exhaustive conjunction search over all 231 pairs of the
+    22-signal set (the full stub feature set from _stub_features).
+    Each pair is a conjunction: the learner memorizes the training
+    majority label of every observed pair-value, falls back to the
+    training global majority for unseen values, is trained on the
+    even rows (sorted by id), and is scored on the held-out odd
+    rows. The search reports the best pair's held-out accuracy; the
+    bound is 0.7.
+
+    Result: 9/12 = 0.75, above the bound. Four pairs tie at 9/12
+    (laugh+vital, sens+vital, vital+routine, vital+digit); they
+    recover the labels' 5-versus-4-versus-low structure and miss
+    only where a third signal would split the low labels. Under 1000
+    fixed-seed label permutations of the same suite with the same
+    learner and split, the best pair reached 9/12 four times and
+    10/12 never (null p99 = 8/12), so the exceedance is genuine
+    structure, not selection noise.
+
+    Root cause, stated plainly: the direction of fit is fixed by the
+    freeze (the stub is changed to meet the frozen labels), and the
+    stub now reproduces all 24 importance labels exactly. That makes
+    the labels a function of the tuned scorer's signals by
+    construction, so any learner strong enough to approximate the
+    tuned scorer's categories (vital, routine) exceeds the bound at
+    pair resolution; only learners too weak to approximate them can
+    stay under it. This test therefore does NOT certify label
+    independence at pair resolution, and the README scopes the
+    independence claim to the resolutions where the bound holds.
+
+    Policy: per the changelog flow, the exceedance reveals
+    pair-level derivability of the frozen labels from the tuned
+    scorer's signals and the labels need human review
+    (eval/GOLDEN_CHANGELOG.md); labels are never rewritten to
+    satisfy the scorer. This is a strict xfail: it fails today, and
+    if a changelogged human review moves the labels so the bound
+    holds, it flips to a failure and this marker must be removed
+    consciously.
+    """
+    good, subset, held = _conjunction_search(2)
+    accuracy = good / held
+    assert accuracy < 0.7, (
+        "pair-conjunction search reached %d/%d = %.3f on subset %r"
+        % (good, held, accuracy, subset))
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "triple-conjunction bound exceeded: best triple scores 10/12 = "
+    "0.833; the frozen labels carry three-signal structure relative "
+    "to the tuned scorer's signals; human label review required per "
+    "eval/GOLDEN_CHANGELOG.md"))
+def test_importance_triple_conjunction_search_stays_under_bound():
+    """Adversarial bound at triple resolution: EXCEEDED, documented.
+
+    Same exhaustive search as the pair test above, over all 1540
+    triples of the 22-signal set, same learner, same even/odd split,
+    same 0.7 bound.
+
+    Result: 10/12 = 0.833, above the bound. Six triples tie at
+    10/12, every one of them including the vital signal paired with
+    two of (laugh, sens, ident, routine, digit). Under 1000
+    fixed-seed label permutations the best triple never reached
+    10/12 (9/12 in 27 runs; null p99 = 9/12), so the exceedance is
+    genuine structure, not selection noise.
+
+    Root cause and policy are the same as the pair test above: the
+    conformance direction of fit makes the labels a function of the
+    tuned scorer's signals, so the bound is not reachable by a
+    learner that can approximate the tuned scorer's categories; per
+    the changelog flow this is flagged for human label review, and
+    the README scopes the independence claim accordingly. Strict
+    xfail: it flips to a failure if a changelogged review ever makes
+    the bound hold.
+    """
+    good, subset, held = _conjunction_search(3)
+    accuracy = good / held
+    assert accuracy < 0.7, (
+        "triple-conjunction search reached %d/%d = %.3f on subset %r"
+        % (good, held, accuracy, subset))
