@@ -8,9 +8,12 @@ CAP = 8
 
 
 class Recall:
-    def select(self, scored: list) -> list:
-        """scored: [(text, score)]. Returns at most CAP texts."""
-        kept = [(t, s) for t, s in scored if s >= GATE]
+    def select(self, scored: list, gate: float = GATE) -> list:
+        """scored: [(text, score)]. Returns at most CAP texts.
+        gate is overridable: per-task calibration lowers it, and that is
+        when the 45% band does its cutting (at the default 0.58 the gate
+        dominates, which is intended)."""
+        kept = [(t, s) for t, s in scored if s >= gate]
         if not kept:
             return []
         best = max(s for _, s in kept)

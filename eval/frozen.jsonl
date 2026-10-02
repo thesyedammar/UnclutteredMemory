@@ -1,0 +1,5 @@
+{"text": "My stop-loss is 8%", "expect": "STORE"}
+{"text": "Buy the whole exchange lol", "expect": "DROP"}
+{"text": "ok", "expect": "DROP"}
+{"text": "I am Batman", "expect": "DROP"}
+{"text": "Rahul's number is 98xxx", "expect": "DROP"}

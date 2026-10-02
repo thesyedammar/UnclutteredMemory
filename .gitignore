@@ -1,23 +1,7 @@
-# Python
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
-venv/
+*.egg-info/
 dist/
 build/
-*.egg-info/
-
-# data and secrets
-*.db
-*.db-*
-.env
-.jev_key
-keys/
-
-# eval artifacts
-eval/out/
-eval/results/
-*.receipt.json
-
-# os
-.DS_Store
