@@ -227,3 +227,82 @@ def test_run_eval_green_with_clean_artifacts(tmp_path, capsys):
 
 def test_similarity_threshold_is_bounded():
     assert 0.5 <= CONTAMINATION_SIM <= 0.95
+
+
+TEXT_EXTS = ("yaml", "yml", "toml", "txt", "md")
+
+
+@pytest.mark.parametrize("ext", TEXT_EXTS)
+def test_text_artifact_split_field_flagged_per_extension(tmp_path, ext):
+    p = tmp_path / ("tuning." + ext)
+    p.write_text("task: general-qa\nsplit: test\n", encoding="utf-8")
+    flags = find_bad_artifacts(TEST_CASES, [str(p)])
+    assert len(flags) == 1
+    assert flags[0]["check"] == "split-field"
+    assert flags[0]["excerpt"] == "split=test"
+
+
+@pytest.mark.parametrize("ext", TEXT_EXTS)
+def test_text_artifact_toml_style_split_field_flagged(tmp_path, ext):
+    p = tmp_path / ("tuning." + ext)
+    p.write_text('task = "general-qa"\ntrained_on = "test"\n',
+                 encoding="utf-8")
+    flags = find_bad_artifacts(TEST_CASES, [str(p)])
+    assert len(flags) == 1
+    assert flags[0]["check"] == "split-field"
+    assert flags[0]["excerpt"] == "trained_on=test"
+
+
+@pytest.mark.parametrize("ext", TEXT_EXTS)
+def test_text_artifact_test_excerpt_flagged_per_extension(tmp_path, ext):
+    p = tmp_path / ("notes." + ext)
+    p.write_text("# tuning notes\nmy stop loss is 8 percent\n",
+                 encoding="utf-8")
+    flags = find_bad_artifacts(TEST_CASES, [str(p)])
+    assert len(flags) == 1
+    assert flags[0]["check"] == "exact-text"
+    assert flags[0]["excerpt"] == "my stop loss is 8 percent"
+
+
+@pytest.mark.parametrize("ext", TEXT_EXTS)
+def test_text_artifact_normalized_excerpt_flagged_per_extension(
+        tmp_path, ext):
+    p = tmp_path / ("notes." + ext)
+    p.write_text("My STOP-LOSS is 8 percent\n", encoding="utf-8")
+    flags = find_bad_artifacts(TEST_CASES, [str(p)])
+    assert len(flags) == 1
+    assert flags[0]["check"] == "normalized-text"
+
+
+@pytest.mark.parametrize("ext", TEXT_EXTS)
+def test_clean_text_artifact_not_flagged_per_extension(tmp_path, ext):
+    p = tmp_path / ("clean." + ext)
+    p.write_text("task: general-qa\nnotes: quarterly planning\n",
+                 encoding="utf-8")
+    assert find_bad_artifacts(TEST_CASES, [str(p)]) == []
+
+
+def test_missing_text_artifact_is_a_hard_error(tmp_path):
+    missing = tmp_path / "absent.txt"
+    with pytest.raises(ArtifactError) as ei:
+        find_bad_artifacts(TEST_CASES, [str(missing)])
+    assert "absent.txt" in str(ei.value)
+
+
+def test_default_paths_include_text_tuning_artifacts(tmp_path):
+    from eval.run import default_artifact_paths
+    (tmp_path / "thresholds").mkdir()
+    (tmp_path / "eval").mkdir()
+    wanted = {"notes.yaml": "thresholds", "tune.yml": "thresholds",
+              "tune.toml": "thresholds", "notes.txt": "thresholds",
+              "thresholds-notes.md": "eval"}
+    for name, sub in wanted.items():
+        (tmp_path / sub / name).write_text("clean notes\n",
+                                           encoding="utf-8")
+    (tmp_path / "eval" / "thresholds-notes.md").write_text(
+        "clean notes\n", encoding="utf-8")
+    paths = default_artifact_paths(tmp_path)
+    for name in ("notes.yaml", "tune.yml", "tune.toml", "notes.txt",
+                 "notes.md", "thresholds-notes.md"):
+        assert any(str(tmp_path) in p and p.endswith(name) for p in paths), \
+            (name, paths)

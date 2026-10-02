@@ -297,11 +297,32 @@ class Store:
         path: it increments the explicit error_count, emits one
         structured log line (time, op, input hash, error type), and
         propagates. It is never swallowed as a quarantine.
+
+        The counted partition covers the whole write path, not just
+        the vote: gate.decide failures log op "admit", while
+        failures inside the follow-up self.put or self.quarantine
+        (including the judge-halted quarantine write itself) log op
+        "admit.put" or "admit.quarantine", then propagate. The op
+        names which write step raised.
         """
+        def _counted(op: str, fn):
+            try:
+                return fn()
+            except Exception as e:
+                self.error_count += 1
+                _LOG.error(json.dumps({
+                    "time": time.time(),
+                    "op": op,
+                    "input_hash": content_hash(text),
+                    "error_type": type(e).__name__,
+                }, sort_keys=True))
+                raise
+
         try:
             d = gate.decide(text, [], [])
         except JevError:
-            self.quarantine(text, "judge-halted", source, user)
+            _counted("admit.quarantine", lambda: self.quarantine(
+                text, "judge-halted", source, user))
             return "QUARANTINE"
         except Exception as e:
             self.error_count += 1
@@ -313,7 +334,8 @@ class Store:
             }, sort_keys=True))
             raise
         if d.action == "STORE":
-            self.put(text, source, user)
+            _counted("admit.put", lambda: self.put(text, source, user))
         elif d.action == "QUARANTINE":
-            self.quarantine(text, ";".join(d.reasons), source, user)
+            _counted("admit.quarantine", lambda: self.quarantine(
+                text, ";".join(d.reasons), source, user))
         return d.action

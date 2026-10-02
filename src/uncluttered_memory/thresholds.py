@@ -46,6 +46,23 @@ RECALL_BAND = 0.45
 RECALL_CAP = 8
 
 # Packing budgets.
+#
+# Chars-as-proxy decision, stated plainly: INJECT_BUDGET_CHARS and
+# RECALL_PACK_BUDGET_CHARS are character counts, used as a cheap
+# proxy for model token budgets. The working rule is about 4 chars
+# per token for English prose, so 4000 chars is roughly 1000
+# tokens. Chars are chosen because they are exact, dependency free,
+# and stable across judges, while real tokenizers differ per model
+# and would tie packing to one tokenizer.
+#
+# Where the proxy can mis-split: it undercounts dense scripts
+# (CJK text carries near one token per char), overcounts
+# whitespace-heavy or repeated-char text, and cannot see real
+# token split points, so a budget cut can land mid-word or mid
+# token. Packing therefore cuts only on whole-card boundaries
+# (Injector.pack and Recall.pack never emit a partial card) rather
+# than slicing text at the char limit; the boundary error is at
+# most one card, never a half card.
 INJECT_BUDGET_CHARS = 4000
 RECALL_PACK_BUDGET_CHARS = 4000
 

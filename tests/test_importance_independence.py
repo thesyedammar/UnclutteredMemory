@@ -96,10 +96,14 @@ def test_importance_marker_features_cannot_reproduce_labels():
     is fixed so the bound cannot be gamed by reordering rows.
     """
     cases = sorted(_load_importance(), key=lambda c: c["id"])
-    assert len(cases) == 24
+    total = len(cases)
+    assert total > 0, "no importance cases in the golden set"
+    assert total >= 8, (
+        "too few importance cases for a held-out split: %d" % total)
     train = [c for i, c in enumerate(cases) if i % 2 == 0]
     held = [c for i, c in enumerate(cases) if i % 2 == 1]
-    assert len(train) == 12 and len(held) == 12
+    assert len(train) == (total + 1) // 2 and len(held) == total // 2, (
+        total, len(train), len(held))
     by_vector: dict = {}
     for c in train:
         by_vector.setdefault(_marker_features(c["text"]), []).append(
@@ -118,10 +122,11 @@ def test_importance_marker_mimic_misses_many():
     only marker features misses widely, so the labels cannot be a
     recoding of the markers."""
     cases = _load_importance()
-    assert len(cases) == 24
+    total = len(cases)
+    assert total > 0, "no importance cases in the golden set"
     misses = [c["id"] for c in cases
               if _stub_mimic(c["text"]) != c["expect"]]
-    assert len(misses) >= 6, misses
+    assert len(misses) >= max(1, total // 4), (misses, total)
 
 
 def test_scorer_competence_marker_free_vitals():

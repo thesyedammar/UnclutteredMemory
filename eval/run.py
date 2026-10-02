@@ -213,6 +213,37 @@ def artifact_strings(obj) -> list:
     return [obj] if isinstance(obj, str) else []
 
 
+#: Non-JSON tuning artifacts are scanned as raw text. JSON files are
+#: parsed and their strings walked; these extensions cannot be parsed
+#: as JSON, so the whole file text plus its lines are scanned for
+#: split-field keys and test-case excerpts instead of passing
+#: unscanned.
+TEXT_ARTIFACT_EXTS = frozenset(
+    {".yaml", ".yml", ".toml", ".txt", ".md"})
+
+#: Split-field keys: a tuning artifact claiming any of these with
+#: value "test" is flagged, in JSON bodies and in raw text alike.
+SPLIT_FIELDS = ("split", "tuned_on", "trained_on", "train_on", "fitted_on")
+
+_SPLIT_FIELD_RE = re.compile(
+    r"(?<!\w)(split|tuned_on|trained_on|train_on|fitted_on)"
+    r"\s*[:=]\s*['\"]?\s*test\s*['\"]?(?!\w)", re.IGNORECASE)
+
+
+def _split_field_hit_text(raw: str):
+    """First split-field key with test value in raw text, or None.
+
+    Matches `split: test`, `split = test`, `tuned_on: "test"` and
+    the same for trained_on/train_on/fitted_on, quoted or not. The
+    excerpt is normalized to `field=test` so JSON and text flags
+    report the same shape.
+    """
+    m = _SPLIT_FIELD_RE.search(raw)
+    if m is None:
+        return None
+    return "%s=test" % m.group(1).lower()
+
+
 EXCERPT_MAX = 120
 
 
@@ -241,6 +272,38 @@ def format_artifact_flag(flag: dict) -> str:
             % (flag["path"], flag["check"], score, flag["excerpt"]))
 
 
+def _flag_strings(p, strs: list, test_raw: set, test_hashes: set,
+                   test_norm: set, test_tokens: list):
+    """Run the text-excerpt checks over candidate strings.
+
+    Priority order: exact-text, content-hash, normalized-text, then
+    token-overlap. Returns a flag dict or None. Shared by the JSON
+    and raw-text scan paths so every extension meets the same bar.
+    """
+    for s in strs:
+        if s in test_raw:
+            return artifact_flag(p, "exact-text", 1.0, s)
+    for s in strs:
+        if s in test_hashes:
+            return artifact_flag(p, "content-hash", 1.0, s)
+    for s in strs:
+        n = normalize_for_compare(s)
+        if n and n in test_norm:
+            return artifact_flag(p, "normalized-text", 1.0, s)
+    best = (0.0, "")
+    for s in strs:
+        toks = token_set(s)
+        if len(toks) < CONTAMINATION_MIN_TOKENS:
+            continue
+        for tt in test_tokens:
+            ov = token_overlap(toks, tt)
+            if ov > best[0]:
+                best = (ov, s)
+    if best[0] >= CONTAMINATION_SIM:
+        return artifact_flag(p, "token-overlap", best[0], best[1])
+    return None
+
+
 def find_bad_artifacts(test_cases: list, paths: list) -> list:
     """Flag tuning artifacts that touch an eval set. One flag per file.
 
@@ -254,6 +317,15 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
     train_on/test, or fitted_on/test). An
     unreadable or malformed artifact is a hard ArtifactError listing
     the file: the scan fails closed and never silently skips a target.
+
+    JSON files (.json) are parsed and their strings walked. YAML,
+    TOML, plain-text and markdown files (.yaml, .yml, .toml, .txt,
+    .md) are scanned as raw text: the whole file plus each
+    non-empty line is checked against the test-case excerpts with
+    the same checks, and the raw text is matched for split-field
+    keys (`split: test`, `split = test`, quoted or not). Any other
+    extension is read as JSON, so a mislabeled tuning artifact
+    still meets the JSON bar instead of passing unscanned.
     """
     test_raw = set()
     test_norm = set()
@@ -269,6 +341,28 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
             test_hashes.add(text_hash(s))
     bad = []
     for p in paths:
+        ext = Path(p).suffix.lower()
+        if ext in TEXT_ARTIFACT_EXTS:
+            try:
+                with open(p, encoding="utf-8") as f:
+                    raw = f.read()
+            except (OSError, ValueError) as e:
+                raise ArtifactError(
+                    "unreadable tuning artifact %s (%s)" % (p, e))
+            if not raw.strip():
+                continue
+            lines = sorted({ln.strip() for ln in raw.splitlines()
+                            if ln.strip()})
+            strs = sorted(set(lines + [raw.strip()]))
+            flag = _flag_strings(p, strs, test_raw, test_hashes,
+                                 test_norm, test_tokens)
+            if flag is None:
+                hit = _split_field_hit_text(raw)
+                if hit is not None:
+                    flag = artifact_flag(p, "split-field", None, hit)
+            if flag is not None:
+                bad.append(flag)
+            continue
         try:
             with open(p, encoding="utf-8") as f:
                 data = json.load(f)
@@ -276,38 +370,11 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
             raise ArtifactError(
                 "unreadable tuning artifact %s (%s)" % (p, e))
         strs = sorted(set(artifact_strings(data)))
-        flag = None
-        for s in strs:
-            if s in test_raw:
-                flag = artifact_flag(p, "exact-text", 1.0, s)
-                break
-        if flag is None:
-            for s in strs:
-                if s in test_hashes:
-                    flag = artifact_flag(p, "content-hash", 1.0, s)
-                    break
-        if flag is None:
-            for s in strs:
-                n = normalize_for_compare(s)
-                if n and n in test_norm:
-                    flag = artifact_flag(p, "normalized-text", 1.0, s)
-                    break
-        if flag is None:
-            best = (0.0, "")
-            for s in strs:
-                toks = token_set(s)
-                if len(toks) < CONTAMINATION_MIN_TOKENS:
-                    continue
-                for tt in test_tokens:
-                    ov = token_overlap(toks, tt)
-                    if ov > best[0]:
-                        best = (ov, s)
-            if best[0] >= CONTAMINATION_SIM:
-                flag = artifact_flag(p, "token-overlap", best[0], best[1])
+        flag = _flag_strings(p, strs, test_raw, test_hashes,
+                             test_norm, test_tokens)
         if flag is None and isinstance(data, dict):
             hit = None
-            for _field in ("split", "tuned_on", "trained_on",
-                           "train_on", "fitted_on"):
+            for _field in SPLIT_FIELDS:
                 if data.get(_field) == "test":
                     hit = "%s=test" % _field
                     break
@@ -321,6 +388,9 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
 def default_artifact_paths(root: Path, extra=None) -> list:
     paths = glob.glob(str(root / "thresholds" / "*.json"))
     paths += glob.glob(str(root / "eval" / "thresholds*.json"))
+    for ext in sorted(TEXT_ARTIFACT_EXTS):
+        paths += glob.glob(str(root / "thresholds" / ("*" + ext)))
+        paths += glob.glob(str(root / "eval" / ("thresholds*" + ext)))
     if extra:
         paths.append(extra)
     return sorted(set(paths))

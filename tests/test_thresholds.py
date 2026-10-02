@@ -93,3 +93,29 @@ def test_recall_select_every_cutoff_is_a_parameter():
     many = [(str(i), 0.9) for i in range(12)]
     assert len(r.select(many, cap=3)) == 3
     assert len(r.select(many)) == th.RECALL_CAP
+
+
+def test_char_budget_proxy_is_documented_and_pinned():
+    """Chars-proxy boundary: budgets are char counts, packed whole-card.
+
+    thresholds.py documents why chars stand in for tokens (the 4x
+    rule), where the proxy mis-splits, and why packing cuts on
+    whole-card boundaries. This test pins the documented behavior:
+    the budget constants, the char (not token) accounting, and the
+    whole-card cut in both packers.
+    """
+    assert th.INJECT_BUDGET_CHARS == 4000
+    assert th.RECALL_PACK_BUDGET_CHARS == 4000
+    doc = (SRC / "thresholds.py").read_text(encoding="utf-8")
+    assert "4 chars" in doc or "4-char" in doc or "4x" in doc
+    assert "whole-card" in doc
+    assert "proxy" in doc
+    from uncluttered_memory.inject import Injector
+    small = "x" * 2500
+    packed = Injector().pack([(small, 1.0), (small, 0.9)])
+    assert packed == small  # second whole card would exceed 4000 chars
+    packed_r = Recall().pack([small, small])
+    assert packed_r == small
+    exact = "y" * (th.INJECT_BUDGET_CHARS - 1)
+    assert Injector().pack([(exact, 1.0)]) == exact
+    assert Recall().pack([exact]) == exact
