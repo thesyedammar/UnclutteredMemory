@@ -136,8 +136,10 @@ model, and never lets a stub answer in Jev's place.
 
 `human_override` documents and tests every action:
 
-- `restore` clears the tombstone fields on the fact; it goes live
-  again.
+- `restore` clears the tombstone fields on the fact and clears
+  conflict marks on both sides (own `conflict_with`, the counterpart
+  fact mark where it still points back, and any `conflicts`-table
+  rows naming the fact); it goes live again fully clean.
 - `retire` soft-tombstones the fact toward `--target-id` (required),
   records the reason, and stores the actor as `human`.
 - `tombstone` is the explicit alias of `retire`: the same soft
@@ -152,8 +154,14 @@ All three are reachable from the CLI and documented in its help:
     unclutter override --db memory.db --fact-id 3 --action tombstone \
         --target-id 5
 
-`Store.restore` is covered by tests including override-then-read-back
-and restore-of-tombstone. The exact-text fallback branch in `Store.put`
+`Store.restore` is covered by tests including override-then-read-back,
+restore-of-tombstone, and restore-of-conflict (both sides read fully
+clean, conflicts rows removed). `Store.put` dedupes by normalized
+content hash only, and a repeat put of tombstoned text resurrects the
+row as live with fresh source/created provenance (new put is new
+life), pinned by put-after-tombstone tests; `Store.supersede` routes
+its same-text path through `put` so it cannot silently return a dead
+id. The exact-text fallback branch in `Store.put`
 was dead code (a row whose text matches also carries the hash of that
 text) and was removed; the dedupe contract is by normalized content
 hash only, pinned by tests.

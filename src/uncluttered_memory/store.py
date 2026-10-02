@@ -83,6 +83,16 @@ class Store:
         self.db.commit()
 
     def put(self, text: str, source: str, user: str = "local") -> int:
+        """Insert or dedupe by normalized content hash.
+
+        Dedupe key is (user, text_hash). A repeat put of live text
+        returns the existing id (refreshing source when it changed).
+        A repeat put of tombstoned text resurrects the row as live:
+        the tombstone fields are cleared, source and created take the
+        new put values (new put is new life), and the same id is
+        returned, now visible in live(). No silent-swallow path: every
+        put either returns a live id or inserts a new live row.
+        """
         # Dedupe is by normalized content hash only. An exact-text
         # fallback used to sit here; it was dead (a row whose text
         # matches also carries the hash of that text, because every
@@ -90,10 +100,19 @@ class Store:
         # rows), so it was removed instead of kept as unreachable code.
         h = content_hash(text)
         row = self.db.execute(
-            "SELECT id, source FROM facts WHERE user=? AND text_hash=?",
+            "SELECT id, source, tombstoned_by FROM facts"
+            " WHERE user=? AND text_hash=?",
             (user, h)).fetchone()
         if row is not None:
-            fid, old_source = row
+            fid, old_source, tombstoned_by = row
+            if tombstoned_by is not None:
+                self.db.execute(
+                    "UPDATE facts SET text=?, source=?, created=?,"
+                    " tombstoned_by=NULL, tombstone_reason=NULL,"
+                    " tombstone_actor=NULL WHERE id=?",
+                    (text, source, time.time(), fid))
+                self.db.commit()
+                return fid
             if old_source != source:
                 self.db.execute("UPDATE facts SET source=? WHERE id=?",
                                 (source, fid))
@@ -120,7 +139,11 @@ class Store:
             return self.put(new_text, source)
         old_text, user = old
         if normalize(new_text) == normalize(old_text):
-            return old_id
+            # Same content would otherwise return the id without
+            # touching the row, which silently swallows a
+            # put-after-tombstone. Route through put() so a
+            # tombstoned row is resurrected as live.
+            return self.put(new_text, source, user)
         new_id = self.put(new_text, source, user)
         if new_id == old_id:
             return old_id
@@ -135,9 +158,33 @@ class Store:
         self.db.commit()
 
     def restore(self, fact_id: int) -> None:
+        """Restore a fact to fully clean live state.
+
+        Clears the tombstone fields and also clears conflict marks on
+        both sides: the fact's own conflict_with, the counterpart
+        fact's conflict_with (only where it still points back, so a
+        newer clash on the counterpart is never clobbered), and any
+        rows in the conflicts table naming this fact. A clash is a
+        pair property, so leaving one side marked after a human
+        restore would read as a dangling unresolved clash; the
+        restored fact and its former counterpart both read clean.
+        Repeat restores are safe no-ops.
+        """
+        row = self.db.execute(
+            "SELECT conflict_with FROM facts WHERE id=?",
+            (fact_id,)).fetchone()
+        counterpart = row[0] if row is not None else None
         self.db.execute(
             "UPDATE facts SET tombstoned_by=NULL, tombstone_reason=NULL,"
-            " tombstone_actor=NULL WHERE id=?", (fact_id,))
+            " tombstone_actor=NULL, conflict_with=NULL WHERE id=?",
+            (fact_id,))
+        if counterpart is not None:
+            self.db.execute(
+                "UPDATE facts SET conflict_with=NULL WHERE id=?"
+                " AND conflict_with=?", (counterpart, fact_id))
+        self.db.execute(
+            "DELETE FROM conflicts WHERE old_id=? OR new_id=?",
+            (fact_id, fact_id))
         self.db.commit()
 
     def mark_conflict(self, old_id: int, new_id: int,

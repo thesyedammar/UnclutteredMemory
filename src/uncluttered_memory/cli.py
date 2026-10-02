@@ -87,7 +87,8 @@ def main(argv=None) -> int:
                       help="id of the fact to act on")
     p_ov.add_argument(
         "--action", required=True, choices=("restore", "retire", "tombstone"),
-        help="restore: clear the tombstone fields and go live again; "
+        help="restore: clear the tombstone fields and conflict marks "
+             "(both sides) and go live again fully clean; "
              "retire: soft-tombstone the fact toward --target-id; "
              "tombstone: explicit alias of retire, same soft tombstone "
              "with actor human")

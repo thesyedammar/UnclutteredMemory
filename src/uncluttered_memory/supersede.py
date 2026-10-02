@@ -132,8 +132,11 @@ def human_override(store, fact_id: int, action: str, actor: str = "human",
                    target_id=None, reason: str = "") -> None:
     """Named-human override. Every action is documented and tested:
 
-    - restore: clear the tombstone fields on fact_id; it goes live
-      again (target_id and reason are ignored).
+    - restore: clear the tombstone fields on fact_id and clear
+      conflict marks on both sides (own conflict_with, the
+      counterpart fact mark where it still points back, and any
+      conflicts-table rows naming fact_id); it goes live again fully
+      clean (target_id and reason are ignored).
     - retire: soft-tombstone fact_id toward target_id (required); the
       stored reason defaults to "human-retire".
     - tombstone: explicit alias of retire, the same soft tombstone
