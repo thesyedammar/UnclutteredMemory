@@ -145,7 +145,8 @@ def token_jaccard(a: str, b: str) -> float:
 
 class Store:
     def __init__(self, path=":memory:",
-                 per_user_memory_cap: "int | None" = th.PER_USER_MEMORY_CAP):
+                 per_user_memory_cap: "int | None" = th.PER_USER_MEMORY_CAP,
+                 auto_spot: bool = True):
         # check_same_thread=False: the HTTP server reads this same
         # connection from handler threads. All server entry goes
         # through MemoryApp.handle, which serializes calls on its own
@@ -157,6 +158,31 @@ class Store:
         #: None means unbounded. Defaults to thresholds, and every
         #: test override passes a tiny value explicitly.
         self._per_user_memory_cap = per_user_memory_cap
+        #: Auto-activation bridge default for put(): after every fresh
+        #: insert the free suspicion screen runs against live rows in
+        #: the same user scope and flagged pairs go to the committee
+        #: (autospot.run_after_put). True by default, so the write
+        #: path spots clashes without a manual supersede call; raw
+        #: insert callers (the eval harness, manual-committee tests,
+        #: data migration) pass auto_spot=False or construct with
+        #: auto_spot=False. A per-call put(auto_spot=...) overrides
+        #: this default for one write.
+        self._auto_spot = auto_spot
+        #: Live dual-Jev pair for the auto bridge (None means the
+        #: offline Strict+Lenient committee only, no network). The
+        #: server sets this when the operator wires live judges;
+        #: tests pass stubbed pairs per call instead.
+        self.auto_live_pair: "object | None" = None
+        #: Shared server rate limiter for the auto bridge live path.
+        #: Checked (and charged) before each live pair vote only;
+        #: offline votes cost no budget. None means unbudgeted.
+        self.rate_limiter: "object | None" = None
+        #: Summary dict from the last fresh insert that ran the
+        #: bridge (autospot.run_after_put result), or None when the
+        #: last put merged, resurrected, hit an exact row, or ran
+        #: with the bridge off. Read-only signal for operators and
+        #: tests; never part of the stored facts.
+        self.last_autospot: "object | None" = None
         #: Explicit counter of unexpected exceptions raised inside
         #: admit(). Judge halts quarantine and do not count; coding
         #: bugs count here, are logged, and propagate.
@@ -199,6 +225,31 @@ class Store:
         n = self._live_count(user)
         if n >= cap:
             raise MemoryCapExceeded(user, cap, n)
+
+    def _maybe_autospot(self, new_id: int, text: str, user: str,
+                        auto_spot=None, relation_pair=None,
+                        live_pair=None, rate_limiter=None) -> None:
+        """Run the auto-activation bridge for one fresh insert.
+
+        auto_spot=None follows the Store default; False skips and
+        clears last_autospot. The autospot module is imported here,
+        not at the top, because it imports this module for the
+        token helpers (function-level import is the established
+        pattern for that cycle). Per-call judge and limiter
+        overrides fall back to the store attributes, which the
+        server wires and tests override per call.
+        """
+        enabled = self._auto_spot if auto_spot is None else auto_spot
+        if not enabled:
+            self.last_autospot = None
+            return
+        from . import autospot as _autospot
+        live = live_pair if live_pair is not None else self.auto_live_pair
+        limiter = (rate_limiter if rate_limiter is not None
+                   else self.rate_limiter)
+        self.last_autospot = _autospot.run_after_put(
+            self, new_id, text, user, relation_pair=relation_pair,
+            live_pair=live, rate_limiter=limiter)
 
     def _clear_tombstone_and_conflict_marks(self, fact_id: int) -> None:
         """Shared clean path for restore() and put() resurrection.
@@ -251,7 +302,8 @@ class Store:
     def put(self, text: str, source: str, user: str = "local",
             dedup_jaccard: float = th.DEDUP_JACCARD,
             gate_action=None, importance=None, judge=None,
-            decided_at=None) -> int:
+            decided_at=None, auto_spot=None, relation_pair=None,
+            live_pair=None, rate_limiter=None) -> int:
         """Insert or dedupe: exact normalized content hash, then near-duplicate.
 
         Stage one is the exact dedupe key (user, text_hash). A repeat
@@ -288,12 +340,32 @@ class Store:
         time from a judged row). Exact-live and near-dupe hits only
         refresh the provided fields, so a plain re-put keeps the
         judged provenance already on the row.
+
+        Auto-activation bridge: only a genuinely fresh insert (past
+        both dedupe stages and the memory cap) runs it. The new row
+        is screened free against live rows in the same user scope
+        and flagged pairs go to the committee, whose verdict applies
+        (tombstone, conflict-mark, or keep) with auto-spot
+        provenance. auto_spot=None follows the Store default (on);
+        pass False for a raw insert with no screening. relation_pair
+        overrides the offline committee (fixture votes in tests);
+        live_pair selects the live dual-Jev path for this write
+        (else the store auto_live_pair, else offline only, no
+        network). rate_limiter budgets live votes only (else the
+        store rate_limiter). The bridge summary lands on
+        self.last_autospot; merges, exact hits, and resurrections
+        leave it None and never screen.
         """
         # Exact dedupe is by normalized content hash. An exact-text
         # fallback used to sit here; it was dead (a row whose text
         # matches also carries the hash of that text, because every
         # write computes the hash and the migration backfills legacy
         # rows), so it was removed instead of kept as unreachable code.
+        #
+        # last_autospot describes the most recent put only: cleared
+        # here so a merge, exact hit, or resurrection never reports a
+        # stale bridge summary from an earlier fresh insert.
+        self.last_autospot = None
         h = content_hash(text)
         row = self.db.execute(
             "SELECT id, source, tombstoned_by FROM facts"
@@ -348,6 +420,11 @@ class Store:
              importance, judge, decided_at))
         self.db.commit()
         assert cur.lastrowid is not None
+        self._maybe_autospot(cur.lastrowid, text, user,
+                             auto_spot=auto_spot,
+                             relation_pair=relation_pair,
+                             live_pair=live_pair,
+                             rate_limiter=rate_limiter)
         return cur.lastrowid
 
     def get(self, fact_id: int):
@@ -666,6 +743,11 @@ class Store:
         time (gate_action, importance, judge, decided_at); get()
         and live() return them. QUARANTINE and DROP write no facts
         row, so they store no row provenance.
+
+        A STOREd row is a fresh insert, so the auto-activation
+        bridge runs for it (free screen plus committee, verdict
+        applied with auto-spot provenance); the summary lands on
+        last_autospot.
         """
         def _counted(op: str, fn):
             try:

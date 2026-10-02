@@ -134,6 +134,42 @@ RECALL_CAP = 8
 # near-duplicates, not deep semantic equivalence.
 DEDUP_JACCARD = 0.85
 
+# Auto-spot suspicion screen (Store.put fresh-insert bridge, autospot.py).
+#
+# After every fresh insert, put scores the new text by token-set
+# Jaccard against live rows in the same user scope and flags pairs
+# at or above AUTOSPOT_MIN_JACCARD that also carry a change signal
+# (an update/negation marker in the new text, or a differing
+# content detail). Flagged pairs go to the existing committee
+# (offline Strict+Lenient pair, live dual-Jev path where wired);
+# the committee verdict applies, never the screen.
+#
+# Threshold choice, stated plainly with measured anchors: dedupe
+# merges at DEDUP_JACCARD above, so the screen must sit well below
+# it to catch reworded same-slot updates. On the frozen relation
+# fixtures the weakest genuine same-slot update scores 0.40
+# ("the office is at 1 Main St" vs "the office moved to 2 Main
+# St": 4 shared tokens over a 10-token union), while a clearly
+# disjoint pair scores 0.33 ("the kettle is blue" vs "the toaster
+# is silver"). AUTOSPOT_MIN_JACCARD sits below the weakest genuine
+# update with margin, so the screen favors recall: a disjoint pair
+# that passes is vetoed to KEEP by the committee (free offline,
+# capped live), while a missed clash would live on as a silent
+# contradiction. The screen never merges or tombstones; it only
+# nominates, and deep paraphrases with little token overlap stay
+# below it by construction (same documented limit as dedupe).
+AUTOSPOT_MIN_JACCARD = 0.30
+
+# Auto-spot committee cap (autospot.run_after_put).
+#
+# At most this many flagged pairs reach the committee per fresh
+# insert, strongest suspicion score first. Bounds the per-write
+# committee cost: the live path asks two differently worded Jev
+# questions per pair, so the worst case is twice this many live
+# calls per write, well inside the per-minute server rate budget.
+# Offline votes cost no budget and no network.
+AUTOSPOT_MAX_PAIRS_PER_WRITE = 5
+
 # RuleJudge vote levels: heuristic stub outputs, not decision cutoffs.
 # The cutoffs that read these live above. Centralized here so the
 # threshold-pin test covers every numeric literal the judge path

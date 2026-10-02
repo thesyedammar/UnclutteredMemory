@@ -482,7 +482,7 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
             got = gate.judge.vote(c["text"], [], []).importance
             ok = got == c["expect"]
         elif suite == "dedupe":
-            s = Store()
+            s = Store(auto_spot=False)
             if collect_stores is not None:
                 collect_stores.append(s)
             a = s.put(c["text"], "eval")
@@ -490,7 +490,12 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
             got = "DUP" if a == b else "DISTINCT"
             ok = got == c["expect"]
         elif suite == "contradict":
-            s = Store()
+            # Raw inserts: this suite measures the committee votes in
+            # isolation (decide plus apply below). The auto bridge
+            # would pre-apply the same verdict on agree cases and
+            # double-count the conflicts row; the bridge has its own
+            # tests in tests/test_autospot.py.
+            s = Store(auto_spot=False)
             if collect_stores is not None:
                 collect_stores.append(s)
             old_id = s.put(c["old"], "eval")
@@ -516,7 +521,10 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
                       and s.tombstoned() == []
                       and s.conflicts() == [])
         elif suite == "supersede":
-            s = Store()
+            # Raw inserts, same contract as the contradict suite
+            # above: committee votes measured in isolation, the auto
+            # bridge covered by its own tests.
+            s = Store(auto_spot=False)
             if collect_stores is not None:
                 collect_stores.append(s)
             old_id = s.put(c["old"], "eval")

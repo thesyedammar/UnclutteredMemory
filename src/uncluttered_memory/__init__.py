@@ -2,10 +2,11 @@ from .gate import Gate, GateDecision, GateVote, RuleJudge, FakeJudge
 from .store import Store
 from .recall import Recall
 from .inject import Injector
-from . import supersede, calibrate
+from . import supersede, calibrate, autospot
 
 __all__ = [
     "Gate", "GateDecision", "GateVote", "RuleJudge", "FakeJudge",
     "Store", "Recall", "Injector", "supersede", "calibrate",
+    "autospot",
 ]
 __version__ = "0.1.0"

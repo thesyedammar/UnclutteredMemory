@@ -60,7 +60,9 @@ def test_unrelated_agreed_keeps_both():
 
 
 def test_agreed_contradict_marks_both_never_tombstones():
-    s = Store()
+    # Raw inserts: manual decide plus apply in isolation; the auto
+    # bridge pre-applying the same verdict is covered separately.
+    s = Store(auto_spot=False)
     old = s.put("I love tea", "user")
     new = s.put("I do not love tea anymore", "user")
     rj = supmod.FakeRelationJudge(

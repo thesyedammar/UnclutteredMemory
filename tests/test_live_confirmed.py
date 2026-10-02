@@ -113,7 +113,7 @@ def test_live_pair_disagreement_vetoes():
     assert dec.action == "KEEP" and not dec.agreed
     assert "live-pair-disagree" in dec.reasons
     s_store = __import__("uncluttered_memory.store",
-                         fromlist=["Store"]).Store()
+                         fromlist=["Store"]).Store(auto_spot=False)
     old_id = s_store.put(old, "t")
     new_id = s_store.put(new, "t")
     assert supmod.apply(s_store, old_id, new_id, dec) is False

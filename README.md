@@ -310,13 +310,36 @@ life), pinned by put-after-tombstone tests; `Store.supersede` routes
 its same-text path through `put` so it cannot silently return a dead
 id. Supersede is scope-explicit: the caller user threads every path,
 a caller scope that differs from the row owner raises ValueError
-with nothing written, a missing id with an explicit user stores in
-that caller scope, and a missing id without a user raises KeyError
-instead of landing a row in the default scope. The exact-text fallback branch in `Store.put`
+with nothing written, and a missing id raises `OrphanSupersedeError`
+(a `KeyError`) with nothing written anywhere, so the caller
+re-issues the write as an explicit `put` once the id is confirmed.
+The exact-text fallback branch in `Store.put`
 was dead code (a row whose text matches also carries the hash of that
 text) and was removed; exact dedupe is by normalized content
 hash, with the token-set near-duplicate stage above it, both pinned
 by tests.
+
+Auto-activation bridge (`src/uncluttered_memory/autospot.py`): every
+fresh `Store.put` insert runs it (on by default; `auto_spot=False`
+for a raw insert, and the eval harness uses raw inserts so the
+contradict/supersede suites keep measuring committee votes in
+isolation). A free suspicion screen (token overlap at
+`AUTOSPOT_MIN_JACCARD` = 0.30 plus a change marker or a differing
+content detail, same-user live rows only) nominates pairs, and the
+existing committee decides: the offline Strict+Lenient pair by
+default (no network), the live dual-Jev path where the operator
+wired a live pair (live plus offline agreement required for any
+destructive act). An agreed supersede tombstones with reason
+`supersede-auto-spot`, an agreed clash conflict-marks with reason
+`conflict_unresolved-auto-spot`, both with actor `auto-spot`, so
+auto rows read apart from manual (`code`) and human rows; vetoes
+and KEEP write nothing. At most `AUTOSPOT_MAX_PAIRS_PER_WRITE` (5)
+flagged pairs reach the committee per write, strongest first, and
+the live path shares the server rate limiter (offline votes spend
+no budget; an exhausted budget stops the run, and a halted judge
+keeps both facts live and reports it). Limits, stated plainly: the
+screen nominates, never decides; deep paraphrases with little token
+overlap stay below it by construction, same as dedupe.
 
 Row provenance, exactly as stored: each facts row carries
 `gate_action` (the gate verdict, `STORE` on judged rows),

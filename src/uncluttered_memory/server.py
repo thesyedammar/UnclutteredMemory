@@ -135,14 +135,25 @@ class MemoryApp:
     store: the real Store. judge: a JudgeClient (offline RuleJudge in
     tests and the default serve path; a live Jev judge only when the
     operator wires one explicitly). limiter: RateLimiter. kill_file:
-    optional path whose existence refuses every call.
+    optional path whose existence refuses every call. live_pair: an
+    optional live dual-Jev relation pair for the auto-activation
+    bridge (None means the offline committee only, no network).
     """
 
-    def __init__(self, store: Store, judge, limiter=None, kill_file=None):
+    def __init__(self, store: Store, judge, limiter=None, kill_file=None,
+                 live_pair=None):
         self.store = store
         self.judge = judge
         self.limiter = limiter or RateLimiter()
         self.kill_file = kill_file
+        # The auto bridge live path shares the server per-minute
+        # budget, so committee votes cost budget like any request;
+        # offline votes cost nothing. Pre-wired store budgets are
+        # respected, never overwritten.
+        if getattr(store, "rate_limiter", None) is None:
+            store.rate_limiter = self.limiter
+        if live_pair is not None:
+            store.auto_live_pair = live_pair
         self.recall = Recall()
         self.injector = Injector()
         # Serializes handler threads onto the one Store connection.

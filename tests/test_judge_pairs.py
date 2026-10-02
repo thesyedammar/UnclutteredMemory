@@ -114,7 +114,10 @@ def test_agreed_supersede_proceeds_only_on_genuine_agreement():
 
 def test_agreed_conflict_marks_both_never_tombstones():
     old, new = "I love morning runs", "I do not love morning runs anymore"
-    s = Store()
+    # Raw inserts: this test measures manual decide plus apply. The
+    # auto bridge would pre-apply the same agreed verdict (covered
+    # in tests/test_autospot.py).
+    s = Store(auto_spot=False)
     old_id = s.put(old, "user")
     new_id = s.put(new, "user")
     dec = supmod.decide(old, new, *offline_relation_pair())
