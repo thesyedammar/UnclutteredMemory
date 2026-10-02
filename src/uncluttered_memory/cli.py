@@ -24,15 +24,17 @@ def do_calibrate(task: str, out) -> int:
     mod = _eval()
     cases = mod.load_cases(mod.CASES_FILE)
     train, test = mod.split_cases(cases)
+    train_admit = [c for c in train if c.get("suite") == "admit"]
+    test_admit = [c for c in test if c.get("suite") == "admit"]
     judge = RuleJudge()
     out = out or str(REPO / "thresholds" / (task + ".json"))
     reg = calmod.calibrate_gate(
-        train, task, out,
+        train_admit, task, out,
         lambda c: judge.vote(c["text"], [], []).durable)
     print("wrote %s task=%s admit.durable=%.2f train_n=%d train_f1=%.3f"
           " (test split untouched, n=%d)" %
-          (out, task, reg["report"]["threshold"], len(train),
-           reg["report"]["f1"], len(test)))
+          (out, task, reg["report"]["threshold"], len(train_admit),
+           reg["report"]["f1"], len(test_admit)))
     return 0
 
 

@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS facts (
   tombstoned_by INTEGER,
   tombstone_reason TEXT,
   tombstone_actor TEXT,
+  conflict_with INTEGER,
   UNIQUE(user, text_hash)
 );
 CREATE TABLE IF NOT EXISTS quarantine (
@@ -29,9 +30,20 @@ CREATE TABLE IF NOT EXISTS quarantine (
   user TEXT NOT NULL DEFAULT 'local',
   created REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS conflicts (
+  id INTEGER PRIMARY KEY,
+  old_id INTEGER NOT NULL,
+  new_id INTEGER NOT NULL,
+  relation TEXT NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  actor TEXT NOT NULL DEFAULT 'code',
+  created REAL NOT NULL
+);
 """
 
-_MIGRATE_COLS = ("text_hash", "user", "tombstone_reason", "tombstone_actor")
+_MIGRATE_COLS = {"text_hash": "TEXT", "user": "TEXT",
+                 "tombstone_reason": "TEXT", "tombstone_actor": "TEXT",
+                 "conflict_with": "INTEGER"}
 
 
 def normalize(text: str) -> str:
@@ -47,10 +59,11 @@ class Store:
         self.db = sqlite3.connect(path)
         self.db.executescript(SCHEMA)
         have = {r[1] for r in self.db.execute("PRAGMA table_info(facts)")}
-        for col in _MIGRATE_COLS:
+        for col, typ in _MIGRATE_COLS.items():
             if col not in have:
                 try:
-                    self.db.execute("ALTER TABLE facts ADD COLUMN %s TEXT" % col)
+                    self.db.execute(
+                        "ALTER TABLE facts ADD COLUMN %s %s" % (col, typ))
                 except sqlite3.OperationalError:
                     pass
         for fid, text in self.db.execute(
@@ -86,7 +99,7 @@ class Store:
     def get(self, fact_id: int):
         return self.db.execute(
             "SELECT id, text, source, user, tombstoned_by,"
-            " tombstone_reason, tombstone_actor"
+            " tombstone_reason, tombstone_actor, conflict_with"
             " FROM facts WHERE id=?", (fact_id,)).fetchone()
 
     def supersede(self, old_id: int, new_text: str, source: str,
@@ -116,6 +129,32 @@ class Store:
             "UPDATE facts SET tombstoned_by=NULL, tombstone_reason=NULL,"
             " tombstone_actor=NULL WHERE id=?", (fact_id,))
         self.db.commit()
+
+    def mark_conflict(self, old_id: int, new_id: int,
+                      reason: str = "conflict_unresolved",
+                      actor: str = "code") -> None:
+        """Mark an unresolved clash: both facts stay live and both rows
+        carry the counterpart mark, plus a row in the conflicts table."""
+        self.db.execute(
+            "INSERT INTO conflicts(old_id, new_id, relation, reason, actor,"
+            " created) VALUES(?,?,?,?,?,?)",
+            (old_id, new_id, "conflict_unresolved", reason, actor, time.time()))
+        self.db.execute("UPDATE facts SET conflict_with=? WHERE id=?",
+                        (new_id, old_id))
+        self.db.execute("UPDATE facts SET conflict_with=? WHERE id=?",
+                        (old_id, new_id))
+        self.db.commit()
+
+    def conflicts(self, user=None) -> list:
+        """Unresolved-clash pairs. Both member facts are still live."""
+        if user is None:
+            return self.db.execute(
+                "SELECT old_id, new_id, relation, reason, actor"
+                " FROM conflicts ORDER BY id").fetchall()
+        return self.db.execute(
+            "SELECT c.old_id, c.new_id, c.relation, c.reason, c.actor"
+            " FROM conflicts c JOIN facts f ON f.id=c.old_id"
+            " WHERE f.user=? ORDER BY c.id", (user,)).fetchall()
 
     def live(self, user=None) -> list:
         if user is None:

@@ -7,13 +7,17 @@ each entry is {type: noul|choice|score, instructions, criteria?}; answers
 come back id-keyed with `noul`/`probability` (0..1), `choice`, or a
 level.
 
-One model only: jev-1.13-free. There is no fallback model anywhere in
+ONE model only: jev-1.13-free. There is no fallback model anywhere in
 this project. On HTTP 429 the client raises RateLimited (with retry-
 after when the route sends one) and every caller halts with a plain
 message telling the operator the free window is rate-limited; pending
 items sit in quarantine and are never voted by any stub. The stubs are
 for offline unit tests only, by explicit opt-in, and are never labeled
 as Jev.
+
+Importance answers use the choice criteria s0..s4 (trivial ..
+critical constraint) and map onto the 1..5 design scale (s0 -> 1,
+s4 -> 5). A choice that cannot be read maps to -1 and fails closed.
 """
 from __future__ import annotations
 
@@ -24,6 +28,7 @@ import urllib.error
 import urllib.request
 
 from .gate import GateVote, JudgeClient
+from .supersede import RelationJudge
 
 ENDPOINT = "https://opencode.ai/zen/v1/systemone"
 MODEL_ENV = "UNCLUTTER_JEV_MODEL"
@@ -82,6 +87,22 @@ class JevJudgeClient(JudgeClient):
         if kind == "choice":
             return answer.get("choice", "")
         return answer.get("score", answer.get("level", -1))
+
+    @staticmethod
+    def _importance_choice(choice) -> int:
+        """s0 trivial .. s4 critical constraint -> design scale 1..5.
+
+        Anything unreadable maps to -1 so the caller fails closed.
+        """
+        if not isinstance(choice, str) or len(choice) < 2 or choice[0] != "s":
+            return -1
+        try:
+            level = int(choice[1:])
+        except ValueError:
+            return -1
+        if 0 <= level <= 4:
+            return level + 1
+        return -1
 
     @property
     def blocked(self) -> bool:
@@ -180,10 +201,7 @@ class JevJudgeClient(JudgeClient):
         durable = float(self._answer_value(a_dur, "noul"))
         if durable < 0.0 or durable > 1.0:
             raise JevError("out-of-range Jev answer")
-        try:
-            importance = int(a_imp.get("choice", "s-1")[1:])
-        except (TypeError, ValueError, IndexError):
-            importance = -1
+        importance = self._importance_choice(a_imp.get("choice"))
         sensitive = float(self._answer_value(a_sens, "noul"))
         stopv = 0.0 if a_stop.get("choice") == "s1" else 1.0
         if importance < 1 or importance > 5 or not 0.0 <= sensitive <= 1.0:
@@ -197,7 +215,7 @@ class JevJudgeClient(JudgeClient):
         return self._judge_vote(text)
 
 
-class JevRelationJudge:
+class JevRelationJudge(RelationJudge):
     """Relation judge over the same native protocol."""
 
     RELATION_OPTIONS = ("supersede", "coexist", "conflict_unresolved")
@@ -227,7 +245,7 @@ class JevRelationJudge:
         return (answers["rel"] or {}).get("choice", "")
 
 
-class RuleRelationJudge:
+class RuleRelationJudge(RelationJudge):
     """Deterministic offline relation stub, keyed by text features."""
 
     def __init__(self, agree_both: str = "supersede"):
@@ -244,5 +262,5 @@ class RuleRelationJudge:
         if "not " in new and any(w in new for w in
                                  ("anymore", "never", "no longer",
                                   "stop", "hate")):
-            return "contradict"
+            return "conflict_unresolved"
         return "unrelated"

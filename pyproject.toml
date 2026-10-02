@@ -13,6 +13,16 @@ dependencies = []
 [project.scripts]
 unclutter = "uncluttered_memory.cli:main"
 
+[tool.setuptools]
+package-dir = { "" = "src" }
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["uncluttered_memory*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Repo-root relative imports for the tests: src holds the package,
+# "." makes the eval harness importable. The package itself installs
+# with pip install -e . (src layout, package-dir above).
+pythonpath = ["src", "."]

@@ -1,5 +1,648 @@
-{"text": "My stop-loss is 8%", "expect": "STORE"}
-{"text": "Buy the whole exchange lol", "expect": "DROP"}
-{"text": "ok", "expect": "DROP"}
-{"text": "I am Batman", "expect": "DROP"}
-{"text": "Rahul's number is 98xxx", "expect": "DROP"}
+{"expect": "STORE", "id": "admit-durable-percent-0000", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 4%"}
+{"expect": "STORE", "id": "admit-durable-percent-0001", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 4% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0002", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 4% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0003", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 4%"}
+{"expect": "STORE", "id": "admit-durable-percent-0004", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 5%"}
+{"expect": "STORE", "id": "admit-durable-percent-0005", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 5% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0006", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 5% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0007", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 5%"}
+{"expect": "STORE", "id": "admit-durable-percent-0008", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 6%"}
+{"expect": "STORE", "id": "admit-durable-percent-0009", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 6% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0010", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 6% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0011", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 6%"}
+{"expect": "STORE", "id": "admit-durable-percent-0012", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 7%"}
+{"expect": "STORE", "id": "admit-durable-percent-0013", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 7% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0014", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 7% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0015", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 7%"}
+{"expect": "STORE", "id": "admit-durable-percent-0016", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 8%"}
+{"expect": "STORE", "id": "admit-durable-percent-0017", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 8% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0018", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 8% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0019", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 8%"}
+{"expect": "STORE", "id": "admit-durable-percent-0020", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 9%"}
+{"expect": "STORE", "id": "admit-durable-percent-0021", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 9% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0022", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 9% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0023", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 9%"}
+{"expect": "STORE", "id": "admit-durable-percent-0024", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 10%"}
+{"expect": "STORE", "id": "admit-durable-percent-0025", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 10% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0026", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 10% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0027", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 10%"}
+{"expect": "STORE", "id": "admit-durable-percent-0028", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 11%"}
+{"expect": "STORE", "id": "admit-durable-percent-0029", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 11% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0030", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 11% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0031", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 11%"}
+{"expect": "STORE", "id": "admit-durable-percent-0032", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 12%"}
+{"expect": "STORE", "id": "admit-durable-percent-0033", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 12% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0034", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 12% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0035", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 12%"}
+{"expect": "STORE", "id": "admit-durable-percent-0036", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 15%"}
+{"expect": "STORE", "id": "admit-durable-percent-0037", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 15% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0038", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 15% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0039", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 15%"}
+{"expect": "STORE", "id": "admit-durable-percent-0040", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 20%"}
+{"expect": "STORE", "id": "admit-durable-percent-0041", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 20% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0042", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 20% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0043", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 20%"}
+{"expect": "STORE", "id": "admit-durable-percent-0044", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "My stop-loss is 25%"}
+{"expect": "STORE", "id": "admit-durable-percent-0045", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "stop-loss set at 25% on entry"}
+{"expect": "STORE", "id": "admit-durable-percent-0046", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "keep the 25% stop loss tight"}
+{"expect": "STORE", "id": "admit-durable-percent-0047", "kind": "durable-percent", "provenance": "synthetic-rule", "suite": "admit", "text": "exit plan: stop-loss at 25%"}
+{"expect": "STORE", "id": "admit-durable-deadline-0000", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "The report deadline is Friday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0001", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "report deadline: Friday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0002", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "the deadline for the report is Friday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0003", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "Friday is the report deadline"}
+{"expect": "STORE", "id": "admit-durable-deadline-0004", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "sprint deadline is Monday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0005", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "the sprint deadline lands on Monday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0006", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "Monday carries the sprint deadline"}
+{"expect": "STORE", "id": "admit-durable-deadline-0007", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "sprint: deadline Monday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0008", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "tax deadline is March 15"}
+{"expect": "STORE", "id": "admit-durable-deadline-0009", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "the March 15 tax deadline stands"}
+{"expect": "STORE", "id": "admit-durable-deadline-0010", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "tax filing deadline: March 15"}
+{"expect": "STORE", "id": "admit-durable-deadline-0011", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "March 15 is the tax deadline"}
+{"expect": "STORE", "id": "admit-durable-deadline-0012", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "the grant deadline fell on Tuesday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0013", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "grant deadline was Tuesday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0014", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "Tuesday held the grant deadline"}
+{"expect": "STORE", "id": "admit-durable-deadline-0015", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "the grant deadline was moved to Tuesday"}
+{"expect": "STORE", "id": "admit-durable-deadline-0016", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "deadline for the migration is end of quarter"}
+{"expect": "STORE", "id": "admit-durable-deadline-0017", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "migration deadline: end of quarter"}
+{"expect": "STORE", "id": "admit-durable-deadline-0018", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "the migration deadline is end of quarter"}
+{"expect": "STORE", "id": "admit-durable-deadline-0019", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "end of quarter is the migration deadline"}
+{"expect": "STORE", "id": "admit-durable-deadline-0020", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "submission deadline is the thirtieth"}
+{"expect": "STORE", "id": "admit-durable-deadline-0021", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "the thirtieth is the submission deadline"}
+{"expect": "STORE", "id": "admit-durable-deadline-0022", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "submission: deadline the thirtieth"}
+{"expect": "STORE", "id": "admit-durable-deadline-0023", "kind": "durable-deadline", "provenance": "synthetic-rule", "suite": "admit", "text": "we submit by the thirtieth, that deadline stands"}
+{"expect": "STORE", "id": "admit-durable-preference-0000", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "I prefer aisle seats on flights"}
+{"expect": "STORE", "id": "admit-durable-preference-0001", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "aisle seats on flights are my preference"}
+{"expect": "STORE", "id": "admit-durable-preference-0002", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "flights: I prefer aisle seats"}
+{"expect": "STORE", "id": "admit-durable-preference-0003", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "I always prefer an aisle seat when flying"}
+{"expect": "STORE", "id": "admit-durable-preference-0004", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "prefer tea over coffee in the morning"}
+{"expect": "STORE", "id": "admit-durable-preference-0005", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "mornings: tea over coffee, that is my preference"}
+{"expect": "STORE", "id": "admit-durable-preference-0006", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "I prefer tea to coffee in the morning"}
+{"expect": "STORE", "id": "admit-durable-preference-0007", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "tea in the morning, coffee later, that is the preference"}
+{"expect": "STORE", "id": "admit-durable-preference-0008", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "I prefer standup notes in the evening"}
+{"expect": "STORE", "id": "admit-durable-preference-0009", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "evening standup notes are what I prefer"}
+{"expect": "STORE", "id": "admit-durable-preference-0010", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "standup notes in the evening, that is my preference"}
+{"expect": "STORE", "id": "admit-durable-preference-0011", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "I prefer the standup notes to land in the evening"}
+{"expect": "STORE", "id": "admit-durable-preference-0012", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "prefer to review code before lunch"}
+{"expect": "STORE", "id": "admit-durable-preference-0013", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "before lunch is when I prefer reviewing code"}
+{"expect": "STORE", "id": "admit-durable-preference-0014", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "I prefer reviewing code before lunch"}
+{"expect": "STORE", "id": "admit-durable-preference-0015", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "code review before lunch is the preference"}
+{"expect": "STORE", "id": "admit-durable-preference-0016", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "I always prefer the earlier train"}
+{"expect": "STORE", "id": "admit-durable-preference-0017", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "the earlier train is what I always prefer"}
+{"expect": "STORE", "id": "admit-durable-preference-0018", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "earlier trains: always my preference"}
+{"expect": "STORE", "id": "admit-durable-preference-0019", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "I prefer the earlier train, always"}
+{"expect": "STORE", "id": "admit-durable-preference-0020", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "she prefers the monthly billing plan"}
+{"expect": "STORE", "id": "admit-durable-preference-0021", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "the monthly billing plan is her preference"}
+{"expect": "STORE", "id": "admit-durable-preference-0022", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "monthly billing: her preference"}
+{"expect": "STORE", "id": "admit-durable-preference-0023", "kind": "durable-preference", "provenance": "synthetic-rule", "suite": "admit", "text": "she always prefers monthly billing"}
+{"expect": "DROP", "id": "admit-filler-0000", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "ok"}
+{"expect": "DROP", "id": "admit-filler-0001", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "k"}
+{"expect": "DROP", "id": "admit-filler-0002", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "fine"}
+{"expect": "DROP", "id": "admit-filler-0003", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "sure"}
+{"expect": "DROP", "id": "admit-filler-0004", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "yes"}
+{"expect": "DROP", "id": "admit-filler-0005", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "no"}
+{"expect": "DROP", "id": "admit-filler-0006", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "hey"}
+{"expect": "DROP", "id": "admit-filler-0007", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "hi"}
+{"expect": "DROP", "id": "admit-filler-0008", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "hello"}
+{"expect": "DROP", "id": "admit-filler-0009", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "thanks"}
+{"expect": "DROP", "id": "admit-filler-0010", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "thx"}
+{"expect": "DROP", "id": "admit-filler-0011", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "cool"}
+{"expect": "DROP", "id": "admit-filler-0012", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "nice"}
+{"expect": "DROP", "id": "admit-filler-0013", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "yo"}
+{"expect": "DROP", "id": "admit-filler-0014", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Ok"}
+{"expect": "DROP", "id": "admit-filler-0015", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "K"}
+{"expect": "DROP", "id": "admit-filler-0016", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Fine"}
+{"expect": "DROP", "id": "admit-filler-0017", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Sure"}
+{"expect": "DROP", "id": "admit-filler-0018", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Yes"}
+{"expect": "DROP", "id": "admit-filler-0019", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "No"}
+{"expect": "DROP", "id": "admit-filler-0020", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Hey"}
+{"expect": "DROP", "id": "admit-filler-0021", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Hi"}
+{"expect": "DROP", "id": "admit-filler-0022", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Hello"}
+{"expect": "DROP", "id": "admit-filler-0023", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Thanks"}
+{"expect": "DROP", "id": "admit-filler-0024", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Thx"}
+{"expect": "DROP", "id": "admit-filler-0025", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Cool"}
+{"expect": "DROP", "id": "admit-filler-0026", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Nice"}
+{"expect": "DROP", "id": "admit-filler-0027", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "Yo"}
+{"expect": "DROP", "id": "admit-filler-0028", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "OK"}
+{"expect": "DROP", "id": "admit-filler-0029", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "SURE"}
+{"expect": "DROP", "id": "admit-filler-0030", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "YES"}
+{"expect": "DROP", "id": "admit-filler-0031", "kind": "filler", "provenance": "synthetic-rule", "suite": "admit", "text": "NO"}
+{"expect": "DROP", "id": "admit-play-0000", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "that was funny lol"}
+{"expect": "DROP", "id": "admit-play-0001", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "buy the whole exchange lol"}
+{"expect": "DROP", "id": "admit-play-0002", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "ship it lmao"}
+{"expect": "DROP", "id": "admit-play-0003", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "haha nice one"}
+{"expect": "DROP", "id": "admit-play-0004", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "rofl that spec"}
+{"expect": "DROP", "id": "admit-play-0005", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "lol the meeting ran long"}
+{"expect": "DROP", "id": "admit-play-0006", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "that plan is done lol"}
+{"expect": "DROP", "id": "admit-play-0007", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "nice work lmao"}
+{"expect": "DROP", "id": "admit-play-0008", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "haha the printer died"}
+{"expect": "DROP", "id": "admit-play-0009", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "rofl the build failed"}
+{"expect": "DROP", "id": "admit-play-0010", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "lol friday deploy"}
+{"expect": "DROP", "id": "admit-play-0011", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "what a week lmao"}
+{"expect": "DROP", "id": "admit-play-0012", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "haha the demo worked"}
+{"expect": "DROP", "id": "admit-play-0013", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "rofl that slide deck"}
+{"expect": "DROP", "id": "admit-play-0014", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "lol the coffee ran out"}
+{"expect": "DROP", "id": "admit-play-0015", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "that review was funny lol"}
+{"expect": "DROP", "id": "admit-play-0016", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "lmao the linter complained"}
+{"expect": "DROP", "id": "admit-play-0017", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "haha classic friday"}
+{"expect": "DROP", "id": "admit-play-0018", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "rofl the wifi again"}
+{"expect": "DROP", "id": "admit-play-0019", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "lol same energy"}
+{"expect": "DROP", "id": "admit-play-0020", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "we shipped it lol"}
+{"expect": "DROP", "id": "admit-play-0021", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "lmao ceiling cat"}
+{"expect": "DROP", "id": "admit-play-0022", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "haha bugs everywhere"}
+{"expect": "DROP", "id": "admit-play-0023", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "rofl the test suite blinked"}
+{"expect": "DROP", "id": "admit-play-0024", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Batman"}
+{"expect": "DROP", "id": "admit-play-0025", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Ironman"}
+{"expect": "DROP", "id": "admit-play-0026", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Groot"}
+{"expect": "DROP", "id": "admit-play-0027", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Spartacus"}
+{"expect": "DROP", "id": "admit-play-0028", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Legend"}
+{"expect": "DROP", "id": "admit-play-0029", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Vengeance"}
+{"expect": "DROP", "id": "admit-play-0030", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Batman Forever"}
+{"expect": "DROP", "id": "admit-play-0031", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Iron Man"}
+{"expect": "DROP", "id": "admit-play-0032", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Groot Again"}
+{"expect": "DROP", "id": "admit-play-0033", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Spartacus Jr"}
+{"expect": "DROP", "id": "admit-play-0034", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Legend Now"}
+{"expect": "DROP", "id": "admit-play-0035", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Vengeance Rising"}
+{"expect": "DROP", "id": "admit-play-0036", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Batman Returns"}
+{"expect": "DROP", "id": "admit-play-0037", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Iron Giant"}
+{"expect": "DROP", "id": "admit-play-0038", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Groot Sr"}
+{"expect": "DROP", "id": "admit-play-0039", "kind": "play", "provenance": "synthetic-rule", "suite": "admit", "text": "I am Spartacus Maximus"}
+{"expect": "DROP", "id": "admit-sensitive-0000", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "Rahul's number is 9812345678"}
+{"expect": "DROP", "id": "admit-sensitive-0001", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "otp is 994553"}
+{"expect": "DROP", "id": "admit-sensitive-0002", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "my mobile is 98xxxx"}
+{"expect": "DROP", "id": "admit-sensitive-0003", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "ssn on file is 11-22-3344"}
+{"expect": "DROP", "id": "admit-sensitive-0004", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "card ends 4455"}
+{"expect": "DROP", "id": "admit-sensitive-0005", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "email backup code is 778899"}
+{"expect": "DROP", "id": "admit-sensitive-0006", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "passcode 884422"}
+{"expect": "DROP", "id": "admit-sensitive-0007", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "account number 998877"}
+{"expect": "DROP", "id": "admit-sensitive-0008", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "the number is 9811112222"}
+{"expect": "DROP", "id": "admit-sensitive-0009", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "the otp changed to 665544"}
+{"expect": "DROP", "id": "admit-sensitive-0010", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "mobile 98xxxx again"}
+{"expect": "DROP", "id": "admit-sensitive-0011", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "ssn is 55-66-7788"}
+{"expect": "DROP", "id": "admit-sensitive-0012", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "card number 411111"}
+{"expect": "DROP", "id": "admit-sensitive-0013", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "email code 223344"}
+{"expect": "DROP", "id": "admit-sensitive-0014", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "passcode rotated to 556677"}
+{"expect": "DROP", "id": "admit-sensitive-0015", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "account 445533"}
+{"expect": "DROP", "id": "admit-sensitive-0016", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "his number is 9700001111"}
+{"expect": "DROP", "id": "admit-sensitive-0017", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "otp 112233"}
+{"expect": "DROP", "id": "admit-sensitive-0018", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "mobile is 97xxxx"}
+{"expect": "DROP", "id": "admit-sensitive-0019", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "ssn 99-88-7766"}
+{"expect": "DROP", "id": "admit-sensitive-0020", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "card 550000"}
+{"expect": "DROP", "id": "admit-sensitive-0021", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "email code 334455"}
+{"expect": "DROP", "id": "admit-sensitive-0022", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "passcode 221100"}
+{"expect": "DROP", "id": "admit-sensitive-0023", "kind": "sensitive", "provenance": "synthetic-rule", "suite": "admit", "text": "account number 667788"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0000", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the archive sits in the basement"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0001", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the archive sits in the basement"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0002", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the archive sits in the basement, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0003", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old archive sits in the basement"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0004", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "we met at the blue house"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0005", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently we met at the blue house"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0006", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "we met at the blue house, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0007", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "we met at the old blue house"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0008", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the garden needs rain soon"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0009", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the garden needs rain soon"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0010", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the garden needs rain soon, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0011", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old garden needs rain soon"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0012", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the painting hangs in the hallway"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0013", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the painting hangs in the hallway"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0014", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the painting hangs in the hallway, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0015", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old painting hangs in the hallway"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0016", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the river runs behind the field"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0017", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the river runs behind the field"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0018", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the river runs behind the field, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0019", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old river runs behind the field"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0020", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the kettle whistles when hot"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0021", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the kettle whistles when hot"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0022", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the kettle whistles when hot, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0023", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old kettle whistles when hot"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0024", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the cat sleeps on the windowsill"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0025", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the cat sleeps on the windowsill"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0026", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the cat sleeps on the windowsill, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0027", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old cat sleeps on the windowsill"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0028", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the bus stops near the corner"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0029", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the bus stops near the corner"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0030", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the bus stops near the corner, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0031", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old bus stops near the corner"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0032", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the kitchen window faces east"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0033", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the kitchen window faces east"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0034", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the kitchen window faces east, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0035", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old kitchen window faces east"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0036", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the trail climbs past the ridge"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0037", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the trail climbs past the ridge"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0038", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the trail climbs past the ridge, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0039", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old trail climbs past the ridge"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0040", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the library closes at dusk"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0041", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the library closes at dusk"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0042", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the library closes at dusk, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0043", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old library closes at dusk"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0044", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the band plays in the square"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0045", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "apparently the band plays in the square"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0046", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the band plays in the square, I think"}
+{"expect": "QUARANTINE", "id": "admit-uncertain-0047", "kind": "uncertain", "provenance": "synthetic-rule", "suite": "admit", "text": "the old band plays in the square"}
+{"expect": 5, "id": "importance-imp5-0000", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the deposit deadline is Friday"}
+{"expect": 5, "id": "importance-imp5-0001", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "Friday is the hard deadline for the deposit"}
+{"expect": 5, "id": "importance-imp5-0002", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the grant report deadline is Monday"}
+{"expect": 5, "id": "importance-imp5-0003", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "Monday is the hard deadline for the grant report"}
+{"expect": 5, "id": "importance-imp5-0004", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the migration deadline is March 3"}
+{"expect": 5, "id": "importance-imp5-0005", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "March 3 is the hard deadline for the migration"}
+{"expect": 5, "id": "importance-imp5-0006", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the budget sheet deadline is the fifth"}
+{"expect": 5, "id": "importance-imp5-0007", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the fifth is the hard deadline for the budget sheet"}
+{"expect": 5, "id": "importance-imp5-0008", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the compliance form deadline is April 15"}
+{"expect": 5, "id": "importance-imp5-0009", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "April 15 is the hard deadline for the compliance form"}
+{"expect": 5, "id": "importance-imp5-0010", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the conference talk deadline is the ninth"}
+{"expect": 5, "id": "importance-imp5-0011", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the ninth is the hard deadline for the conference talk"}
+{"expect": 5, "id": "importance-imp5-0012", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the thesis draft deadline is June 1"}
+{"expect": 5, "id": "importance-imp5-0013", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "June 1 is the hard deadline for the thesis draft"}
+{"expect": 5, "id": "importance-imp5-0014", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the patent filing deadline is the twelfth"}
+{"expect": 5, "id": "importance-imp5-0015", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the twelfth is the hard deadline for the patent filing"}
+{"expect": 5, "id": "importance-imp5-0016", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the lease renewal deadline is the eighteenth"}
+{"expect": 5, "id": "importance-imp5-0017", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the eighteenth is the hard deadline for the lease renewal"}
+{"expect": 5, "id": "importance-imp5-0018", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the glossary pass deadline is September 2"}
+{"expect": 5, "id": "importance-imp5-0019", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "September 2 is the hard deadline for the glossary pass"}
+{"expect": 5, "id": "importance-imp5-0020", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the audit reply deadline is the twenty-first"}
+{"expect": 5, "id": "importance-imp5-0021", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the twenty-first is the hard deadline for the audit reply"}
+{"expect": 5, "id": "importance-imp5-0022", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the invoice batch deadline is the last day of term"}
+{"expect": 5, "id": "importance-imp5-0023", "kind": "imp5", "provenance": "synthetic-rule", "suite": "importance", "text": "the last day of term is the hard deadline for the invoice batch"}
+{"expect": 4, "id": "importance-imp4-0000", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the west lab opens at 7am"}
+{"expect": 4, "id": "importance-imp4-0001", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 7am slot covers the west lab"}
+{"expect": 4, "id": "importance-imp4-0002", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the east lab opens at 8am"}
+{"expect": 4, "id": "importance-imp4-0003", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 8am slot covers the east lab"}
+{"expect": 4, "id": "importance-imp4-0004", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the north desk opens at 9am"}
+{"expect": 4, "id": "importance-imp4-0005", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 9am slot covers the north desk"}
+{"expect": 4, "id": "importance-imp4-0006", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the south desk opens at 10am"}
+{"expect": 4, "id": "importance-imp4-0007", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 10am slot covers the south desk"}
+{"expect": 4, "id": "importance-imp4-0008", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the hub opens at 11am"}
+{"expect": 4, "id": "importance-imp4-0009", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 11am slot covers the hub"}
+{"expect": 4, "id": "importance-imp4-0010", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the annex opens at 12pm"}
+{"expect": 4, "id": "importance-imp4-0011", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 12pm slot covers the annex"}
+{"expect": 4, "id": "importance-imp4-0012", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the loft opens at 2pm"}
+{"expect": 4, "id": "importance-imp4-0013", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 2pm slot covers the loft"}
+{"expect": 4, "id": "importance-imp4-0014", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the yard opens at 3pm"}
+{"expect": 4, "id": "importance-imp4-0015", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 3pm slot covers the yard"}
+{"expect": 4, "id": "importance-imp4-0016", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the dock opens at 4pm"}
+{"expect": 4, "id": "importance-imp4-0017", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 4pm slot covers the dock"}
+{"expect": 4, "id": "importance-imp4-0018", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the pier opens at 5pm"}
+{"expect": 4, "id": "importance-imp4-0019", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 5pm slot covers the pier"}
+{"expect": 4, "id": "importance-imp4-0020", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the west lab opens at 11am"}
+{"expect": 4, "id": "importance-imp4-0021", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 11am slot covers the west lab"}
+{"expect": 4, "id": "importance-imp4-0022", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the east lab opens at 12pm"}
+{"expect": 4, "id": "importance-imp4-0023", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 12pm slot covers the east lab"}
+{"expect": 4, "id": "importance-imp4-0024", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the north desk opens at 2pm"}
+{"expect": 4, "id": "importance-imp4-0025", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 2pm slot covers the north desk"}
+{"expect": 4, "id": "importance-imp4-0026", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the south desk opens at 3pm"}
+{"expect": 4, "id": "importance-imp4-0027", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 3pm slot covers the south desk"}
+{"expect": 4, "id": "importance-imp4-0028", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the hub opens at 4pm"}
+{"expect": 4, "id": "importance-imp4-0029", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 4pm slot covers the hub"}
+{"expect": 4, "id": "importance-imp4-0030", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the annex opens at 5pm"}
+{"expect": 4, "id": "importance-imp4-0031", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 5pm slot covers the annex"}
+{"expect": 4, "id": "importance-imp4-0032", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the loft opens at 7am"}
+{"expect": 4, "id": "importance-imp4-0033", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 7am slot covers the loft"}
+{"expect": 4, "id": "importance-imp4-0034", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the yard opens at 8am"}
+{"expect": 4, "id": "importance-imp4-0035", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 8am slot covers the yard"}
+{"expect": 4, "id": "importance-imp4-0036", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the dock opens at 9am"}
+{"expect": 4, "id": "importance-imp4-0037", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 9am slot covers the dock"}
+{"expect": 4, "id": "importance-imp4-0038", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the pier opens at 10am"}
+{"expect": 4, "id": "importance-imp4-0039", "kind": "imp4", "provenance": "synthetic-rule", "suite": "importance", "text": "the 10am slot covers the pier"}
+{"expect": 1, "id": "importance-imp1-0000", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "ok"}
+{"expect": 1, "id": "importance-imp1-0001", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "sure"}
+{"expect": 1, "id": "importance-imp1-0002", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "cool"}
+{"expect": 1, "id": "importance-imp1-0003", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "nice"}
+{"expect": 1, "id": "importance-imp1-0004", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "thanks"}
+{"expect": 1, "id": "importance-imp1-0005", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "hello"}
+{"expect": 1, "id": "importance-imp1-0006", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "yo"}
+{"expect": 1, "id": "importance-imp1-0007", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "fine"}
+{"expect": 1, "id": "importance-imp1-0008", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "that works lol"}
+{"expect": 1, "id": "importance-imp1-0009", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "good one haha"}
+{"expect": 1, "id": "importance-imp1-0010", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "nice try rofl"}
+{"expect": 1, "id": "importance-imp1-0011", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "classic lmao"}
+{"expect": 1, "id": "importance-imp1-0012", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "the wifi died haha"}
+{"expect": 1, "id": "importance-imp1-0013", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "so funny lol"}
+{"expect": 1, "id": "importance-imp1-0014", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "best meeting lol"}
+{"expect": 1, "id": "importance-imp1-0015", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "cheers lmao"}
+{"expect": 1, "id": "importance-imp1-0016", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "I am Rocket"}
+{"expect": 1, "id": "importance-imp1-0017", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "I am Nebula"}
+{"expect": 1, "id": "importance-imp1-0018", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "I am Drax"}
+{"expect": 1, "id": "importance-imp1-0019", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "I am Mantis"}
+{"expect": 1, "id": "importance-imp1-0020", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "I am Valkyrie"}
+{"expect": 1, "id": "importance-imp1-0021", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "I am Storm"}
+{"expect": 1, "id": "importance-imp1-0022", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "I am Phoenix"}
+{"expect": 1, "id": "importance-imp1-0023", "kind": "imp1", "provenance": "synthetic-rule", "suite": "importance", "text": "I am Wolverine"}
+{"expect": 2, "id": "importance-imp2-0000", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "my pin is 448866"}
+{"expect": 2, "id": "importance-imp2-0001", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "otp 559900"}
+{"expect": 2, "id": "importance-imp2-0002", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "ssn 44-55-6677"}
+{"expect": 2, "id": "importance-imp2-0003", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "number 909090"}
+{"expect": 2, "id": "importance-imp2-0004", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "card 445566"}
+{"expect": 2, "id": "importance-imp2-0005", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "mobile 667788"}
+{"expect": 2, "id": "importance-imp2-0006", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "passcode 112233"}
+{"expect": 2, "id": "importance-imp2-0007", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "backup email code 998877"}
+{"expect": 2, "id": "importance-imp2-0008", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "account 554433"}
+{"expect": 2, "id": "importance-imp2-0009", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "otp 778899"}
+{"expect": 2, "id": "importance-imp2-0010", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "phone 990011"}
+{"expect": 2, "id": "importance-imp2-0011", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "ssn 66-77-8899"}
+{"expect": 2, "id": "importance-imp2-0012", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the violin rests in its case"}
+{"expect": 2, "id": "importance-imp2-0013", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the compass points north"}
+{"expect": 2, "id": "importance-imp2-0014", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the lantern hangs by the porch"}
+{"expect": 2, "id": "importance-imp2-0015", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the ferry crosses at dawn"}
+{"expect": 2, "id": "importance-imp2-0016", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the notebook lies on the desk"}
+{"expect": 2, "id": "importance-imp2-0017", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the rookery wakes at sunrise"}
+{"expect": 2, "id": "importance-imp2-0018", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the hose coils by the tap"}
+{"expect": 2, "id": "importance-imp2-0019", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the mural covers the wall"}
+{"expect": 2, "id": "importance-imp2-0020", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the oven warms the kitchen"}
+{"expect": 2, "id": "importance-imp2-0021", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the trail forks past the creek"}
+{"expect": 2, "id": "importance-imp2-0022", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the sail catches the breeze"}
+{"expect": 2, "id": "importance-imp2-0023", "kind": "imp2", "provenance": "synthetic-rule", "suite": "importance", "text": "the bell rings across the yard"}
+{"candidate": "ship  the  friday  build", "expect": "DUP", "id": "dedupe-dup-0000", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the friday build"}
+{"candidate": "  ship the sales report  ", "expect": "DUP", "id": "dedupe-dup-0001", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the sales report"}
+{"candidate": "ship\tthe\tonboarding\tflow", "expect": "DUP", "id": "dedupe-dup-0002", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the onboarding flow"}
+{"candidate": "ship the garden gate ", "expect": "DUP", "id": "dedupe-dup-0003", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the garden gate"}
+{"candidate": "ship  the  studio  lease", "expect": "DUP", "id": "dedupe-dup-0004", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the studio lease"}
+{"candidate": "  ship the evening menu  ", "expect": "DUP", "id": "dedupe-dup-0005", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the evening menu"}
+{"candidate": "ship\tthe\tfield\tnotes", "expect": "DUP", "id": "dedupe-dup-0006", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the field notes"}
+{"candidate": "ship the red bicycle ", "expect": "DUP", "id": "dedupe-dup-0007", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the red bicycle"}
+{"candidate": "ship  the  guest  list", "expect": "DUP", "id": "dedupe-dup-0008", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the guest list"}
+{"candidate": "  ship the backup plan  ", "expect": "DUP", "id": "dedupe-dup-0009", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "ship the backup plan"}
+{"candidate": "review\tthe\tfriday\tbuild", "expect": "DUP", "id": "dedupe-dup-0010", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the friday build"}
+{"candidate": "review the sales report ", "expect": "DUP", "id": "dedupe-dup-0011", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the sales report"}
+{"candidate": "review  the  onboarding  flow", "expect": "DUP", "id": "dedupe-dup-0012", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the onboarding flow"}
+{"candidate": "  review the garden gate  ", "expect": "DUP", "id": "dedupe-dup-0013", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the garden gate"}
+{"candidate": "review\tthe\tstudio\tlease", "expect": "DUP", "id": "dedupe-dup-0014", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the studio lease"}
+{"candidate": "review the evening menu ", "expect": "DUP", "id": "dedupe-dup-0015", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the evening menu"}
+{"candidate": "review  the  field  notes", "expect": "DUP", "id": "dedupe-dup-0016", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the field notes"}
+{"candidate": "  review the red bicycle  ", "expect": "DUP", "id": "dedupe-dup-0017", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the red bicycle"}
+{"candidate": "review\tthe\tguest\tlist", "expect": "DUP", "id": "dedupe-dup-0018", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the guest list"}
+{"candidate": "review the backup plan ", "expect": "DUP", "id": "dedupe-dup-0019", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "review the backup plan"}
+{"candidate": "archive  the  friday  build", "expect": "DUP", "id": "dedupe-dup-0020", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the friday build"}
+{"candidate": "  archive the sales report  ", "expect": "DUP", "id": "dedupe-dup-0021", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the sales report"}
+{"candidate": "archive\tthe\tonboarding\tflow", "expect": "DUP", "id": "dedupe-dup-0022", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the onboarding flow"}
+{"candidate": "archive the garden gate ", "expect": "DUP", "id": "dedupe-dup-0023", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the garden gate"}
+{"candidate": "archive  the  studio  lease", "expect": "DUP", "id": "dedupe-dup-0024", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the studio lease"}
+{"candidate": "  archive the evening menu  ", "expect": "DUP", "id": "dedupe-dup-0025", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the evening menu"}
+{"candidate": "archive\tthe\tfield\tnotes", "expect": "DUP", "id": "dedupe-dup-0026", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the field notes"}
+{"candidate": "archive the red bicycle ", "expect": "DUP", "id": "dedupe-dup-0027", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the red bicycle"}
+{"candidate": "archive  the  guest  list", "expect": "DUP", "id": "dedupe-dup-0028", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the guest list"}
+{"candidate": "  archive the backup plan  ", "expect": "DUP", "id": "dedupe-dup-0029", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "archive the backup plan"}
+{"candidate": "update\tthe\tfriday\tbuild", "expect": "DUP", "id": "dedupe-dup-0030", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the friday build"}
+{"candidate": "update the sales report ", "expect": "DUP", "id": "dedupe-dup-0031", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the sales report"}
+{"candidate": "update  the  onboarding  flow", "expect": "DUP", "id": "dedupe-dup-0032", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the onboarding flow"}
+{"candidate": "  update the garden gate  ", "expect": "DUP", "id": "dedupe-dup-0033", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the garden gate"}
+{"candidate": "update\tthe\tstudio\tlease", "expect": "DUP", "id": "dedupe-dup-0034", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the studio lease"}
+{"candidate": "update the evening menu ", "expect": "DUP", "id": "dedupe-dup-0035", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the evening menu"}
+{"candidate": "update  the  field  notes", "expect": "DUP", "id": "dedupe-dup-0036", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the field notes"}
+{"candidate": "  update the red bicycle  ", "expect": "DUP", "id": "dedupe-dup-0037", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the red bicycle"}
+{"candidate": "update\tthe\tguest\tlist", "expect": "DUP", "id": "dedupe-dup-0038", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the guest list"}
+{"candidate": "update the backup plan ", "expect": "DUP", "id": "dedupe-dup-0039", "kind": "dup", "provenance": "synthetic-rule", "suite": "dedupe", "text": "update the backup plan"}
+{"candidate": "Stage the friday build", "expect": "DISTINCT", "id": "dedupe-distinct-0000", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the friday build"}
+{"candidate": "stage the sales report.", "expect": "DISTINCT", "id": "dedupe-distinct-0001", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the sales report"}
+{"candidate": "stage a onboarding flow", "expect": "DISTINCT", "id": "dedupe-distinct-0002", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the onboarding flow"}
+{"candidate": "stage the garden gate today", "expect": "DISTINCT", "id": "dedupe-distinct-0003", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the garden gate"}
+{"candidate": "Stage the studio lease", "expect": "DISTINCT", "id": "dedupe-distinct-0004", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the studio lease"}
+{"candidate": "stage the evening menu.", "expect": "DISTINCT", "id": "dedupe-distinct-0005", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the evening menu"}
+{"candidate": "stage a field notes", "expect": "DISTINCT", "id": "dedupe-distinct-0006", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the field notes"}
+{"candidate": "stage the red bicycle today", "expect": "DISTINCT", "id": "dedupe-distinct-0007", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the red bicycle"}
+{"candidate": "Stage the guest list", "expect": "DISTINCT", "id": "dedupe-distinct-0008", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the guest list"}
+{"candidate": "stage the backup plan.", "expect": "DISTINCT", "id": "dedupe-distinct-0009", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "stage the backup plan"}
+{"candidate": "measure a friday build", "expect": "DISTINCT", "id": "dedupe-distinct-0010", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the friday build"}
+{"candidate": "measure the sales report today", "expect": "DISTINCT", "id": "dedupe-distinct-0011", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the sales report"}
+{"candidate": "Measure the onboarding flow", "expect": "DISTINCT", "id": "dedupe-distinct-0012", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the onboarding flow"}
+{"candidate": "measure the garden gate.", "expect": "DISTINCT", "id": "dedupe-distinct-0013", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the garden gate"}
+{"candidate": "measure a studio lease", "expect": "DISTINCT", "id": "dedupe-distinct-0014", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the studio lease"}
+{"candidate": "measure the evening menu today", "expect": "DISTINCT", "id": "dedupe-distinct-0015", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the evening menu"}
+{"candidate": "Measure the field notes", "expect": "DISTINCT", "id": "dedupe-distinct-0016", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the field notes"}
+{"candidate": "measure the red bicycle.", "expect": "DISTINCT", "id": "dedupe-distinct-0017", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the red bicycle"}
+{"candidate": "measure a guest list", "expect": "DISTINCT", "id": "dedupe-distinct-0018", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the guest list"}
+{"candidate": "measure the backup plan today", "expect": "DISTINCT", "id": "dedupe-distinct-0019", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "measure the backup plan"}
+{"candidate": "Sketch the friday build", "expect": "DISTINCT", "id": "dedupe-distinct-0020", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the friday build"}
+{"candidate": "sketch the sales report.", "expect": "DISTINCT", "id": "dedupe-distinct-0021", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the sales report"}
+{"candidate": "sketch a onboarding flow", "expect": "DISTINCT", "id": "dedupe-distinct-0022", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the onboarding flow"}
+{"candidate": "sketch the garden gate today", "expect": "DISTINCT", "id": "dedupe-distinct-0023", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the garden gate"}
+{"candidate": "Sketch the studio lease", "expect": "DISTINCT", "id": "dedupe-distinct-0024", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the studio lease"}
+{"candidate": "sketch the evening menu.", "expect": "DISTINCT", "id": "dedupe-distinct-0025", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the evening menu"}
+{"candidate": "sketch a field notes", "expect": "DISTINCT", "id": "dedupe-distinct-0026", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the field notes"}
+{"candidate": "sketch the red bicycle today", "expect": "DISTINCT", "id": "dedupe-distinct-0027", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the red bicycle"}
+{"candidate": "Sketch the guest list", "expect": "DISTINCT", "id": "dedupe-distinct-0028", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the guest list"}
+{"candidate": "sketch the backup plan.", "expect": "DISTINCT", "id": "dedupe-distinct-0029", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "sketch the backup plan"}
+{"candidate": "draft a friday build", "expect": "DISTINCT", "id": "dedupe-distinct-0030", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the friday build"}
+{"candidate": "draft the sales report today", "expect": "DISTINCT", "id": "dedupe-distinct-0031", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the sales report"}
+{"candidate": "Draft the onboarding flow", "expect": "DISTINCT", "id": "dedupe-distinct-0032", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the onboarding flow"}
+{"candidate": "draft the garden gate.", "expect": "DISTINCT", "id": "dedupe-distinct-0033", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the garden gate"}
+{"candidate": "draft a studio lease", "expect": "DISTINCT", "id": "dedupe-distinct-0034", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the studio lease"}
+{"candidate": "draft the evening menu today", "expect": "DISTINCT", "id": "dedupe-distinct-0035", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the evening menu"}
+{"candidate": "Draft the field notes", "expect": "DISTINCT", "id": "dedupe-distinct-0036", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the field notes"}
+{"candidate": "draft the red bicycle.", "expect": "DISTINCT", "id": "dedupe-distinct-0037", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the red bicycle"}
+{"candidate": "draft a guest list", "expect": "DISTINCT", "id": "dedupe-distinct-0038", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the guest list"}
+{"candidate": "draft the backup plan today", "expect": "DISTINCT", "id": "dedupe-distinct-0039", "kind": "distinct", "provenance": "synthetic-rule", "suite": "dedupe", "text": "draft the backup plan"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0000", "kind": "conflict", "new": "I do not keep morning runs anymore", "old": "I love morning runs", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0001", "kind": "conflict", "new": "morning runs is not part of my week anymore", "old": "we still enjoy morning runs", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0002", "kind": "conflict", "new": "we do not do morning runs anymore, never again", "old": "I keep morning runs around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0003", "kind": "conflict", "new": "I do not miss morning runs at all anymore", "old": "morning runs has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0004", "kind": "conflict", "new": "I do not keep the old chat tool anymore", "old": "the team uses the old chat tool", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0005", "kind": "conflict", "new": "the old chat tool is not part of my week anymore", "old": "we still enjoy the old chat tool", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0006", "kind": "conflict", "new": "we do not do the old chat tool anymore, never again", "old": "I keep the old chat tool around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0007", "kind": "conflict", "new": "I do not miss the old chat tool at all anymore", "old": "the old chat tool has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0008", "kind": "conflict", "new": "I do not keep coffee after lunch anymore", "old": "coffee after lunch is a habit", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0009", "kind": "conflict", "new": "coffee after lunch is not part of my week anymore", "old": "we still enjoy coffee after lunch", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0010", "kind": "conflict", "new": "we do not do coffee after lunch anymore, never again", "old": "I keep coffee after lunch around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0011", "kind": "conflict", "new": "I do not miss coffee after lunch at all anymore", "old": "coffee after lunch has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0012", "kind": "conflict", "new": "I do not keep the studio opening time anymore", "old": "the studio opens at nine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0013", "kind": "conflict", "new": "the studio opening time is not part of my week anymore", "old": "we still enjoy the studio opening time", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0014", "kind": "conflict", "new": "we do not do the studio opening time anymore, never again", "old": "I keep the studio opening time around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0015", "kind": "conflict", "new": "I do not miss the studio opening time at all anymore", "old": "the studio opening time has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0016", "kind": "conflict", "new": "I do not keep weekly board games anymore", "old": "weekly board games are a thing", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0017", "kind": "conflict", "new": "weekly board games is not part of my week anymore", "old": "we still enjoy weekly board games", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0018", "kind": "conflict", "new": "we do not do weekly board games anymore, never again", "old": "I keep weekly board games around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0019", "kind": "conflict", "new": "I do not miss weekly board games at all anymore", "old": "weekly board games has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0020", "kind": "conflict", "new": "I do not keep the north gate anymore", "old": "the north gate is the entry", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0021", "kind": "conflict", "new": "the north gate is not part of my week anymore", "old": "we still enjoy the north gate", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0022", "kind": "conflict", "new": "we do not do the north gate anymore, never again", "old": "I keep the north gate around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0023", "kind": "conflict", "new": "I do not miss the north gate at all anymore", "old": "the north gate has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0024", "kind": "conflict", "new": "I do not keep the rooftop garden anymore", "old": "the rooftop garden is open", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0025", "kind": "conflict", "new": "the rooftop garden is not part of my week anymore", "old": "we still enjoy the rooftop garden", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0026", "kind": "conflict", "new": "we do not do the rooftop garden anymore, never again", "old": "I keep the rooftop garden around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0027", "kind": "conflict", "new": "I do not miss the rooftop garden at all anymore", "old": "the rooftop garden has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0028", "kind": "conflict", "new": "I do not keep the friday calls anymore", "old": "friday calls run long", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0029", "kind": "conflict", "new": "the friday calls is not part of my week anymore", "old": "we still enjoy the friday calls", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0030", "kind": "conflict", "new": "we do not do the friday calls anymore, never again", "old": "I keep the friday calls around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0031", "kind": "conflict", "new": "I do not miss the friday calls at all anymore", "old": "the friday calls has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0032", "kind": "conflict", "new": "I do not keep the paper invoices anymore", "old": "we keep paper invoices", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0033", "kind": "conflict", "new": "the paper invoices is not part of my week anymore", "old": "we still enjoy the paper invoices", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0034", "kind": "conflict", "new": "we do not do the paper invoices anymore, never again", "old": "I keep the paper invoices around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0035", "kind": "conflict", "new": "I do not miss the paper invoices at all anymore", "old": "the paper invoices has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0036", "kind": "conflict", "new": "I do not keep dessert after dinner anymore", "old": "dessert after dinner happens", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0037", "kind": "conflict", "new": "dessert after dinner is not part of my week anymore", "old": "we still enjoy dessert after dinner", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0038", "kind": "conflict", "new": "we do not do dessert after dinner anymore, never again", "old": "I keep dessert after dinner around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0039", "kind": "conflict", "new": "I do not miss dessert after dinner at all anymore", "old": "dessert after dinner has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0040", "kind": "conflict", "new": "I do not keep the guest wifi password anymore", "old": "the guest wifi is shared", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0041", "kind": "conflict", "new": "the guest wifi password is not part of my week anymore", "old": "we still enjoy the guest wifi password", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0042", "kind": "conflict", "new": "we do not do the guest wifi password anymore, never again", "old": "I keep the guest wifi password around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0043", "kind": "conflict", "new": "I do not miss the guest wifi password at all anymore", "old": "the guest wifi password has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0044", "kind": "conflict", "new": "I do not keep the 7am alarm anymore", "old": "the 7am alarm works", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0045", "kind": "conflict", "new": "the 7am alarm is not part of my week anymore", "old": "we still enjoy the 7am alarm", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0046", "kind": "conflict", "new": "we do not do the 7am alarm anymore, never again", "old": "I keep the 7am alarm around", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "CONFLICT", "id": "contradict-conflict-0047", "kind": "conflict", "new": "I do not miss the 7am alarm at all anymore", "old": "the 7am alarm has been the routine", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0000", "kind": "keep", "new": "the spare key stays in the studio", "old": "I keep the spare key in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0001", "kind": "keep", "new": "the blue kettle stays in the kitchen", "old": "I keep the blue kettle in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0002", "kind": "keep", "new": "the paper map stays in the attic", "old": "I keep the paper map in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0003", "kind": "keep", "new": "the red ladder stays in the cellar", "old": "I keep the red ladder in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0004", "kind": "keep", "new": "the wool blanket stays in the study", "old": "I keep the wool blanket in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0005", "kind": "keep", "new": "the brass lamp stays in the porch", "old": "I keep the brass lamp in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0006", "kind": "keep", "new": "the iron skillet stays in the garage", "old": "I keep the iron skillet in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0007", "kind": "keep", "new": "the glass jar stays in the shed", "old": "I keep the glass jar in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0008", "kind": "keep", "new": "the linen apron stays in the studio", "old": "I keep the linen apron in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0009", "kind": "keep", "new": "the silver tray stays in the kitchen", "old": "I keep the silver tray in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0010", "kind": "keep", "new": "the wooden crate stays in the attic", "old": "I keep the wooden crate in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0011", "kind": "keep", "new": "the copper pot stays in the cellar", "old": "I keep the copper pot in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0012", "kind": "keep", "new": "the canvas bag stays in the study", "old": "I keep the canvas bag in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0013", "kind": "keep", "new": "the leather strap stays in the porch", "old": "I keep the leather strap in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0014", "kind": "keep", "new": "the marble bowl stays in the garage", "old": "I keep the marble bowl in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0015", "kind": "keep", "new": "the ceramic mug stays in the shed", "old": "I keep the ceramic mug in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0016", "kind": "keep", "new": "the bamboo mat stays in the studio", "old": "I keep the bamboo mat in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0017", "kind": "keep", "new": "the steel box stays in the kitchen", "old": "I keep the steel box in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0018", "kind": "keep", "new": "the felt hat stays in the attic", "old": "I keep the felt hat in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0019", "kind": "keep", "new": "the cotton scarf stays in the cellar", "old": "I keep the cotton scarf in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0020", "kind": "keep", "new": "the rubber boots stays in the study", "old": "I keep the rubber boots in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0021", "kind": "keep", "new": "the straw basket stays in the porch", "old": "I keep the straw basket in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0022", "kind": "keep", "new": "the clay vase stays in the garage", "old": "I keep the clay vase in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0023", "kind": "keep", "new": "the stone bowl stays in the shed", "old": "I keep the stone bowl in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0024", "kind": "keep", "new": "the oak stool stays in the studio", "old": "I keep the oak stool in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0025", "kind": "keep", "new": "the pine shelf stays in the kitchen", "old": "I keep the pine shelf in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0026", "kind": "keep", "new": "the maple board stays in the attic", "old": "I keep the maple board in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0027", "kind": "keep", "new": "the willow chair stays in the cellar", "old": "I keep the willow chair in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0028", "kind": "keep", "new": "the birch handle stays in the study", "old": "I keep the birch handle in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0029", "kind": "keep", "new": "the ash tray stays in the porch", "old": "I keep the ash tray in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0030", "kind": "keep", "new": "the cedar chest stays in the garage", "old": "I keep the cedar chest in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "KEEP", "id": "contradict-keep-0031", "kind": "keep", "new": "the walnut desk stays in the shed", "old": "I keep the walnut desk in the studio", "provenance": "synthetic-rule", "suite": "contradict"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0000", "kind": "tombstone", "new": "the office moved to the north lot", "old": "the office is at the east wing", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0001", "kind": "tombstone", "new": "the office changed to the north lot", "old": "the office sits near the east wing", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0002", "kind": "tombstone", "new": "the office is now at the north lot", "old": "the office was on the east wing", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0003", "kind": "tombstone", "new": "we renamed the office to the north lot", "old": "we called it the office at the east wing", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0004", "kind": "tombstone", "new": "the warehouse moved to the annex", "old": "the warehouse is at the old mill", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0005", "kind": "tombstone", "new": "the warehouse changed to the annex", "old": "the warehouse sits near the old mill", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0006", "kind": "tombstone", "new": "the warehouse is now at the annex", "old": "the warehouse was on the old mill", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0007", "kind": "tombstone", "new": "we renamed the warehouse to the annex", "old": "we called it the warehouse at the old mill", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0008", "kind": "tombstone", "new": "the print shop moved to the high street", "old": "the print shop is at the station road", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0009", "kind": "tombstone", "new": "the print shop changed to the high street", "old": "the print shop sits near the station road", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0010", "kind": "tombstone", "new": "the print shop is now at the high street", "old": "the print shop was on the station road", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0011", "kind": "tombstone", "new": "we renamed the print shop to the high street", "old": "we called it the print shop at the station road", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0012", "kind": "tombstone", "new": "the bike store moved to the harbor road", "old": "the bike store is at the market square", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0013", "kind": "tombstone", "new": "the bike store changed to the harbor road", "old": "the bike store sits near the market square", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0014", "kind": "tombstone", "new": "the bike store is now at the harbor road", "old": "the bike store was on the market square", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0015", "kind": "tombstone", "new": "we renamed the bike store to the harbor road", "old": "we called it the bike store at the market square", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0016", "kind": "tombstone", "new": "the coffee stand moved to the county line", "old": "the coffee stand is at the river bend", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0017", "kind": "tombstone", "new": "the coffee stand changed to the county line", "old": "the coffee stand sits near the river bend", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0018", "kind": "tombstone", "new": "the coffee stand is now at the county line", "old": "the coffee stand was on the river bend", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0019", "kind": "tombstone", "new": "we renamed the coffee stand to the county line", "old": "we called it the coffee stand at the river bend", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0020", "kind": "tombstone", "new": "the repair desk moved to the new arcade", "old": "the repair desk is at the chapel lane", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0021", "kind": "tombstone", "new": "the repair desk changed to the new arcade", "old": "the repair desk sits near the chapel lane", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0022", "kind": "tombstone", "new": "the repair desk is now at the new arcade", "old": "the repair desk was on the chapel lane", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0023", "kind": "tombstone", "new": "we renamed the repair desk to the new arcade", "old": "we called it the repair desk at the chapel lane", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0024", "kind": "tombstone", "new": "the records room moved to the upper deck", "old": "the records room is at the mill yard", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0025", "kind": "tombstone", "new": "the records room changed to the upper deck", "old": "the records room sits near the mill yard", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0026", "kind": "tombstone", "new": "the records room is now at the upper deck", "old": "the records room was on the mill yard", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0027", "kind": "tombstone", "new": "we renamed the records room to the upper deck", "old": "we called it the records room at the mill yard", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0028", "kind": "tombstone", "new": "the supply closet moved to the glass tower", "old": "the supply closet is at the lower deck", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0029", "kind": "tombstone", "new": "the supply closet changed to the glass tower", "old": "the supply closet sits near the lower deck", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0030", "kind": "tombstone", "new": "the supply closet is now at the glass tower", "old": "the supply closet was on the lower deck", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0031", "kind": "tombstone", "new": "we renamed the supply closet to the glass tower", "old": "we called it the supply closet at the lower deck", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0032", "kind": "tombstone", "new": "the training room moved to the south quay", "old": "the training room is at the west quay", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0033", "kind": "tombstone", "new": "the training room changed to the south quay", "old": "the training room sits near the west quay", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0034", "kind": "tombstone", "new": "the training room is now at the south quay", "old": "the training room was on the west quay", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0035", "kind": "tombstone", "new": "we renamed the training room to the south quay", "old": "we called it the training room at the west quay", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0036", "kind": "tombstone", "new": "the photo lab moved to the hill road", "old": "the photo lab is at the park edge", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0037", "kind": "tombstone", "new": "the photo lab changed to the hill road", "old": "the photo lab sits near the park edge", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0038", "kind": "tombstone", "new": "the photo lab is now at the hill road", "old": "the photo lab was on the park edge", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0039", "kind": "tombstone", "new": "we renamed the photo lab to the hill road", "old": "we called it the photo lab at the park edge", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0040", "kind": "tombstone", "new": "the tool shed moved to the creekside", "old": "the tool shed is at the orchard row", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0041", "kind": "tombstone", "new": "the tool shed changed to the creekside", "old": "the tool shed sits near the orchard row", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0042", "kind": "tombstone", "new": "the tool shed is now at the creekside", "old": "the tool shed was on the orchard row", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0043", "kind": "tombstone", "new": "we renamed the tool shed to the creekside", "old": "we called it the tool shed at the orchard row", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0044", "kind": "tombstone", "new": "the reading nook moved to the depot", "old": "the reading nook is at the main gate", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0045", "kind": "tombstone", "new": "the reading nook changed to the depot", "old": "the reading nook sits near the main gate", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0046", "kind": "tombstone", "new": "the reading nook is now at the depot", "old": "the reading nook was on the main gate", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "TOMBSTONE", "id": "supersede-tombstone-0047", "kind": "tombstone", "new": "we renamed the reading nook to the depot", "old": "we called it the reading nook at the main gate", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0000", "kind": "keep", "new": "the fuse box waits in the shed", "old": "the fuse box sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0001", "kind": "keep", "new": "the garden hose waits in the garage", "old": "the garden hose sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0002", "kind": "keep", "new": "the bird feeder waits in the porch", "old": "the bird feeder sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0003", "kind": "keep", "new": "the porch light waits in the cellar", "old": "the porch light sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0004", "kind": "keep", "new": "the cellar door waits in the shed", "old": "the cellar door sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0005", "kind": "keep", "new": "the paint tins waits in the garage", "old": "the paint tins sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0006", "kind": "keep", "new": "the camping stove waits in the porch", "old": "the camping stove sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0007", "kind": "keep", "new": "the fishing rod waits in the cellar", "old": "the fishing rod sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0008", "kind": "keep", "new": "the seed packets waits in the shed", "old": "the seed packets sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0009", "kind": "keep", "new": "the ladder rails waits in the garage", "old": "the ladder rails sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0010", "kind": "keep", "new": "the gate latch waits in the porch", "old": "the gate latch sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0011", "kind": "keep", "new": "the brick path waits in the cellar", "old": "the brick path sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0012", "kind": "keep", "new": "the pond pump waits in the shed", "old": "the pond pump sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0013", "kind": "keep", "new": "the shed roof waits in the garage", "old": "the shed roof sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0014", "kind": "keep", "new": "the coal bunker waits in the porch", "old": "the coal bunker sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0015", "kind": "keep", "new": "the water butt waits in the cellar", "old": "the water butt sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0016", "kind": "keep", "new": "the fruit cage waits in the shed", "old": "the fruit cage sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0017", "kind": "keep", "new": "the compost bin waits in the garage", "old": "the compost bin sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0018", "kind": "keep", "new": "the cold frame waits in the porch", "old": "the cold frame sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0019", "kind": "keep", "new": "the hose reel waits in the cellar", "old": "the hose reel sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0020", "kind": "keep", "new": "the wheelbarrow waits in the shed", "old": "the wheelbarrow sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0021", "kind": "keep", "new": "the watering can waits in the garage", "old": "the watering can sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0022", "kind": "keep", "new": "the potting bench waits in the porch", "old": "the potting bench sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0023", "kind": "keep", "new": "the trellis net waits in the cellar", "old": "the trellis net sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0024", "kind": "keep", "new": "the garden fork waits in the shed", "old": "the garden fork sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0025", "kind": "keep", "new": "the leaf rake waits in the garage", "old": "the leaf rake sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0026", "kind": "keep", "new": "the wheel hoe waits in the porch", "old": "the wheel hoe sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0027", "kind": "keep", "new": "the seed trays waits in the cellar", "old": "the seed trays sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0028", "kind": "keep", "new": "the twine spool waits in the shed", "old": "the twine spool sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0029", "kind": "keep", "new": "the plant pots waits in the garage", "old": "the plant pots sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0030", "kind": "keep", "new": "the glove box waits in the porch", "old": "the glove box sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"expect": "KEEP", "id": "supersede-keep-0031", "kind": "keep", "new": "the boot rack waits in the cellar", "old": "the boot rack sits by the door", "provenance": "synthetic-rule", "suite": "supersede"}
+{"candidates": [["card a", 0.92], ["card b", 0.71], ["card c", 0.41], ["card d", 0.2]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0000", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.88], ["card b", 0.62], ["card c", 0.55], ["card d", 0.18]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0001", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.95], ["card b", 0.6], ["card c", 0.44], ["card d", 0.31]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0002", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.81], ["card b", 0.77], ["card c", 0.52], ["card d", 0.12]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0003", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.99], ["card b", 0.66], ["card c", 0.38], ["card d", 0.33]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0004", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.74], ["card b", 0.7], ["card c", 0.57], ["card d", 0.29]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0005", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.9], ["card b", 0.85], ["card c", 0.42], ["card d", 0.14]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0006", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.97], ["card b", 0.63], ["card c", 0.49], ["card d", 0.27]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0007", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.83], ["card b", 0.79], ["card c", 0.51], ["card d", 0.24]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0008", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.86], ["card b", 0.68], ["card c", 0.35], ["card d", 0.22]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0009", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.94], ["card b", 0.61], ["card c", 0.53], ["card d", 0.16]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0010", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.78], ["card b", 0.75], ["card c", 0.47], ["card d", 0.26]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0011", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.91], ["card b", 0.87], ["card c", 0.39], ["card d", 0.19]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0012", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.89], ["card b", 0.72], ["card c", 0.56], ["card d", 0.15]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0013", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.93], ["card b", 0.64], ["card c", 0.46], ["card d", 0.21]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0014", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.84], ["card b", 0.69], ["card c", 0.43], ["card d", 0.17]], "expect": ["card a", "card b"], "id": "rerank-gate-cut-0015", "kind": "gate-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.9], ["card b", 0.61], ["card c", 0.47], ["card d", 0.28]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0000", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.85], ["card b", 0.7], ["card c", 0.44], ["card d", 0.31]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0001", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.95], ["card b", 0.62], ["card c", 0.5], ["card d", 0.3]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0002", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.8], ["card b", 0.66], ["card c", 0.41], ["card d", 0.32]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0003", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.99], ["card b", 0.64], ["card c", 0.52], ["card d", 0.29]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0004", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.75], ["card b", 0.68], ["card c", 0.39], ["card d", 0.33]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0005", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.92], ["card b", 0.6], ["card c", 0.48], ["card d", 0.27]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0006", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.87], ["card b", 0.71], ["card c", 0.45], ["card d", 0.34]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0007", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.81], ["card b", 0.63], ["card c", 0.42], ["card d", 0.35]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0008", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.88], ["card b", 0.65], ["card c", 0.49], ["card d", 0.3]], "expect": ["card a", "card b", "card c"], "gate": 0.3, "id": "rerank-band-cut-0009", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.94], ["card b", 0.67], ["card c", 0.51], ["card d", 0.31]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0010", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.79], ["card b", 0.69], ["card c", 0.46], ["card d", 0.29]], "expect": ["card a", "card b", "card c"], "gate": 0.3, "id": "rerank-band-cut-0011", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.91], ["card b", 0.6], ["card c", 0.43], ["card d", 0.28]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0012", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.86], ["card b", 0.69], ["card c", 0.5], ["card d", 0.32]], "expect": ["card a", "card b", "card c"], "gate": 0.3, "id": "rerank-band-cut-0013", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.97], ["card b", 0.61], ["card c", 0.44], ["card d", 0.33]], "expect": ["card a", "card b"], "gate": 0.3, "id": "rerank-band-cut-0014", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.83], ["card b", 0.7], ["card c", 0.48], ["card d", 0.3]], "expect": ["card a", "card b", "card c"], "gate": 0.3, "id": "rerank-band-cut-0015", "kind": "band-cut", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.72], ["card b", 0.88], ["card c", 0.61], ["card d", 0.95]], "expect": ["card d", "card b", "card a", "card c"], "id": "rerank-order-0000", "kind": "order", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.66], ["card b", 0.91], ["card c", 0.83], ["card d", 0.74]], "expect": ["card b", "card c", "card d", "card a"], "id": "rerank-order-0001", "kind": "order", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.98], ["card b", 0.62], ["card c", 0.77], ["card d", 0.85]], "expect": ["card a", "card d", "card c", "card b"], "id": "rerank-order-0002", "kind": "order", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.79], ["card b", 0.96], ["card c", 0.68], ["card d", 0.87]], "expect": ["card b", "card d", "card a", "card c"], "id": "rerank-order-0003", "kind": "order", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.64], ["card b", 0.82], ["card c", 0.93], ["card d", 0.71]], "expect": ["card c", "card b", "card d", "card a"], "id": "rerank-order-0004", "kind": "order", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.9], ["card b", 0.67], ["card c", 0.84], ["card d", 0.99]], "expect": ["card d", "card a", "card c", "card b"], "id": "rerank-order-0005", "kind": "order", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.75], ["card b", 0.97], ["card c", 0.63], ["card d", 0.86]], "expect": ["card b", "card d", "card a", "card c"], "id": "rerank-order-0006", "kind": "order", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.92], ["card b", 0.78], ["card c", 0.65], ["card d", 0.89]], "expect": ["card a", "card d", "card b", "card c"], "id": "rerank-order-0007", "kind": "order", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.6], ["card b", 0.61], ["card c", 0.62], ["card d", 0.63], ["card e", 0.64], ["card f", 0.65], ["card g", 0.6599999999999999], ["card h", 0.6699999999999999], ["card i", 0.6799999999999999], ["card j", 0.69], ["card k", 0.7], ["card l", 0.71]], "expect": ["card l", "card k", "card j", "card i", "card h", "card g", "card f", "card e"], "id": "rerank-cap-0000", "kind": "cap", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.62], ["card b", 0.635], ["card c", 0.65], ["card d", 0.665], ["card e", 0.6799999999999999], ["card f", 0.695], ["card g", 0.71], ["card h", 0.725], ["card i", 0.74], ["card j", 0.755], ["card k", 0.77], ["card l", 0.7849999999999999]], "expect": ["card l", "card k", "card j", "card i", "card h", "card g", "card f", "card e"], "id": "rerank-cap-0001", "kind": "cap", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.58], ["card b", 0.6], ["card c", 0.62], ["card d", 0.6399999999999999], ["card e", 0.6599999999999999], ["card f", 0.6799999999999999], ["card g", 0.7], ["card h", 0.72], ["card i", 0.74], ["card j", 0.76], ["card k", 0.78], ["card l", 0.7999999999999999]], "expect": ["card l", "card k", "card j", "card i", "card h", "card g", "card f", "card e"], "id": "rerank-cap-0002", "kind": "cap", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.7], ["card b", 0.71], ["card c", 0.72], ["card d", 0.73], ["card e", 0.74], ["card f", 0.75], ["card g", 0.76], ["card h", 0.77], ["card i", 0.7799999999999999], ["card j", 0.7899999999999999], ["card k", 0.7999999999999999], ["card l", 0.8099999999999999]], "expect": ["card l", "card k", "card j", "card i", "card h", "card g", "card f", "card e"], "id": "rerank-cap-0003", "kind": "cap", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.61], ["card b", 0.627], ["card c", 0.644], ["card d", 0.661], ["card e", 0.6779999999999999], ["card f", 0.695], ["card g", 0.712], ["card h", 0.729], ["card i", 0.746], ["card j", 0.763], ["card k", 0.78], ["card l", 0.7969999999999999]], "expect": ["card l", "card k", "card j", "card i", "card h", "card g", "card f", "card e"], "id": "rerank-cap-0004", "kind": "cap", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.59], ["card b", 0.603], ["card c", 0.616], ["card d", 0.629], ["card e", 0.642], ["card f", 0.655], ["card g", 0.6679999999999999], ["card h", 0.6809999999999999], ["card i", 0.694], ["card j", 0.707], ["card k", 0.72], ["card l", 0.733]], "expect": ["card l", "card k", "card j", "card i", "card h", "card g", "card f", "card e"], "id": "rerank-cap-0005", "kind": "cap", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.66], ["card b", 0.671], ["card c", 0.682], ["card d", 0.6930000000000001], ["card e", 0.7040000000000001], ["card f", 0.7150000000000001], ["card g", 0.726], ["card h", 0.737], ["card i", 0.748], ["card j", 0.759], ["card k", 0.77], ["card l", 0.781]], "expect": ["card l", "card k", "card j", "card i", "card h", "card g", "card f", "card e"], "id": "rerank-cap-0006", "kind": "cap", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.72], ["card b", 0.729], ["card c", 0.738], ["card d", 0.747], ["card e", 0.756], ["card f", 0.765], ["card g", 0.774], ["card h", 0.7829999999999999], ["card i", 0.7919999999999999], ["card j", 0.8009999999999999], ["card k", 0.8099999999999999], ["card l", 0.819]], "expect": ["card l", "card k", "card j", "card i", "card h", "card g", "card f", "card e"], "id": "rerank-cap-0007", "kind": "cap", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.57], ["card b", 0.44], ["card c", 0.21]], "expect": [], "id": "rerank-empty-0000", "kind": "empty", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.55], ["card b", 0.5], ["card c", 0.3]], "expect": [], "id": "rerank-empty-0001", "kind": "empty", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.42], ["card b", 0.38], ["card c", 0.12]], "expect": [], "id": "rerank-empty-0002", "kind": "empty", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.56], ["card b", 0.41], ["card c", 0.33]], "expect": [], "id": "rerank-empty-0003", "kind": "empty", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.52], ["card b", 0.47], ["card c", 0.29]], "expect": [], "id": "rerank-empty-0004", "kind": "empty", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.49], ["card b", 0.35], ["card c", 0.18]], "expect": [], "id": "rerank-empty-0005", "kind": "empty", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.51], ["card b", 0.46], ["card c", 0.27]], "expect": [], "id": "rerank-empty-0006", "kind": "empty", "provenance": "synthetic-rule", "suite": "rerank"}
+{"candidates": [["card a", 0.53], ["card b", 0.4], ["card c", 0.15]], "expect": [], "id": "rerank-empty-0007", "kind": "empty", "provenance": "synthetic-rule", "suite": "rerank"}

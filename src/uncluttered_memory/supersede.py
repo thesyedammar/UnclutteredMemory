@@ -1,14 +1,34 @@
-"""Supersede lifecycle: code orders pairs, judges vote relation, code tombstones.
+"""Supersede lifecycle: code orders pairs, judges vote relation, code applies.
 
 Judges only cast the relation vote. Code owns ordering, agreement,
-tombstones, and rollback. Destructive acts need two agreeing judges.
+application, and rollback. A soft tombstone is applied only when both
+judges agree the new text supersedes the old one.
+
+An agreed clash never tombstones: the pair is marked
+conflict_unresolved (both facts stay live, both carry the counterpart
+mark, and the pair lands in the conflicts table for a human). Coexist
+and unrelated also keep both facts live. These labels are the ones the
+native Jev relation question asks for, plus legacy aliases.
+
+Labels accepted: supersede | coexist | conflict_unresolved | unrelated |
+same (legacy alias: contradict maps to conflict_unresolved).
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-RELATIONS = ("same", "contradict", "supersede", "unrelated")
-DESTRUCTIVE = ("same", "contradict", "supersede")
+RELATIONS = ("same", "contradict", "conflict_unresolved",
+             "supersede", "coexist", "unrelated")
+
+#: Relations that may soft-tombstone the older fact, and only with
+#: two agreeing judges.
+TOMBSTONE_RELATIONS = ("supersede",)
+
+#: Clash relations: both facts stay live, both are marked with the
+#: counterpart, never tombstoned.
+CONFLICT_RELATIONS = ("contradict", "conflict_unresolved")
+
+BENIGN_RELATIONS = ("same", "coexist", "unrelated")
 
 
 class RelationJudge:
@@ -32,8 +52,15 @@ class FakeRelationJudge(RelationJudge):
 class SupersedeDecision:
     relation: str
     agreed: bool
-    action: str  # TOMBSTONE or KEEP
+    action: str  # TOMBSTONE, CONFLICT, or KEEP
     reasons: list = field(default_factory=list)
+
+
+def canonical_relation(label: str) -> str:
+    """Map the legacy contradict label onto the design vocabulary."""
+    if label == "contradict":
+        return "conflict_unresolved"
+    return label
 
 
 def candidate_pairs(facts: list) -> list:
@@ -52,24 +79,47 @@ def candidate_pairs(facts: list) -> list:
 
 def decide(old_text: str, new_text: str, judge_a: RelationJudge,
            judge_b: RelationJudge) -> SupersedeDecision:
+    """Paired relation vote. Destructive apply needs both judges agreeing.
+
+    - supersede agreed: soft tombstone the old fact (new supersedes it).
+    - clash agreed (contradict / conflict_unresolved): mark both
+      conflict_unresolved and keep both live. Never tombstone.
+    - coexist / unrelated / same agreed: keep both live.
+    - disagreement or an unknown label: veto, keep everything.
+    """
     va = judge_a.relation(old_text, new_text)
     vb = judge_b.relation(old_text, new_text)
     if va not in RELATIONS or vb not in RELATIONS:
-        return SupersedeDecision("unrelated", False, "KEEP", ["invalid-label-veto"])
+        return SupersedeDecision("unrelated", False, "KEEP",
+                                 ["invalid-label-veto"])
     if va != vb:
         return SupersedeDecision(va, False, "KEEP", ["disagree-veto"])
-    if va == "unrelated":
-        return SupersedeDecision(va, True, "KEEP", ["unrelated-agreed"])
-    return SupersedeDecision(va, True, "TOMBSTONE", [va + "-agreed"])
+    rel = canonical_relation(va)
+    if rel in TOMBSTONE_RELATIONS:
+        return SupersedeDecision(rel, True, "TOMBSTONE", [rel + "-agreed"])
+    if rel in CONFLICT_RELATIONS:
+        return SupersedeDecision(rel, True, "CONFLICT",
+                                 ["conflict-unresolved-never-tombstone"])
+    return SupersedeDecision(rel, True, "KEEP", [rel + "-agreed"])
 
 
 def apply(store, old_id: int, new_id: int, decision: SupersedeDecision,
           actor: str = "code", reason: str = "") -> bool:
-    """Apply an agreed destructive decision as a soft tombstone. No-op on veto."""
-    if decision.action != "TOMBSTONE" or not decision.agreed:
+    """Apply an agreed decision. No-op (False) on veto.
+
+    TOMBSTONE soft-tombstones the old fact. CONFLICT marks both facts
+    conflict_unresolved, keeps both live, and records the pair.
+    """
+    if not decision.agreed:
         return False
-    store.tombstone(old_id, new_id, reason or decision.relation, actor)
-    return True
+    if decision.action == "TOMBSTONE":
+        store.tombstone(old_id, new_id, reason or decision.relation, actor)
+        return True
+    if decision.action == "CONFLICT":
+        store.mark_conflict(old_id, new_id, reason or decision.relation,
+                            actor)
+        return True
+    return False
 
 
 def human_override(store, fact_id: int, action: str, actor: str = "human",

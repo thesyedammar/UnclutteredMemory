@@ -1,8 +1,8 @@
-"""P1 tests: supersede agreement veto, tombstones, calibration fingerprints,
-eval split integrity, quarantine-state store, idempotent store, judge stubs."""
+"""P1 tests: supersede agreement veto, conflict marking (never tombstone),
+tombstones for agreed supersede, calibration fingerprints, eval split
+integrity, quarantine-state store, idempotent store, judge stubs."""
 import json
 import os
-import sys
 import time
 
 import pytest
@@ -19,8 +19,6 @@ from uncluttered_memory.store import Store
 
 from eval.run import (find_bad_artifacts, run_eval, split_cases)
 from eval import run as evalmod
-
-sys.path.insert(0, "src")
 
 
 def test_agreement_veto_no_tombstone():
@@ -62,6 +60,94 @@ def test_unrelated_agreed_keeps_both():
     assert dec.action == "KEEP" and dec.agreed and dec.relation == "unrelated"
 
 
+def test_agreed_contradict_marks_both_never_tombstones():
+    s = Store()
+    old = s.put("I love tea", "user")
+    new = s.put("I do not love tea anymore", "user")
+    rj = supmod.FakeRelationJudge(
+        {("I love tea", "I do not love tea anymore"): "contradict"})
+    dec = supmod.decide("I love tea", "I do not love tea anymore", rj, rj)
+    assert dec.action == "CONFLICT" and dec.agreed
+    assert dec.relation == "conflict_unresolved"
+    assert "never-tombstone" in " ".join(dec.reasons)
+    assert supmod.apply(s, old, new, dec)
+    assert s.get(old)[4] is None and s.get(new)[4] is None
+    assert s.tombstoned() == []
+    assert s.get(old)[7] == new and s.get(new)[7] == old
+    assert s.conflicts() == [(old, new, "conflict_unresolved",
+                              "conflict_unresolved", "code")]
+    assert {t for _, t, _ in s.live()} == {"I love tea",
+                                           "I do not love tea anymore"}
+
+
+def test_agreed_conflict_unresolved_label_marks_both():
+    s = Store()
+    old = s.put("the gate opens at nine", "user")
+    new = s.put("the gate is not opening at nine anymore", "user")
+    rj = supmod.FakeRelationJudge(
+        {("the gate opens at nine",
+          "the gate is not opening at nine anymore"): "conflict_unresolved"})
+    dec = supmod.decide("the gate opens at nine",
+                        "the gate is not opening at nine anymore", rj, rj)
+    assert dec.action == "CONFLICT" and dec.agreed
+    assert supmod.apply(s, old, new, dec)
+    assert s.tombstoned() == []
+    assert len(s.conflicts()) == 1
+
+
+def test_agreed_coexist_keeps_both_unmarked():
+    s = Store()
+    old = s.put("the kettle is blue", "user")
+    new = s.put("the toaster is silver", "user")
+    rj = supmod.FakeRelationJudge(
+        {("the kettle is blue", "the toaster is silver"): "coexist"})
+    dec = supmod.decide("the kettle is blue", "the toaster is silver", rj, rj)
+    assert dec.action == "KEEP" and dec.agreed and dec.relation == "coexist"
+    assert not supmod.apply(s, old, new, dec)
+    assert s.conflicts() == []
+    assert {t for _, t, _ in s.live()} == {"the kettle is blue",
+                                           "the toaster is silver"}
+
+
+def test_agreed_same_keeps_both_never_tombstones():
+    s = Store()
+    old = s.put("ship friday", "user")
+    new = s.put("we ship friday", "user")
+    rj = supmod.FakeRelationJudge({("ship friday", "we ship friday"): "same"})
+    dec = supmod.decide("ship friday", "we ship friday", rj, rj)
+    assert dec.action == "KEEP" and dec.agreed and dec.relation == "same"
+    assert not supmod.apply(s, old, new, dec)
+    assert s.tombstoned() == []
+
+
+def test_disagree_on_conflict_vetoes_and_keeps_both():
+    s = Store()
+    old = s.put("standup at nine", "user")
+    new = s.put("standup moved to ten", "user")
+    a = supmod.FakeRelationJudge(
+        {("standup at nine", "standup moved to ten"): "conflict_unresolved"})
+    b = supmod.FakeRelationJudge(
+        {("standup at nine", "standup moved to ten"): "supersede"})
+    dec = supmod.decide("standup at nine", "standup moved to ten", a, b)
+    assert dec.action == "KEEP" and not dec.agreed
+    assert not supmod.apply(s, old, new, dec)
+    assert s.tombstoned() == [] and s.conflicts() == []
+
+
+def test_conflicts_user_scoped():
+    s = Store()
+    a1 = s.put("alice fact one", "user", user="alice")
+    a2 = s.put("alice fact two", "user", user="alice")
+    b1 = s.put("bob fact one", "user", user="bob")
+    b2 = s.put("bob fact two", "user", user="bob")
+    s.mark_conflict(a1, a2)
+    s.mark_conflict(b1, b2)
+    assert len(s.conflicts()) == 2
+    assert s.conflicts(user="alice") == [(a1, a2, "conflict_unresolved",
+                                          "conflict_unresolved", "code")]
+    assert len(s.conflicts(user="bob")) == 1
+
+
 def test_human_override_restore_and_retire():
     s = Store()
     old = s.put("meeting is at 3pm", "user")
@@ -92,8 +178,8 @@ def test_tombstone_retention_and_restore():
     assert {t for _, t, _ in s.live()} == {"trip on monday", "trip on tuesday"}
 
 
-def test_calibrate_fingerprint_refusal():
-    out = tmp_registry()
+def test_calibrate_fingerprint_refusal(tmp_path):
+    out = str(tmp_path / "registry.json")
     calibrate_gate([{"text": "keep 8%", "expect": "STORE"},
                     {"text": "lol", "expect": "DROP"}], "alpha", out,
                    lambda c: 0.9 if c["expect"] == "STORE" else 0.1)
@@ -102,13 +188,8 @@ def test_calibrate_fingerprint_refusal():
     assert load_registry(out, "alpha")["task"] == "alpha"
 
 
-def tmp_registry():
-    import tempfile
-    return tempfile.mktemp(suffix=".json")
-
-
-def test_calibrate_refuses_test_split():
-    out = tmp_registry()
+def test_calibrate_refuses_test_split(tmp_path):
+    out = str(tmp_path / "registry.json")
     with pytest.raises(CalibrationError):
         calibrate_gate([{"text": "x", "expect": "STORE", "split": "test"}],
                        "t", out, lambda c: 0.9)
@@ -142,10 +223,11 @@ def test_eval_artifact_touching_test_exits_2(tmp_path):
     with open(evalmod.CASES_FILE) as f:
         cases = [json.loads(l) for l in f if l.strip()]
     train, test = split_cases(cases)
+    sample = next(c for c in test if "text" in c)
     bad = tmp_path / "thresholds" / "general-qa.json"
     bad.parent.mkdir()
     bad.write_text(json.dumps(
-        {"task": "general-qa", "trained_on": test[0]["text"]}))
+        {"task": "general-qa", "trained_on": sample["text"]}))
     assert find_bad_artifacts(test, [str(bad)]) == [str(bad)]
     rc = run_eval(str(evalmod.CASES_FILE), task="general-qa",
                   registry_path=None, root=tmp_path)
@@ -230,7 +312,7 @@ def test_rule_relation_judge_features():
     rj = RuleRelationJudge()
     assert rj.relation("x", "x") == "same"
     assert rj.relation("old", "the plan changed now") == "supersede"
-    assert rj.relation("love tea", "not tea anymore") == "contradict"
+    assert rj.relation("love tea", "not tea anymore") == "conflict_unresolved"
     assert rj.relation("love tea", "no more tea") == "unrelated"
 
 
@@ -325,7 +407,7 @@ def test_primary_vote_composes_answers(monkeypatch):
                             "stop": {"choice": "s1"}}}
     monkeypatch.setattr(j, "_ask_primary", ok)
     v = j.vote("stop-loss at 8%", [], [])
-    assert v.durable >= 0.5 and v.importance == 4
+    assert v.durable >= 0.5 and v.importance == 5
     assert v.sensitive == 0.0 and v.stop == 0.0
 
 
@@ -341,9 +423,8 @@ def test_429_halts_no_fallback(monkeypatch):
     assert "Retry later" in rate_limited_message(RateLimited("x"))
 
 
-def test_eval_cases_not_present_in_registry():
-    import tempfile
-    p = tempfile.mktemp()
+def test_eval_cases_not_present_in_registry(tmp_path):
+    p = str(tmp_path / "registry.json")
     calibrate_gate([{"text": "keep 10%", "expect": "STORE"},
                     {"text": "lol", "expect": "DROP"}], "alpha", p,
                    lambda c: 0.9 if c["expect"] == "STORE" else 0.1)
@@ -352,10 +433,15 @@ def test_eval_cases_not_present_in_registry():
 
 
 def test_run_eval_reports_metrics(tmp_path, capsys):
-    cases = [{"text": "My stop-loss is 8%", "expect": "STORE"},
-             {"text": "Buy the whole exchange lol", "expect": "DROP"},
-             {"text": "ok", "expect": "DROP"},
-             {"text": "I am Batman", "expect": "DROP"}]
+    cases = [{"suite": "admit", "kind": "durable-percent",
+              "provenance": "synthetic-rule",
+              "text": "My stop-loss is 8%", "expect": "STORE"},
+             {"suite": "admit", "kind": "play", "provenance": "synthetic-rule",
+              "text": "Buy the whole exchange lol", "expect": "DROP"},
+             {"suite": "admit", "kind": "filler", "provenance": "synthetic-rule",
+              "text": "ok", "expect": "DROP"},
+             {"suite": "admit", "kind": "play", "provenance": "synthetic-rule",
+              "text": "I am Batman", "expect": "DROP"}]
     p = tmp_path / "frozen.jsonl"
     with open(p, "w") as f:
         for c in cases:
@@ -363,9 +449,36 @@ def test_run_eval_reports_metrics(tmp_path, capsys):
     rc = run_eval(str(p), task="general-qa", registry_path=None, root=tmp_path)
     assert rc == 0
     out = capsys.readouterr().out
-    assert "admit   train" in out and "admit   test" in out
+    assert "admit      train" in out and "admit      test" in out
+    assert "importance train" in out and "rerank     test" in out
+    assert "provenance=synthetic-rule" in out and "cases sha256" in out
     assert "cost per 1k" in out and "latency" in out
     assert "rule-stub" in out
+
+
+def test_run_eval_rejects_missing_provenance(tmp_path, capsys):
+    cases = [{"suite": "admit", "kind": "filler",
+              "text": "ok", "expect": "DROP"}]
+    p = tmp_path / "frozen.jsonl"
+    with open(p, "w") as f:
+        for c in cases:
+            f.write(json.dumps(c) + "\n")
+    rc = run_eval(str(p), task="general-qa", registry_path=None, root=tmp_path)
+    assert rc == 2
+    out = capsys.readouterr().out
+    assert "provenance" in out and "CASES ERROR" in out
+
+
+def test_run_eval_rejects_unknown_suite(tmp_path, capsys):
+    cases = [{"suite": "vibes", "kind": "x", "provenance": "synthetic-rule",
+              "text": "anything", "expect": "STORE"}]
+    p = tmp_path / "frozen.jsonl"
+    with open(p, "w") as f:
+        for c in cases:
+            f.write(json.dumps(c) + "\n")
+    rc = run_eval(str(p), task="general-qa", registry_path=None, root=tmp_path)
+    assert rc == 2
+    assert "unknown suite" in capsys.readouterr().out
 
 
 def test_cli_calibrate_train_only(tmp_path):

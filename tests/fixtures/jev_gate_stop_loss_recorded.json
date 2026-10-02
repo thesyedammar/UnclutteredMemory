@@ -1,0 +1,1 @@
+{"model":"jev-1.13-free","answers":{"dur":{"type":"noul","noul":0.69},"imp":{"type":"choice","choice":"s4","confidence":0.28,"probabilities":{"s2":0.19,"s3":0.32,"s0":0.03,"s4":0.42,"s1":0.04}},"sens":{"type":"noul","noul":0.22},"stop":{"type":"choice","choice":"s1","confidence":0.93,"probabilities":{"s0":0.04,"s1":0.96}}},"usage":{"input_tokens":514,"output_tokens":121}}
