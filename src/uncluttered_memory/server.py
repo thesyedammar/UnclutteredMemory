@@ -190,7 +190,7 @@ class MemoryApp:
                          "quarantined": False}
 
     def _live_id(self, user: str, text: str):
-        for fid, old_text, _src in self.store.live(user):
+        for fid, old_text, *_ in self.store.live(user):
             if old_text == text:
                 return fid
         return None
@@ -229,7 +229,7 @@ class MemoryApp:
 
     def _score_live(self, user: str, query: str) -> list:
         scored = []
-        for _fid, text, _src in self.store.live(user):
+        for _fid, text, *_ in self.store.live(user):
             scored.append((text, token_jaccard(query, text)))
         scored.sort(key=lambda kv: -kv[1])
         return scored

@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS facts (
   tombstone_reason TEXT,
   tombstone_actor TEXT,
   conflict_with INTEGER,
+  gate_action TEXT,
+  importance INTEGER,
+  judge TEXT,
+  decided_at REAL,
   UNIQUE(user, text_hash)
 );
 CREATE TABLE IF NOT EXISTS quarantine (
@@ -61,7 +65,9 @@ CREATE INDEX IF NOT EXISTS conflicts_pair ON conflicts(old_id, new_id);
 
 _MIGRATE_COLS = {"text_hash": "TEXT", "user": "TEXT",
                  "tombstone_reason": "TEXT", "tombstone_actor": "TEXT",
-                 "conflict_with": "INTEGER"}
+                 "conflict_with": "INTEGER", "gate_action": "TEXT",
+                 "importance": "INTEGER", "judge": "TEXT",
+                 "decided_at": "REAL"}
 
 
 def normalize(text: str) -> str:
@@ -150,8 +156,33 @@ class Store:
             "DELETE FROM conflicts WHERE old_id=? OR new_id=?",
             (fact_id, fact_id))
 
+    def _write_provenance(self, fact_id: int, gate_action,
+                          importance, judge, decided_at,
+                          overwrite_nulls: bool) -> None:
+        """Write judge provenance on a facts row.
+
+        Insert and resurrection pass overwrite_nulls=True: the row
+        takes all four values as given (None clears to NULL), because
+        a new row and a new life carry no older verdict. Merge and
+        exact-live hits pass False: only the provided (non-None)
+        fields refresh, so a plain re-put never clobbers judged
+        provenance with NULLs. Callers commit.
+        """
+        vals = {"gate_action": gate_action, "importance": importance,
+                "judge": judge, "decided_at": decided_at}
+        if not overwrite_nulls:
+            vals = {k: v for k, v in vals.items() if v is not None}
+            if not vals:
+                return
+        self.db.execute(
+            "UPDATE facts SET %s WHERE id=?" % ", ".join(
+                "%s=?" % k for k in vals),
+            (*vals.values(), fact_id))
+
     def put(self, text: str, source: str, user: str = "local",
-            dedup_jaccard: float = th.DEDUP_JACCARD) -> int:
+            dedup_jaccard: float = th.DEDUP_JACCARD,
+            gate_action=None, importance=None, judge=None,
+            decided_at=None) -> int:
         """Insert or dedupe: exact normalized content hash, then near-duplicate.
 
         Stage one is the exact dedupe key (user, text_hash). A repeat
@@ -177,6 +208,15 @@ class Store:
 
         No silent-swallow path: every put either returns a live id or
         inserts a new live row.
+
+        Judge provenance (gate_action, importance, judge,
+        decided_at) rides as optional keywords, normally supplied by
+        admit() from the gate decision. Inserts and resurrections
+        store them as given (None reads NULL: a direct insert with
+        no gate vote is a ghostwriter row, distinguishable at read
+        time from a judged row). Exact-live and near-dupe hits only
+        refresh the provided fields, so a plain re-put keeps the
+        judged provenance already on the row.
         """
         # Exact dedupe is by normalized content hash. An exact-text
         # fallback used to sit here; it was dead (a row whose text
@@ -196,12 +236,18 @@ class Store:
                     " WHERE id=?",
                     (text, source, time.time(), fid))
                 self._clear_tombstone_and_conflict_marks(fid)
+                self._write_provenance(fid, gate_action, importance,
+                                       judge, decided_at,
+                                       overwrite_nulls=True)
                 self.db.commit()
                 return fid
             if old_source != source:
                 self.db.execute("UPDATE facts SET source=? WHERE id=?",
                                 (source, fid))
-                self.db.commit()
+            self._write_provenance(fid, gate_action, importance,
+                                   judge, decided_at,
+                                   overwrite_nulls=False)
+            self.db.commit()
             return fid
         best_id = None
         best_source = None
@@ -217,24 +263,44 @@ class Store:
             if best_source != source:
                 self.db.execute("UPDATE facts SET source=? WHERE id=?",
                                 (source, best_id))
-                self.db.commit()
+            self._write_provenance(best_id, gate_action, importance,
+                                   judge, decided_at,
+                                   overwrite_nulls=False)
+            self.db.commit()
             return best_id
         cur = self.db.execute(
-            "INSERT INTO facts(text, text_hash, source, user, created)"
-            " VALUES(?,?,?,?,?)", (text, h, source, user, time.time()))
+            "INSERT INTO facts(text, text_hash, source, user, created,"
+            " gate_action, importance, judge, decided_at)"
+            " VALUES(?,?,?,?,?,?,?,?,?)",
+            (text, h, source, user, time.time(), gate_action,
+             importance, judge, decided_at))
         self.db.commit()
         assert cur.lastrowid is not None
         return cur.lastrowid
 
     def get(self, fact_id: int):
+        """One facts row: the 8 lifecycle fields plus judge provenance.
+
+        Returns (id, text, source, user, tombstoned_by,
+        tombstone_reason, tombstone_actor, conflict_with,
+        gate_action, importance, judge, decided_at). The last four
+        are the gate verdict, the voted importance, the judge
+        identity (live model name, or stub:ClassName offline), and
+        the decision time. A ghostwriter direct insert reads
+        (None, None, None, None) there; only a judged write fills
+        them.
+        """
         return self.db.execute(
             "SELECT id, text, source, user, tombstoned_by,"
-            " tombstone_reason, tombstone_actor, conflict_with"
+            " tombstone_reason, tombstone_actor, conflict_with,"
+            " gate_action, importance, judge, decided_at"
             " FROM facts WHERE id=?", (fact_id,)).fetchone()
 
     def supersede(self, old_id: int, new_text: str, source: str,
                   user: "str | None" = None,
-                  reason: str = "supersede", actor: str = "code") -> int:
+                  reason: str = "supersede", actor: str = "code",
+                  gate_action=None, importance=None, judge=None,
+                  decided_at=None) -> int:
         """Scope-explicit supersede: the caller user threads every path.
 
         The dedupe key is (user, text_hash) and live(user=...) pairs
@@ -249,6 +315,10 @@ class Store:
           in that caller scope and the new id is returned.
         - missing id without a user: KeyError(old_id); no row is
           silently inserted into the default scope.
+
+        Judge provenance keywords (gate_action, importance, judge,
+        decided_at) forward to both put() paths, so a judged
+        supersede stores its verdict on the new row.
         """
         old = self.db.execute("SELECT text, user FROM facts WHERE id=?",
                               (old_id,)).fetchone()
@@ -266,8 +336,14 @@ class Store:
             # touching the row, which silently swallows a
             # put-after-tombstone. Route through put() so a
             # tombstoned row is resurrected as live.
-            return self.put(new_text, source, row_user)
-        new_id = self.put(new_text, source, row_user)
+            return self.put(new_text, source, row_user,
+                            gate_action=gate_action,
+                            importance=importance, judge=judge,
+                            decided_at=decided_at)
+        new_id = self.put(new_text, source, row_user,
+                          gate_action=gate_action,
+                          importance=importance, judge=judge,
+                          decided_at=decided_at)
         if new_id == old_id:
             return old_id
         self.tombstone(old_id, new_id, reason, actor)
@@ -331,7 +407,16 @@ class Store:
             " WHERE fo.user=? OR fn.user=? ORDER BY c.id", (user, user)).fetchall()
 
     def live(self, user=None) -> list:
-        """Live facts, oldest first: (id, text, source).
+        """Live facts, oldest first: (id, text, source, gate_action,
+        importance, judge, decided_at).
+
+        The first three are the fact; the last four are the judge
+        provenance stored at write time (gate verdict, voted
+        importance, judge identity, decision time). A ghostwriter
+        direct insert reads (None, None, None, None) there; only a
+        judged write (admit, or put/supersede with provenance)
+        fills them, so judged rows are distinguishable at read
+        time.
 
         Read cost, stated plainly: the SQL filter is indexed
         (facts_live_user for a user scope, facts_live unscoped), so
@@ -346,10 +431,12 @@ class Store:
         """
         if user is None:
             return self.db.execute(
-                "SELECT id, text, source FROM facts"
+                "SELECT id, text, source, gate_action, importance,"
+                " judge, decided_at FROM facts"
                 " WHERE tombstoned_by IS NULL ORDER BY id").fetchall()
         return self.db.execute(
-            "SELECT id, text, source FROM facts"
+            "SELECT id, text, source, gate_action, importance,"
+            " judge, decided_at FROM facts"
             " WHERE tombstoned_by IS NULL AND user=? ORDER BY id",
             (user,)).fetchall()
 
@@ -492,6 +579,12 @@ class Store:
         (including the judge-halted quarantine write itself) log op
         "admit.put" or "admit.quarantine", then propagate. The op
         names which write step raised.
+
+        On STORE the gate verdict is stored on the facts row with
+        the voted importance, the judge identity, and the decision
+        time (gate_action, importance, judge, decided_at); get()
+        and live() return them. QUARANTINE and DROP write no facts
+        row, so they store no row provenance.
         """
         def _counted(op: str, fn):
             try:
@@ -522,7 +615,10 @@ class Store:
             }, sort_keys=True))
             raise
         if d.action == "STORE":
-            _counted("admit.put", lambda: self.put(text, source, user))
+            _counted("admit.put", lambda: self.put(
+                text, source, user, gate_action=d.action,
+                importance=d.importance, judge=d.judge,
+                decided_at=time.time()))
         elif d.action == "QUARANTINE":
             _counted("admit.quarantine", lambda: self.quarantine(
                 text, ";".join(d.reasons), source, user))

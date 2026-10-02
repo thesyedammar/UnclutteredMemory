@@ -47,7 +47,7 @@ def test_prompt_injection_admit_path_quarantines_or_drops():
         s = Store()
         action = s.admit(text, "attacker", Gate(RuleJudge()))
         assert action in ("QUARANTINE", "DROP"), text
-        assert [t for _, t, _ in s.live()] == []
+        assert [t for _, t, *_ in s.live()] == []
 
 
 def test_paraphrase_exfil_is_flagged(tmp_path):

@@ -527,7 +527,7 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
             if c["expect"] == "TOMBSTONE":
                 ok = (dec.action == "TOMBSTONE" and applied
                       and s.get(old_id)[4] == new_id
-                      and any(t == c["new"] for _, t, _ in s.live()))
+                      and any(t == c["new"] for _, t, *_ in s.live()))
             else:  # KEEP
                 ok = (dec.action == "KEEP" and not applied
                       and s.get(old_id)[4] is None

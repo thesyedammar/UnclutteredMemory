@@ -137,9 +137,9 @@ def test_near_dupe_never_crosses_user_scope():
               user="alice")
     b = s.put("sunday hamper picnic the pack for", "chat", user="bob")
     assert a != b
-    assert [t for _, t, _ in s.live(user="alice")] == [
+    assert [t for _, t, *_ in s.live(user="alice")] == [
         "pack the picnic hamper for sunday"]
-    assert [t for _, t, _ in s.live(user="bob")] == [
+    assert [t for _, t, *_ in s.live(user="bob")] == [
         "sunday hamper picnic the pack for"]
 
 
@@ -154,6 +154,46 @@ def test_tombstoned_near_dupe_inserts_fresh_row():
     assert fresh != fid
     assert s.get(fid)[4] == other
     assert fresh in [r[0] for r in s.live()]
+
+
+def test_added_word_in_short_fact_stays_distinct():
+    # 3 shared of 4 union = 0.75, below the 0.85 default: an added
+    # word in a short fact is a different fact, so it stays separate.
+    assert token_jaccard("ship today the build",
+                         "ship the build") == 3 / 4
+    s = Store()
+    a = s.put("ship today the build", "email")
+    b = s.put("ship the build", "chat")
+    assert a != b
+    assert len(s.live()) == 2
+
+
+def test_exact_default_threshold_pair_merges():
+    # 17 shared of 20 union = 0.85 exactly: at-or-above the default
+    # merges, so this pair is one row.
+    shared = ["t%02d" % i for i in range(17)]
+    a_text = " ".join(shared + ["alpha"])
+    b_text = " ".join(shared + ["beta", "gamma"])
+    assert token_jaccard(a_text, b_text) == 17 / 20 == 0.85
+    s = Store()
+    a = s.put(a_text, "email")
+    assert s.put(b_text, "chat") == a
+    assert len(s.live()) == 1
+
+
+def test_just_below_default_threshold_pair_stays_distinct():
+    # 16 shared of 19 union = 0.842, just under the 0.85 default:
+    # near miss, stays two rows.
+    shared = ["t%02d" % i for i in range(16)]
+    a_text = " ".join(shared + ["alpha"])
+    b_text = " ".join(shared + ["beta", "gamma"])
+    assert token_jaccard(a_text, b_text) == 16 / 19
+    assert token_jaccard(a_text, b_text) < th.DEDUP_JACCARD
+    s = Store()
+    a = s.put(a_text, "email")
+    b = s.put(b_text, "chat")
+    assert a != b
+    assert len(s.live()) == 2
 
 
 def test_empty_and_single_token_texts_are_safe():

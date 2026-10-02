@@ -128,6 +128,13 @@ def test_boundary_comparisons_strict_above_at_or_above():
     assert at_store.reasons == ["durable+important"]
 
 
+def test_done_deal_store_vote_stores():
+    """A clean vote with no deny firing stores: done deal, it stores."""
+    d = _decide("done", GateVote(0.9, 5, 0.0))
+    assert d.action == "STORE"
+    assert d.reasons == ["durable+important"]
+
+
 def test_precedence_holds_when_cutoffs_are_overridden():
     """The branch order is structural; overrides move the bars only."""
     vote = GateVote(0.9, 5, 0.9, sensitive=0.9)

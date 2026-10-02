@@ -9,10 +9,20 @@ class Injector:
         self.budget = budget_chars
 
     def pack(self, cards: list) -> str:
-        """cards: [(text, score)]. Whole cards only, best first, hard budget."""
+        """cards: [(text, score)]. Whole cards only, best first, hard budget.
+
+        Exact-duplicate card texts pack once: cards arrive best
+        first, so the first occurrence wins and later copies are
+        skipped without spending budget. Distinct cards are never
+        merged here; near-duplicate merging is the store write
+        path, not the inject read path.
+        """
         ordered = sorted(cards, key=lambda c: -c[1])
-        out, used = [], 0
+        out, used, seen = [], 0, set()
         for text, _ in ordered:
+            if text in seen:
+                continue
+            seen.add(text)
             if used + len(text) + 1 > self.budget:
                 break
             out.append(text)

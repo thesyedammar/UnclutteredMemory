@@ -255,7 +255,7 @@ def test_cli_full_run_against_temp_db(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "restore by human" in out
     assert "coding-bug count (Store.error_count): 0" in out
-    assert {t for _, t, _ in Store(str(db)).live()} == {
+    assert {t for _, t, *_ in Store(str(db)).live()} == {
         "dentist appointment at 3pm Tuesday",
         "dentist appointment at 4pm Tuesday"}
     rc = climod.main(["override", "--db", str(db), "--fact-id", str(old),
@@ -264,7 +264,7 @@ def test_cli_full_run_against_temp_db(tmp_path, capsys):
     assert rc == 0
     row = Store(str(db)).get(old)
     assert row[4] == new and row[5] == "user said so" and row[6] == "human"
-    assert [t for _, t, _ in Store(str(db)).live()] == [
+    assert [t for _, t, *_ in Store(str(db)).live()] == [
         "dentist appointment at 4pm Tuesday"]
 
 
@@ -294,7 +294,7 @@ def test_disk_backed_sqlite_file_db_write_reopen_tombstone(tmp_path):
     s1.db.close()
     assert db.exists() and db.stat().st_size > 0
     s2 = Store(str(db))
-    assert [t for _, t, _ in s2.live()] == [
+    assert [t for _, t, *_ in s2.live()] == [
         "standup moved to half past ten on weekdays"]
     tomb = s2.tombstoned()
     assert len(tomb) == 1 and tomb[0][0] == a and tomb[0][3] == b
@@ -303,7 +303,7 @@ def test_disk_backed_sqlite_file_db_write_reopen_tombstone(tmp_path):
     s2.restore(a)
     s2.db.close()
     s3 = Store(str(db))
-    assert {t for _, t, _ in s3.live()} == {
+    assert {t for _, t, *_ in s3.live()} == {
         "standup moved to half past nine on weekdays",
         "standup moved to half past ten on weekdays"}
     assert s3.tombstoned() == []

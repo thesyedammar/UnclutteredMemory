@@ -39,7 +39,7 @@ def test_tombstone_not_rewrite():
     s = Store()
     old = s.put("ship tuesday", "agent")
     s.supersede(old, "ship thursday", "agent")
-    texts = [t for _, t, _ in s.live()]
+    texts = [t for _, t, *_ in s.live()]
     assert texts == ["ship thursday"]
 
 
@@ -78,6 +78,15 @@ def test_injector_orders_and_caps():
     inj = Injector(budget_chars=10)
     assert inj.pack([("low", 0.6), ("high", 0.9)]) == "high\nlow"
     assert inj.pack([("toolongcard", 0.9)]) == ""
+
+
+def test_injector_dedupes_duplicate_cards():
+    # Injecting the same card text twice packs it once: the first
+    # (best-scored) occurrence wins and the copy spends no budget.
+    inj = Injector(budget_chars=100)
+    assert inj.pack([("same card", 0.9), ("same card", 0.8)]) == "same card"
+    assert inj.pack([("b card", 0.9), ("a card", 0.8),
+                     ("b card", 0.7)]) == "b card\na card"
 
 
 def test_injector_zero_budget_packs_nothing():

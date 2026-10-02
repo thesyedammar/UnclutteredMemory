@@ -36,10 +36,10 @@ is set; everything else is offline.
 - `src/uncluttered_memory/gate.py` - one batch of typed judge questions, code enforces drop / quarantine / store. Unseen input fails closed to quarantine, never an exception. RuleJudge is an offline heuristic stub keyed by text features; it is not Jev. Every decision cutoff (confidence, play, sensitive, stop, durable, importance) is a parameter whose default lives in `thresholds.py`.
 - `src/uncluttered_memory/thresholds.py` - the one home for every decision-threshold default and every RuleJudge vote level. Logic paths read cutoffs from here; no other module hardcodes a numeric decision boundary or vote literal. The per-task registry can override `admit.durable` only.
 - `src/uncluttered_memory/console.py` - report streams are forced to UTF-8 with a named error handler (`backslashreplace`), so a cp1252 console or pipe never mangles a report line.
-- `src/uncluttered_memory/store.py` - SQLite with two-stage dedupe (exact normalized content hash first, then token-set Jaccard at `DEDUP_JACCARD` = 0.85 over live same-user rows; the dead exact-text fallback branch was removed), provenance per row, soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, and per-user scoping. `Store.admit` quarantines only judge-halt exceptions (the JevError family: rate limit, bad key, transport, malformed judge answer); any other exception is a coding bug that increments an explicit `error_count`, emits one structured log line (time, op, input hash, error type), and propagates instead of vanishing as a quarantine.
+- `src/uncluttered_memory/store.py` - SQLite with two-stage dedupe (exact normalized content hash first, then token-set Jaccard at `DEDUP_JACCARD` = 0.85 over live same-user rows; the dead exact-text fallback branch was removed), judge provenance per row (`gate_action`, `importance`, `judge`, `decided_at`, all NULL on a ghostwriter direct insert), soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, and per-user scoping. `Store.admit` quarantines only judge-halt exceptions (the JevError family: rate limit, bad key, transport, malformed judge answer); any other exception is a coding bug that increments an explicit `error_count`, emits one structured log line (time, op, input hash, error type), and propagates instead of vanishing as a quarantine.
 - `src/uncluttered_memory/supersede.py` - code-ordered candidate pairs, relation vote via the judge protocol (supersede / coexist / conflict_unresolved / unrelated). Only an agreed supersede soft-tombstones the old fact; an agreed clash marks both facts conflict_unresolved and keeps both live, never a tombstone. Named-human override for restore / retire / tombstone, each documented in the CLI help (`unclutter override --help`) and tested end to end.
 - `src/uncluttered_memory/recall.py` - the read path: gate, band, and cap are parameters defaulting to `thresholds.py`; code packs.
-- `src/uncluttered_memory/inject.py` - card-first packing, whole-card truncation, hard budget from `thresholds.py`.
+- `src/uncluttered_memory/inject.py` - card-first packing, whole-card truncation, exact-duplicate card texts packed once (first, best-scored occurrence wins), hard budget from `thresholds.py`.
 - `src/uncluttered_memory/calibrate.py` - per-task threshold registry fingerprinted to the task name, refuses mismatched files, UNCALIBRATED default, train-only tuning.
 - `src/uncluttered_memory/jev_client.py` - judge protocol with a native Jev client, plus the heterogeneous offline relation pair (StrictRelationJudge + LenientRelationJudge). StrictRelationJudge requires at least two shared content tokens beyond stopwords and numbers before it reads a marker as being about the same slot.
 - `eval/run.py` - one-command eval over two case sets: the hand-authored golden set (the claim) and the synthetic bulk set (self-consistency). Per-suite tables, admit precision/recall/F1, latency, cost-per-1k estimate, contamination scans that fail closed. Every contamination flag carries a machine-readable reason (which check fired, similarity score, offending excerpt) and the report prints it.
@@ -293,9 +293,12 @@ Tokens are case- and punctuation-sensitive, matching the contract that
 case and punctuation are content; resurrection stays exact-only (a
 fuzzy match against tombstoned text inserts a fresh row); the
 threshold is a `put` parameter tests can override. Limits, stated
-plainly: a single-word change in a short fact still reads DISTINCT,
+plainly: a single-word change in a short fact still reads DISTINCT
+(`ship today the build` vs `ship the build` scores 3/4 = 0.75),
 and heavily reworded paraphrases with little token overlap stay
-DISTINCT. This stage catches near-duplicates, not deep semantic
+DISTINCT. The boundary is pinned at the default: a pair scoring
+exactly 0.85 merges (at-or-above), a pair just under it stays
+separate. This stage catches near-duplicates, not deep semantic
 equivalence. A repeat put of tombstoned text resurrects the
 row as live with fresh source/created provenance (new put is new
 life), pinned by put-after-tombstone tests; `Store.supersede` routes
@@ -309,6 +312,23 @@ was dead code (a row whose text matches also carries the hash of that
 text) and was removed; exact dedupe is by normalized content
 hash, with the token-set near-duplicate stage above it, both pinned
 by tests.
+
+Row provenance, exactly as stored: each facts row carries
+`gate_action` (the gate verdict, `STORE` on judged rows),
+`importance` (the voted 1-5 importance), `judge` (the judge
+identity: the live model name such as `jev-1.13-free`, or
+`stub:RuleJudge` / `stub:FakeJudge` offline), and `decided_at`
+(unix time of the decision). `Store.admit` fills all four from the
+gate decision on STORE; `put` and `supersede` take them as keywords
+and write them on inserts, resurrections, and merges (a plain
+re-put refreshes only provided fields, never NULLs over judged
+provenance). A ghostwriter direct SQL insert leaves all four NULL,
+so `get()` and `live()` both tell a judged row from an unjudged
+one at read time. Operator bypass rows (`release`,
+`approve_quarantine`) go through `put` with no gate vote and read
+NULL like direct inserts: only `admit` rows claim a judge.
+Databases created before these columns migrate on open (missing
+columns added, old rows read NULL provenance).
 
 ## Honesty
 

@@ -22,7 +22,7 @@ def test_approve_releases_live_and_logs_reason(tmp_path):
     db = _seeded_db(tmp_path)
     s = Store(str(db))
     fid = s.approve_quarantine(1, "checked, real duty", actor="human")
-    assert [t for _, t, _ in s.live()] == ["the visa interview is on monday"]
+    assert [t for _, t, *_ in s.live()] == ["the visa interview is on monday"]
     assert [qid for qid, _, _ in s.quarantined()] == [2]
     reviews = s.reviews()
     assert len(reviews) == 1
@@ -70,7 +70,7 @@ def test_release_is_privileged_bypass_with_no_review_row(tmp_path):
     db = _seeded_db(tmp_path)
     s = Store(str(db))
     fid = s.release(1)
-    assert [t for _, t, _ in s.live()] == ["the visa interview is on monday"]
+    assert [t for _, t, *_ in s.live()] == ["the visa interview is on monday"]
     assert [qid for qid, _, _ in s.quarantined()] == [2]
     assert s.reviews() == []
     assert s.get(fid)[1] == "the visa interview is on monday"
@@ -134,7 +134,7 @@ def test_cli_approve_end_to_end(tmp_path, capsys):
     assert "released as fact" in out
     assert "by human" in out
     s = Store(str(db))
-    assert [t for _, t, _ in s.live()] == ["the visa interview is on monday"]
+    assert [t for _, t, *_ in s.live()] == ["the visa interview is on monday"]
     assert s.reviews()[0][3] == "checked with the team"
 
 

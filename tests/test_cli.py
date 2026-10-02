@@ -50,7 +50,7 @@ def test_cli_override_tombstone_reads_back(tmp_path, capsys):
     row = Store(str(db)).get(old)
     assert row[4] == new and row[5] == "human-tombstone"
     assert row[6] == "human"
-    assert [t for _, t, _ in Store(str(db)).live()] == ["meeting is at 4pm"]
+    assert [t for _, t, *_ in Store(str(db)).live()] == ["meeting is at 4pm"]
 
 
 def test_cli_override_help_documents_every_action(capsys):

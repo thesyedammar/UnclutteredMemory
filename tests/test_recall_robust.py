@@ -89,7 +89,7 @@ def test_recall_never_crashes_on_unseen_paraphrases():
     ]
     for s in seeds:
         store.put(s, "user")
-    live = [t for _, t, _ in store.live()]
+    live = [t for _, t, *_ in store.live()]
     assert live, "seed store unexpectedly empty"
     gate = Gate(RuleJudge())
     recall = Recall()

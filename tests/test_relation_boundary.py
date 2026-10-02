@@ -32,7 +32,7 @@ def _assert_veto(old, new):
     assert dec.action == "KEEP" and not dec.agreed, (old, new, dec.action)
     assert supmod.apply(s, old_id, new_id, dec) is False
     assert s.tombstoned() == [] and s.conflicts() == []
-    assert {t for _, t, _ in s.live()} == {old, new}
+    assert {t for _, t, *_ in s.live()} == {old, new}
 
 
 def _assert_agreed_tombstone(old, new, shared_expected):
@@ -46,7 +46,7 @@ def _assert_agreed_tombstone(old, new, shared_expected):
     assert dec.agreed and dec.action == "TOMBSTONE", (old, new, dec.action)
     assert supmod.apply(s, old_id, new_id, dec) is True
     assert s.get(old_id)[4] == new_id
-    assert [t for _, t, _ in s.live()] == [new]
+    assert [t for _, t, *_ in s.live()] == [new]
 
 
 def test_shared_token_minimum_raised_to_two():

@@ -61,7 +61,7 @@ def test_recall_on_5k_rows_within_budget(tmp_path):
     start = time.perf_counter()
     rows = s.live("local")
     scored = [(t, token_jaccard("winter supply roster query", t))
-              for _, t, _ in rows]
+              for _, t, *_ in rows]
     texts = Recall().select(scored)
     Recall().pack(texts)
     dt = time.perf_counter() - start

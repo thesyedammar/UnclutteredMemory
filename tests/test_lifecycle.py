@@ -17,7 +17,7 @@ def test_human_override_restore_read_back():
                           reason="wrong call")
     row = s.get(old)
     assert row[4] is None and row[5] is None and row[6] is None
-    assert {t for _, t, _ in s.live()} == {"meeting is at 3pm",
+    assert {t for _, t, *_ in s.live()} == {"meeting is at 3pm",
                                            "meeting is at 4pm"}
     assert s.tombstoned() == []
 
@@ -30,7 +30,7 @@ def test_human_override_retire_read_back():
                           target_id=victim, reason="user said so")
     row = s.get(old)
     assert row[4] == victim and row[5] == "user said so" and row[6] == "human"
-    assert [t for _, t, _ in s.live()] == ["gate key is steel"]
+    assert [t for _, t, *_ in s.live()] == ["gate key is steel"]
     assert s.tombstoned() == [(old, "gate key is brass", "user", victim)]
 
 
@@ -44,13 +44,13 @@ def test_restore_of_tombstone_is_read_back_live():
     row = s.get(old)
     assert row[4] is None and row[5] is None and row[6] is None
     assert s.tombstoned() == []
-    assert {t for _, t, _ in s.live()} == {"trip on monday",
+    assert {t for _, t, *_ in s.live()} == {"trip on monday",
                                            "trip on tuesday"}
     # the counterpart fact is untouched, and repeat restores are safe
     assert s.get(new)[4] is None
     s.restore(old)
     s.restore(new)
-    assert {t for _, t, _ in s.live()} == {"trip on monday",
+    assert {t for _, t, *_ in s.live()} == {"trip on monday",
                                            "trip on tuesday"}
 
 
@@ -114,7 +114,7 @@ def test_put_after_tombstone_resurrects_live():
     row = s.get(fid)
     assert row[4] is None and row[5] is None and row[6] is None
     assert row[2] == "chat"
-    assert {t for _, t, _ in s.live()} == {"  resurrect   me ",
+    assert {t for _, t, *_ in s.live()} == {"  resurrect   me ",
                                            "unrelated fact"}
     assert s.tombstoned() == []
 
@@ -145,7 +145,7 @@ def test_restore_conflict_marked_fact_reads_fully_clean():
     assert ra[4] is None and ra[5] is None and ra[6] is None
     assert ra[7] is None and rb[7] is None
     assert s.conflicts() == []
-    assert {t for _, t, _ in s.live()} == {"sky is blue", "sky is green"}
+    assert {t for _, t, *_ in s.live()} == {"sky is blue", "sky is green"}
 
 
 def test_restore_conflict_marked_fact_direct_store_call():
@@ -178,7 +178,7 @@ def test_put_resurrects_conflict_marked_tombstoned_fact_fully_clean():
     assert ra[4] is None and ra[5] is None and ra[6] is None
     assert ra[7] is None and rb[7] is None
     assert s.conflicts() == []
-    assert {t for _, t, _ in s.live()} == {"sky  is   blue", "sky is green",
+    assert {t for _, t, *_ in s.live()} == {"sky  is   blue", "sky is green",
                                            "unrelated row"}
     assert s.tombstoned() == []
 
@@ -210,7 +210,7 @@ def test_supersede_matching_user_threads_caller_scope():
     old = s.put("alice fact one", "email", user="alice")
     new = s.supersede(old, "alice fact two", "chat", user="alice")
     assert new != old
-    assert [t for _, t, _ in s.live(user="alice")] == ["alice fact two"]
+    assert [t for _, t, *_ in s.live(user="alice")] == ["alice fact two"]
     assert s.live(user="bob") == []
     assert [fid for fid, _, _, _ in s.tombstoned(user="alice")] == [old]
 
@@ -221,7 +221,7 @@ def test_supersede_cross_user_refused_and_writes_nothing():
     old = s.put("alice private fact", "email", user="alice")
     with pytest.raises(ValueError):
         s.supersede(old, "bob replacement", "chat", user="bob")
-    assert [t for _, t, _ in s.live(user="alice")] == ["alice private fact"]
+    assert [t for _, t, *_ in s.live(user="alice")] == ["alice private fact"]
     assert s.live(user="bob") == []
     assert s.tombstoned() == []
     assert s.get(old)[4] is None
@@ -242,9 +242,9 @@ def test_supersede_missing_id_with_explicit_user_lands_in_scope():
     s = Store()
     alice_old = s.put("alice kept fact", "email", user="alice")
     new = s.supersede(9999, "bob fresh fact", "chat", user="bob")
-    assert [t for _, t, _ in s.live(user="bob")] == ["bob fresh fact"]
-    assert [t for _, t, _ in s.live(user="alice")] == ["alice kept fact"]
-    assert "bob fresh fact" not in [t for _, t, _ in s.live(user="alice")]
+    assert [t for _, t, *_ in s.live(user="bob")] == ["bob fresh fact"]
+    assert [t for _, t, *_ in s.live(user="alice")] == ["alice kept fact"]
+    assert "bob fresh fact" not in [t for _, t, *_ in s.live(user="alice")]
     assert s.get(alice_old)[4] is None
     assert new in [r[0] for r in s.live(user="bob")]
 

@@ -65,6 +65,25 @@ class GateVote:
 class GateDecision:
     action: str  # STORE, QUARANTINE, DROP
     reasons: list = field(default_factory=list)
+    # Judge provenance carried with every decision, so the write path
+    # can store it on the facts row: the voted importance and the
+    # judge identity (live model name, or stub:ClassName offline).
+    importance: int | None = None
+    judge: str = ""
+
+
+def judge_name(judge) -> str:
+    """Judge identity for row provenance: live model name or stub label.
+
+    A live judge carries its model (JevJudgeClient.model, the live
+    model name); offline stubs carry no model, so they read as
+    stub:ClassName (stub:RuleJudge, stub:FakeJudge). The label tells
+    a judged row from a ghostwriter direct insert (NULL judge).
+    """
+    model = getattr(judge, "model", None)
+    if model:
+        return str(model)
+    return "stub:" + type(judge).__name__
 
 
 class JudgeClient:
@@ -346,15 +365,22 @@ class Gate:
         owning branch are both visible in the decision record.
         """
         v = self.judge.vote(text, neighbors or [], facts or [])
+        who = judge_name(self.judge)
         if v.conf < min_conf:
-            return GateDecision("QUARANTINE", ["uncertain-low-conf"])
+            return GateDecision("QUARANTINE", ["uncertain-low-conf"],
+                                v.importance, who)
         if v.play > play_drop:
-            return GateDecision("DROP", ["play>" + _num(play_drop)])
+            return GateDecision("DROP", ["play>" + _num(play_drop)],
+                                v.importance, who)
         if v.sensitive > sensitive_drop:
-            return GateDecision("DROP", ["sensitive>" + _num(sensitive_drop)])
+            return GateDecision("DROP", ["sensitive>" + _num(sensitive_drop)],
+                                v.importance, who)
         if v.stop >= stop_block:
             return GateDecision("QUARANTINE",
-                                ["stop>=" + _num(stop_block)])
+                                ["stop>=" + _num(stop_block)],
+                                v.importance, who)
         if v.durable >= durable_min and v.importance >= importance_min:
-            return GateDecision("STORE", ["durable+important"])
-        return GateDecision("DROP", ["not-durable-or-trivial"])
+            return GateDecision("STORE", ["durable+important"],
+                                v.importance, who)
+        return GateDecision("DROP", ["not-durable-or-trivial"],
+                            v.importance, who)

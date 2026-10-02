@@ -40,7 +40,7 @@ def test_agreed_supersede_tombstones_with_provenance():
     assert supmod.apply(s, old, new, dec, actor="code", reason="addr")
     row = s.get(old)
     assert row[4] == new and row[5] == "addr" and row[6] == "code"
-    assert [t for _, t, _ in s.live()] == ["office is at 2 Main St"]
+    assert [t for _, t, *_ in s.live()] == ["office is at 2 Main St"]
 
 
 def test_invalid_label_veto():
@@ -75,7 +75,7 @@ def test_agreed_contradict_marks_both_never_tombstones():
     assert s.get(old)[7] == new and s.get(new)[7] == old
     assert s.conflicts() == [(old, new, "conflict_unresolved",
                               "conflict_unresolved", "code")]
-    assert {t for _, t, _ in s.live()} == {"I love tea",
+    assert {t for _, t, *_ in s.live()} == {"I love tea",
                                            "I do not love tea anymore"}
 
 
@@ -104,7 +104,7 @@ def test_agreed_coexist_keeps_both_unmarked():
     assert dec.action == "KEEP" and dec.agreed and dec.relation == "coexist"
     assert not supmod.apply(s, old, new, dec)
     assert s.conflicts() == []
-    assert {t for _, t, _ in s.live()} == {"the kettle is blue",
+    assert {t for _, t, *_ in s.live()} == {"the kettle is blue",
                                            "the toaster is silver"}
 
 
@@ -198,7 +198,7 @@ def test_tombstone_retention_and_restore():
     assert dead and dead[0][0] == old and dead[0][3] == new
     s.restore(old)
     assert s.get(old)[4] is None
-    assert {t for _, t, _ in s.live()} == {"trip on monday", "trip on tuesday"}
+    assert {t for _, t, *_ in s.live()} == {"trip on monday", "trip on tuesday"}
 
 
 def test_calibrate_fingerprint_refusal(tmp_path):
@@ -283,7 +283,7 @@ def test_quarantine_is_real_store_state():
     rows = s.quarantined()
     assert [r[1] for r in rows] == ["eligible for a 30% discount", "waitlist"]
     fid = s.release(1, "chat")
-    assert [t for _, t, _ in s.live()] == ["eligible for a 30% discount"]
+    assert [t for _, t, *_ in s.live()] == ["eligible for a 30% discount"]
     assert s.quarantined() == [(2, "waitlist", "stop>=0.58")]
     assert s.get(fid) is not None
 
@@ -305,7 +305,7 @@ def test_admit_stores_through_gate():
     s = Store()
     action = s.admit("prefer standup at 9am", "chat", Gate(RuleJudge()))
     assert action == "STORE"
-    assert [t for _, t, _ in s.live()] == ["prefer standup at 9am"]
+    assert [t for _, t, *_ in s.live()] == ["prefer standup at 9am"]
 
 
 def test_supersede_equal_text_noop():
@@ -313,7 +313,7 @@ def test_supersede_equal_text_noop():
     old = s.put("ship friday", "user")
     assert s.supersede(old, "ship  friday", "user") == old
     assert s.tombstoned() == []
-    assert [t for _, t, _ in s.live()] == ["ship friday"]
+    assert [t for _, t, *_ in s.live()] == ["ship friday"]
 
 
 def test_put_updates_provenance_source():
@@ -329,7 +329,7 @@ def test_user_scoping():
     a = s.put("stop-loss 8%", "user", user="alice")
     b = s.put("stop-loss 8%", "user", user="bob")
     assert a != b
-    assert [t for _, t, _ in s.live(user="alice")] == ["stop-loss 8%"]
+    assert [t for _, t, *_ in s.live(user="alice")] == ["stop-loss 8%"]
     assert len(s.live(user="bob")) == 1
 
 

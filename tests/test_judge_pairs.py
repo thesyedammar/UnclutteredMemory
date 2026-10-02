@@ -81,7 +81,7 @@ def test_supersede_vetoed_on_disagreement():
     assert supmod.apply(s, old_id, new_id, dec) is False
     assert s.tombstoned() == []
     assert s.conflicts() == []
-    assert {t for _, t, _ in s.live()} == {old, new}
+    assert {t for _, t, *_ in s.live()} == {old, new}
 
 
 def test_conflict_marking_vetoed_on_disagreement():
@@ -109,7 +109,7 @@ def test_agreed_supersede_proceeds_only_on_genuine_agreement():
     assert dec.agreed and dec.action == "TOMBSTONE"
     assert supmod.apply(s, old_id, new_id, dec)
     assert s.get(old_id)[4] == new_id
-    assert [t for _, t, _ in s.live()] == [new]
+    assert [t for _, t, *_ in s.live()] == [new]
 
 
 def test_agreed_conflict_marks_both_never_tombstones():

@@ -100,7 +100,7 @@ def _quarantine_vote(text: str) -> Gate:
 def test_put_failure_counts_logs_put_op_and_propagates(caplog):
     s = Store()
     text = "a durable fact worth keeping"
-    def _boom(text, source, user="local"):
+    def _boom(text, source, user="local", **kw):
         raise RuntimeError("disk is gone")
     s.put = _boom
     with caplog.at_level(logging.ERROR, logger="uncluttered_memory.store"):

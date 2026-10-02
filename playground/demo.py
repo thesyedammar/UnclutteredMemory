@@ -45,7 +45,7 @@ def main() -> int:
     recall = Recall()
     query = "standup daily"
     scored = [(t, token_jaccard(query, t))
-              for _, t, _ in store.live("alice")]
+              for _, t, *_ in store.live("alice")]
     texts = recall.select(sorted(scored, key=lambda kv: -kv[1]))
     print("RECALL query=%r texts=%r" % (query, texts))
     packed = Injector().pack([(t, s) for t, s in scored if t in texts])
