@@ -123,13 +123,22 @@ def _laugh(low: str) -> bool:
 
 
 def _identity_claim(raw: str, low: str) -> bool:
-    """Proper-noun 'I am X' with no durable markers reads as play."""
-    if re.fullmatch(r"i am ([a-z][a-z ]{0,20})", low) is None:
+    """Proper-noun 'I am X' with no durable markers reads as play.
+
+    Casefold-insensitive: 'i am zorro' and 'I am Zorro' both read
+    as identity claims. Casing alone never distinguishes a name, so
+    the match runs on raw.casefold() and the name check accepts any
+    leading letter via casefold instead of requiring an uppercase
+    first letter. The low argument is accepted for call compatibility
+    and is not trusted for the decision.
+    """
+    folded = raw.casefold()
+    if re.fullmatch(r"i am ([a-z][a-z ]{0,20})", folded) is None:
         return False
     if re.search(r"\d", raw) is not None:
         return False
     ent = raw.strip()[4:].strip()
-    return bool(ent) and ent[0].isupper()
+    return bool(ent) and ent[0].casefold().isalpha()
 
 
 def _sensitive(low: str) -> bool:

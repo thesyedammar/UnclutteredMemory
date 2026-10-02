@@ -5,13 +5,15 @@ marker, 4/1/2 sat in stub buckets), so the hand-authored claim was
 overstated. The suite was rewritten from human judgment of what is
 actually worth remembering, deliberately breaking the buckets: vital
 facts with no marker words, trivial facts carrying marker words, and
-near-boundary judgments. These tests pin that independence:
+near-boundary judgments.
 
-- labels live in the data file, not derived from text features
-  (stripping every marker token leaves stored labels unchanged, while
-  a stub-mimicking marker predictor misses widely);
-- the offline scorer earns the hard cells on merit (marker-free
-  vitals at 5, marker-bearing trivials at 1/2).
+The independence claim rests ONLY on the label-side tests below:
+labels live in the data file (stripping every marker token leaves the
+stored labels unchanged), and a stub-mimicking marker predictor that
+reads only marker features misses widely. The scorer-competence
+checks at the bottom of this file use RuleJudge as the scorer, so
+they prove a stub matches the labels on hard cells; they are kept as
+competence checks and are explicitly NOT independence evidence.
 """
 import json
 import re
@@ -67,6 +69,9 @@ def _stub_mimic(text: str) -> int:
 
 
 def test_importance_labels_live_in_data_not_derived():
+    """Independence evidence (label side): stripping every marker
+    token leaves the stored labels unchanged, because the labels are
+    stored in the data file, not derived from text features."""
     cases = _load_importance()
     assert len(cases) == 24
     before = [(c["id"], c["expect"]) for c in cases]
@@ -74,12 +79,27 @@ def test_importance_labels_live_in_data_not_derived():
     assert any(s != c["text"] for s, c in zip(stripped, cases))
     after = [(c["id"], c["expect"]) for c in _load_importance()]
     assert after == before
+
+
+def test_importance_marker_mimic_misses_many():
+    """Independence evidence (label side): a predictor that reads
+    only marker features misses widely, so the labels cannot be a
+    recoding of the markers."""
+    cases = _load_importance()
+    assert len(cases) == 24
     misses = [c["id"] for c in cases
               if _stub_mimic(c["text"]) != c["expect"]]
     assert len(misses) >= 6, misses
 
 
-def test_scorer_earns_marker_free_vitals():
+def test_scorer_competence_marker_free_vitals():
+    """Scorer-competence check, NOT independence evidence.
+
+    Uses RuleJudge as the scorer, so a pass proves the stub matches
+    the labels on marker-free vitals. That is competence of the stub
+    on hard cells, not proof the labels are independent of the stub;
+    independence rests only on the label-side tests above.
+    """
     gate = Gate(RuleJudge())
     vital = [c for c in _load_importance()
              if c["expect"] == 5 and not _has_marker(c["text"])]
@@ -89,7 +109,14 @@ def test_scorer_earns_marker_free_vitals():
     assert len(good) >= 3, (vital, good)
 
 
-def test_scorer_earns_marker_bearing_trivials():
+def test_scorer_competence_marker_bearing_trivials():
+    """Scorer-competence check, NOT independence evidence.
+
+    Uses RuleJudge as the scorer, so a pass proves the stub matches
+    the labels on marker-bearing trivials. That is competence of the
+    stub on hard cells, not proof the labels are independent of the
+    stub; independence rests only on the label-side tests above.
+    """
     gate = Gate(RuleJudge())
     trivial = [c for c in _load_importance()
                if c["expect"] in (1, 2) and _has_marker(c["text"])]

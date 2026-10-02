@@ -24,6 +24,12 @@ fabricated from a stub in place of a live answer.
 Relation cases cost two live calls each (one per live question) plus
 offline strict plus lenient confirmation, which costs no calls.
 
+Importance cases compare the stub vote against the live
+jev-1.13-free vote on the shared 1..5 design scale, through the same
+vote call path on both sides (see importance_verdict). The
+comparison is INFORMATION ONLY, exactly like the rest of this
+script: agreement or disagreement gates nothing.
+
 Exit codes: 0 completed or skipped (information only), 2 unreadable
 golden set or rejected key, 3 halted on the Jev rate limit.
 """
@@ -71,12 +77,24 @@ def sample_cases(cases: list, n: int = 20) -> list:
     return picks[:n]
 
 
+def importance_verdict(judge, text: str) -> int:
+    """One shared vote call path for the importance comparison.
+
+    Both the stub side (RuleJudge) and the live side (jev-1.13-free
+    client) are read through judge.vote(text, [], []).importance on
+    the 1..5 design scale, so a stub/live difference is a genuine
+    verdict disagreement on the same scale, never a call-path or
+    scale artifact.
+    """
+    return judge.vote(text, [], []).importance
+
+
 def stub_verdict(case: dict):
     suite = case["suite"]
     if suite == "admit":
         return Gate(RuleJudge()).decide(case["text"], [], []).action
     if suite == "importance":
-        return RuleJudge().vote(case["text"], [], []).importance
+        return importance_verdict(RuleJudge(), case["text"])
     if suite in ("contradict", "supersede"):
         return supmod.decide(case["old"], case["new"],
                              *offline_relation_pair()).action
@@ -89,7 +107,7 @@ def live_verdict(case: dict, gate_judge, live_a, live_b,
     if suite == "admit":
         return Gate(gate_judge).decide(case["text"], [], []).action
     if suite == "importance":
-        return gate_judge.vote(case["text"], [], []).importance
+        return importance_verdict(gate_judge, case["text"])
     if suite in ("contradict", "supersede"):
         # Independent evidence: two differently worded live Jev
         # questions must agree with each other AND the offline
@@ -137,6 +155,7 @@ def main(argv=None) -> int:
     live_a, live_b = live_relation_pair()
     agree = 0
     done = 0
+    by_suite: dict = {}
     for case in picks:
         try:
             stub = stub_verdict(case)
@@ -159,6 +178,9 @@ def main(argv=None) -> int:
         done += 1
         same = stub == live
         agree += 1 if same else 0
+        slot = by_suite.setdefault(case["suite"], [0, 0])
+        slot[1] += 1
+        slot[0] += 1 if same else 0
         print("%-10s %-16s stub=%-11r live=%-11r %s"
               % (case["suite"], case["id"], stub, live,
                  "agree" if same else "differ"))
@@ -166,6 +188,11 @@ def main(argv=None) -> int:
     if done:
         print("stub-vs-live agreement (INFORMATION ONLY, never a gate): "
               "%d/%d = %.1f%%" % (agree, done, 100.0 * agree / done))
+        for suite in sorted(by_suite):
+            hit, total = by_suite[suite]
+            print("  %-10s agreement (information only): %d/%d %s"
+                  % (suite, hit, total,
+                     "agree" if hit == total else "differ present"))
     else:
         print("no cases were run; nothing to compare")
     return 0

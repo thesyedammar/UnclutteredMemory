@@ -42,6 +42,22 @@ def do_calibrate(task: str, out) -> int:
     return 0
 
 
+def report_error_count(store) -> int:
+    """Print the store coding-bug count; nonzero fails loudly.
+
+    Returns 0 when Store.error_count is 0, else prints the loud
+    NONZERO line and returns 1 so the CLI exit code surfaces the
+    coding bug instead of burying it.
+    """
+    n = store.error_count
+    if n:
+        print("CODING-BUG COUNT NONZERO (Store.error_count): %d; a coding "
+              "bug fired on this store" % n)
+        return 1
+    print("coding-bug count (Store.error_count): 0")
+    return 0
+
+
 def do_override(args) -> int:
     """Named-human override against a store file. All actions documented."""
     db = Path(args.db)
@@ -65,7 +81,7 @@ def do_override(args) -> int:
         print("override: fact %d %s -> %d by human (reason=%r)"
               % (args.fact_id, args.action, args.target_id,
                  args.reason or ("human-" + args.action)))
-    return 0
+    return report_error_count(store)
 
 
 def main(argv=None) -> int:

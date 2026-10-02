@@ -345,9 +345,25 @@ def relation_judge_pair() -> tuple:
     return offline_relation_pair()
 
 
+def total_error_count(stores: list) -> int:
+    """Sum of Store.error_count across eval stores (coding-bug count).
+
+    Eval stores normally never see admit(), so this is normally 0;
+    any nonzero value means a coding bug fired inside a store write
+    path during the eval and the run must fail loudly.
+    """
+    return sum(int(getattr(s, "error_count", 0) or 0) for s in stores)
+
+
 def evaluate_suite(suite: str, cases: list, gate: Gate,
-                   durable_min: float = th.DURABLE_MIN) -> tuple:
-    """Run one suite. Returns (rows, latencies_ms)."""
+                   durable_min: float = th.DURABLE_MIN,
+                   collect_stores: "list | None" = None) -> tuple:
+    """Run one suite. Returns (rows, latencies_ms).
+
+    Stores created for the Store-backed suites are appended to
+    collect_stores when given, so run_eval can headline the summed
+    Store.error_count (coding-bug count) across the whole run.
+    """
     rows, lat = [], []
     for c in cases:
         t0 = time.perf_counter()
@@ -360,12 +376,16 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
             ok = got == c["expect"]
         elif suite == "dedupe":
             s = Store()
+            if collect_stores is not None:
+                collect_stores.append(s)
             a = s.put(c["text"], "eval")
             b = s.put(c["candidate"], "eval")
             got = "DUP" if a == b else "DISTINCT"
             ok = got == c["expect"]
         elif suite == "contradict":
             s = Store()
+            if collect_stores is not None:
+                collect_stores.append(s)
             old_id = s.put(c["old"], "eval")
             new_id = s.put(c["new"], "eval")
             dec = supmod.decide(c["old"], c["new"], *relation_judge_pair())
@@ -390,6 +410,8 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
                       and s.conflicts() == [])
         elif suite == "supersede":
             s = Store()
+            if collect_stores is not None:
+                collect_stores.append(s)
             old_id = s.put(c["old"], "eval")
             new_id = s.put(c["new"], "eval")
             dec = supmod.decide(c["old"], c["new"], *relation_judge_pair())
@@ -556,20 +578,27 @@ def run_eval(cases_path=None, task: str = "general-qa",
         reg_note = "registry %s task=%s" % (registry_path, task)
 
     gate = Gate(judge or RuleJudge())
+    eval_stores: list = []
     try:
         results = {}
         lat = []
         for suite in SUITES:
             tr_cases = [c for c in train if c["suite"] == suite]
             te_cases = [c for c in test if c["suite"] == suite]
-            tr_rows, tr_lat = evaluate_suite(suite, tr_cases, gate, durable_min)
-            te_rows, te_lat = evaluate_suite(suite, te_cases, gate, durable_min)
+            tr_rows, tr_lat = evaluate_suite(suite, tr_cases, gate,
+                                            durable_min,
+                                            collect_stores=eval_stores)
+            te_rows, te_lat = evaluate_suite(suite, te_cases, gate,
+                                            durable_min,
+                                            collect_stores=eval_stores)
             results[suite] = (tr_rows, te_rows)
             lat += tr_lat + te_lat
         golden_results = {}
         for suite in SUITES:
             g_cases = [c for c in golden if c["suite"] == suite]
-            g_rows, g_lat = evaluate_suite(suite, g_cases, gate, durable_min)
+            g_rows, g_lat = evaluate_suite(suite, g_cases, gate,
+                                          durable_min,
+                                          collect_stores=eval_stores)
             golden_results[suite] = g_rows
             lat += g_lat
     except RateLimited as e:
@@ -668,6 +697,12 @@ def run_eval(cases_path=None, task: str = "general-qa",
               % (golden_ok, golden_total, golden_fails))
     print("bulk self-consistency (synthetic-rule): %d/%d ok, %d failures"
           % (bulk_ok, bulk_total, bulk_fails))
+    bug_count = total_error_count(eval_stores)
+    print("coding-bug count (Store.error_count across eval stores): %d"
+          % bug_count)
+    if bug_count:
+        print("CODING-BUG COUNT NONZERO: %d coding bug(s) fired inside "
+              "store write paths during this run" % bug_count)
     print("latency judge ms: p50=%.3f p95=%.3f (n=%d, offline stub)"
           % (pct(lat, 0.5), pct(lat, 0.95), len(lat)))
     cost = 1000 * TOKENS_PER_ITEM * PRICE_INR_PER_M / 1e6
@@ -678,13 +713,14 @@ def run_eval(cases_path=None, task: str = "general-qa",
           " normalized text, golden disjoint from bulk, artifacts fail"
           " closed)")
     if golden:
-        status = "PASS" if not (golden_fails or bulk_fails) else "FAIL"
+        status = ("PASS" if not (golden_fails or bulk_fails or bug_count)
+                  else "FAIL")
         print("%s: golden %d failures, bulk %d failures"
               % (status, golden_fails, bulk_fails))
-        return 1 if (golden_fails or bulk_fails) else 0
-    status = "PASS" if not bulk_fails else "FAIL"
+        return 1 if (golden_fails or bulk_fails or bug_count) else 0
+    status = "PASS" if not (bulk_fails or bug_count) else "FAIL"
     print("%s: bulk %d failures (no golden set loaded)" % (status, bulk_fails))
-    return 1 if bulk_fails else 0
+    return 1 if (bulk_fails or bug_count) else 0
 
 
 def main(argv=None) -> int:

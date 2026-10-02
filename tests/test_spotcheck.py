@@ -61,7 +61,9 @@ def test_halts_honestly_on_429(monkeypatch, capsys):
 
 
 def test_stub_side_of_the_comparison_matches_the_claim():
-    """The offline half of the spotcheck agrees with the golden labels."""
+    """Competence sanity for the spotcheck baseline, NOT independence
+    evidence: the offline half of the comparison agrees with the
+    golden labels, so a stub/live difference is meaningful."""
     mod = _load()
     cases = load_cases(ROOT / "eval" / "golden.jsonl")
     for c in mod.sample_cases(cases, 20):

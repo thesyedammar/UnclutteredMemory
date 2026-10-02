@@ -26,8 +26,12 @@ an agreed destructive act means two distinct heuristics agreed, never
 one heuristic copied twice.
 
 Importance answers use the choice criteria s0..s4 (trivial .. critical
-constraint) and map onto the 1..5 design scale (s0 -> 1, s4 -> 5). A
-choice that cannot be read maps to -1 and fails closed.
+constraint) and map onto the 1..5 design scale (s0 -> 1, s4 -> 5).
+The same 1..5 design-scale labels are accepted directly as well
+("1".."5" strings or 1..5 ints map to themselves), so a judge that
+answers in design-scale labels is read exactly, never failed closed.
+A choice that cannot be read as either label set maps to -1 and
+fails closed.
 """
 from __future__ import annotations
 
@@ -104,16 +108,28 @@ class JevJudgeClient(JudgeClient):
     def _importance_choice(choice) -> int:
         """s0 trivial .. s4 critical constraint -> design scale 1..5.
 
-        Anything unreadable maps to -1 so the caller fails closed.
+        Accepts both label sets explicitly: Jev criteria keys 's0'
+        through 's4' (case-insensitive, surrounding whitespace
+        tolerated) map to 1..5, and design-scale labels '1' through
+        '5' (strings) or 1 through 5 (ints) map to themselves. Only
+        a choice readable in neither label set maps to -1 so the
+        caller fails closed; no valid label ever fails closed.
         """
-        if not isinstance(choice, str) or len(choice) < 2 or choice[0] != "s":
+        if isinstance(choice, bool):
             return -1
-        try:
-            level = int(choice[1:])
-        except ValueError:
-            return -1
-        if 0 <= level <= 4:
-            return level + 1
+        if isinstance(choice, int):
+            return choice if 1 <= choice <= 5 else -1
+        if isinstance(choice, str):
+            s = choice.strip().casefold()
+            if s in ("1", "2", "3", "4", "5"):
+                return int(s)
+            if len(s) >= 2 and s[0] == "s":
+                try:
+                    level = int(s[1:])
+                except ValueError:
+                    return -1
+                if 0 <= level <= 4:
+                    return level + 1
         return -1
 
     @property
