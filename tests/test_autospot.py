@@ -110,6 +110,87 @@ def test_number_swap_nominates_but_committee_keeps_both():
     assert s.last_autospot["kept"] == [old_id]
 
 
+def test_stale_backfill_never_tombstones_newer_fact():
+    # Directionality by insert order: the existing row is the old
+    # side, the fresh row the new side. Stale wording arriving late
+    # is nominated (the number moved) but the committee reads the
+    # marker-free fresh text as no revision and vetoes to KEEP.
+    s = Store()
+    newer_id = s.put("the office moved to 2 Main St", "user")
+    stale_id = s.put("the office is at 1 Main St", "user")
+    assert s.tombstoned() == []
+    assert s.get(newer_id)[4] is None and s.get(stale_id)[4] is None
+    assert {t for _, t, *_ in s.live()} == {
+        "the office moved to 2 Main St", "the office is at 1 Main St"}
+    assert isinstance(s.last_autospot, dict)
+    assert s.last_autospot["checked"] == 1
+    assert s.last_autospot["kept"] == [newer_id]
+
+
+def test_agreed_keep_carries_relation_veto_carries_veto_keep():
+    # Agreed benign verdicts record their relation; only genuine
+    # disagreement reads "veto-keep".
+    s = Store()
+    s.put(KETTLE, "user")
+    s.put(TOASTER, "user")
+    assert isinstance(s.last_autospot, dict)
+    kept = s.last_autospot["outcomes"][0]
+    assert kept["applied"] is False and kept["action"] == "KEEP"
+    assert kept["reason"] == "unrelated-auto-spot"
+
+    old = "the studio opens at nine"
+    new = "the studio no longer opens at nine, it opens at ten now"
+    s2 = Store()
+    s2.put(old, "user")
+    s2.put(new, "user")
+    assert isinstance(s2.last_autospot, dict)
+    vetoed = s2.last_autospot["outcomes"][0]
+    assert vetoed["applied"] is False and vetoed["action"] == "KEEP"
+    assert vetoed["reason"] == "veto-keep"
+
+
+def test_old_side_negation_nominates_via_detail_signals():
+    # Markers read from the new side only (revision direction);
+    # the old-side negation still nominates through the symmetric
+    # detail signals, then the committee decides.
+    old, new = "I stopped morning runs", "I love morning runs"
+    assert autospot.has_change_signal(new) is False
+    assert autospot.is_suspicious(old, new) is True
+    s = Store()
+    old_id = s.put(old, "user")
+    new_id = s.put(new, "user")
+    assert s.tombstoned() == [] and s.conflicts() == []
+    assert {t for _, t, *_ in s.live()} == {old, new}
+    assert isinstance(s.last_autospot, dict)
+    assert s.last_autospot["kept"] == [old_id]
+
+
+def test_serve_cli_exposes_auto_spot_knob(capsys, tmp_path, monkeypatch):
+    import uncluttered_memory.server as srvmod
+    from uncluttered_memory.cli import main
+    seen = {}
+
+    class _Once:
+        def __init__(self, store):
+            seen["auto"] = store._auto_spot
+
+        def serve_forever(self):
+            raise KeyboardInterrupt()
+
+    def fake_serve(host, port, store, judge, kill_file=None):
+        return _Once(store)
+
+    monkeypatch.setattr(srvmod, "serve", fake_serve)
+    db = str(tmp_path / "cli.db")
+    assert main(["serve", "--db", db]) == 0
+    assert seen["auto"] is True
+    assert main(["serve", "--db", db, "--no-auto-spot"]) == 0
+    assert seen["auto"] is False
+    out = capsys.readouterr().out
+    assert "auto-spot on (offline committee)" in out
+    assert "auto-spot off" in out
+
+
 def test_committee_coding_bug_propagates_loudly():
     # A raising committee judge is a coding bug, never a quiet KEEP:
     # put propagates, the fresh row stays live, nothing is marked.

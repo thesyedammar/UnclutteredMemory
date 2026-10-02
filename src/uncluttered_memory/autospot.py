@@ -67,6 +67,12 @@ def has_change_signal(new_text: str) -> bool:
 
     Reuses the committee marker patterns, so a wording the
     committee reads as an update or a clash reads the same here.
+    Markers read from the new side only, matching the revision
+    direction the committee votes on (does the LATER fact revise
+    the earlier one). The asymmetry is deliberate and documented:
+    an old-side negation still nominates through the symmetric
+    detail signals (content or number tokens differ), and the
+    committee then decides.
     """
     lowered = new_text.lower()
     return bool(_STRONG_UPDATE_RE.search(lowered)
@@ -145,7 +151,15 @@ def find_candidates(store, new_id: int, new_text: str, user: str,
 
     Scans live rows in the same user scope only (cross-user rows
     never flag: the dedupe key and live reads are scoped the same
-    way). Returns (candidates, dropped), where candidates holds at
+    way). Pairs are directional by insert order: the existing row
+    is always the old side and the fresh row the new side, so a
+    stale backfill arriving late never tombstones a newer fact
+    (the committee reads the fresh text as the revision, and
+    marker-free stale wording vetoes to KEEP). The screen runs at
+    write time only and never re-screens older pairs when later
+    state changes; a changed fact is re-nominated by its own next
+    fresh write.
+    Returns (candidates, dropped), where candidates holds at
     most max_pairs (old_id, old_text, score) entries ordered by
     score descending (lowest id wins ties), and dropped counts the
     flagged pairs cut by the cap.
@@ -271,7 +285,12 @@ def run_after_put(store, new_id: int, new_text: str, user: str,
         else:
             summary["kept"].append(old_id)
             applied = False
-            reason = "veto-keep"
+            # Agreed benign verdicts carry their relation (unrelated,
+            # coexist, same), so the audit record distinguishes a
+            # committee that agreed both facts live from a genuine
+            # disagreement veto. Only vetoes read "veto-keep".
+            reason = ((dec.relation + reason_suffix) if dec.agreed
+                      else "veto-keep")
         summary["outcomes"].append(
             {"old_id": old_id, "new_id": new_id,
              "relation": dec.relation, "action": dec.action,

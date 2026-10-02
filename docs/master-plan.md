@@ -62,3 +62,10 @@ Say instead: gates, scores, reduces, measured X on our labeled set (n=640, split
 
 - Next: Ammar creates the GitHub repo; P1 scaffold (src layout + eval seed + conformance skeleton) lands first.
 - Residuals (max 5): paraphrase-catch rate / tuning cost / label sourcing / live latency / sqlite-vec parity.
+
+## Addendum 2026-10-02: build drift (frozen content above untouched)
+
+- Package layout shipped as `src/uncluttered_memory/*`, not flat `src/*.py`.
+- sqlite-vec was never adopted: the store is stdlib sqlite3 only, no vector extension.
+- Suite counts grew past the 640-case sketch (frozen golden plus synthetic bulk, floors pinned per suite in the eval).
+- Auto-activation bridge (P5): every fresh `Store.put` screens free and committees flagged pairs; see README plus `src/uncluttered_memory/autospot.py`.

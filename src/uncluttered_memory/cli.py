@@ -239,19 +239,23 @@ def do_serve(args) -> int:
     The default judge is the offline RuleJudge stub, stated plainly:
     serving with live Jev needs explicit wiring, which this command
     does not do. Per-user scoping, rate caps, and the kill switch
-    are enforced per request by MemoryApp.
+    are enforced per request by MemoryApp. Every fresh insert also
+    runs the auto-activation bridge with the offline committee (no
+    network); --no-auto-spot serves raw inserts instead.
     """
     from uncluttered_memory.gate import RuleJudge as _RuleJudge
     from uncluttered_memory.server import serve as _serve
     db = Path(args.db)
     if str(db.parent) not in ("", "."):
         db.parent.mkdir(parents=True, exist_ok=True)
-    store = Store(str(db))
+    store = Store(str(db), auto_spot=not args.no_auto_spot)
     httpd = _serve(args.host, args.port, store, _RuleJudge(),
                    kill_file=args.kill_file)
     print("unclutter serve: %s:%d over %s (offline RuleJudge; "
-          "kill switch env %s)" % (args.host, args.port, args.db,
-                                   "UNCLUTTER_KILL_SWITCH"))
+          "auto-spot %s; kill switch env %s)"
+          % (args.host, args.port, args.db,
+             "off" if args.no_auto_spot else "on (offline committee)",
+             "UNCLUTTER_KILL_SWITCH"))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
@@ -359,6 +363,10 @@ def main(argv=None) -> int:
     p_srv.add_argument("--port", type=int, default=8765)
     p_srv.add_argument("--kill-file", default=None,
                        help="path whose existence refuses every request")
+    p_srv.add_argument("--no-auto-spot", action="store_true",
+                       help="disable the auto-activation bridge (default: "
+                       "every fresh insert is screened free and flagged "
+                       "pairs go to the offline committee, no network)")
     args = parser.parse_args(argv)
     if args.command == "run":
         argv = ["--task", args.task]
