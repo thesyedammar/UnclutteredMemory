@@ -332,7 +332,7 @@ def build_cases() -> list:
         ("I love morning runs", "morning runs"),
         ("the team uses the old chat tool", "the old chat tool"),
         ("coffee after lunch is a habit", "coffee after lunch"),
-        ("the studio opens at nine", "the studio opening time"),
+        ("the studio opening is at nine", "the studio opening time"),
         ("weekly board games are a thing", "weekly board games"),
         ("the north gate is the entry", "the north gate"),
         ("the rooftop garden is open", "the rooftop garden"),
@@ -381,7 +381,7 @@ def build_cases() -> list:
     # ------------------------------------------------------------------
     # supersede: 80 cases. TOMBSTONE 48, KEEP 32.
     # ------------------------------------------------------------------
-    places = ("office", "warehouse", "print shop", "bike store",
+    places = ("head office", "main warehouse", "print shop", "bike store",
               "coffee stand", "repair desk", "records room", "supply closet",
               "training room", "photo lab", "tool shed", "reading nook")
     old_locs = ("the east wing", "the old mill", "the station road",

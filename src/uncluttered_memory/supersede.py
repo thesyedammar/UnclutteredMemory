@@ -130,7 +130,19 @@ def apply(store, old_id: int, new_id: int, decision: SupersedeDecision,
 
 def human_override(store, fact_id: int, action: str, actor: str = "human",
                    target_id=None, reason: str = "") -> None:
-    """Named-human rollback or force. action: restore | retire | tombstone."""
+    """Named-human override. Every action is documented and tested:
+
+    - restore: clear the tombstone fields on fact_id; it goes live
+      again (target_id and reason are ignored).
+    - retire: soft-tombstone fact_id toward target_id (required); the
+      stored reason defaults to "human-retire".
+    - tombstone: explicit alias of retire, the same soft tombstone
+      toward target_id (required), default reason "human-tombstone".
+
+    The stored tombstone_actor is `actor` for both destructive
+    actions. Any other action raises ValueError, and retire/tombstone
+    without target_id raise ValueError.
+    """
     if action == "restore":
         store.restore(fact_id)
     elif action in ("retire", "tombstone"):

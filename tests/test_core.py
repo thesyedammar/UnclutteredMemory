@@ -1,5 +1,7 @@
 """P0 core tests, kept on branch-keyed stubs. The eval and P1 tests use
 feature-keyed RuleJudge: these remain only to lock signature behavior."""
+import pytest
+
 from uncluttered_memory.gate import FakeJudge, Gate, GateVote
 from uncluttered_memory.inject import Injector
 from uncluttered_memory.recall import Recall
@@ -76,3 +78,18 @@ def test_injector_orders_and_caps():
     inj = Injector(budget_chars=10)
     assert inj.pack([("low", 0.6), ("high", 0.9)]) == "high\nlow"
     assert inj.pack([("toolongcard", 0.9)]) == ""
+
+
+def test_injector_zero_budget_packs_nothing():
+    inj = Injector(budget_chars=0)
+    assert inj.pack([("card", 0.9)]) == ""
+    assert inj.pack([("a", 0.5), ("b", 0.5)]) == ""
+
+
+def test_release_unknown_quarantine_id_raises_keyerror():
+    s = Store()
+    s.quarantine("held item", "stop>=0.58")
+    with pytest.raises(KeyError):
+        s.release(123)
+    # the held row is untouched by the failed release
+    assert s.quarantined() == [(1, "held item", "stop>=0.58")]

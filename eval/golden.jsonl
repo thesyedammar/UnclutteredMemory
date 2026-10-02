@@ -101,7 +101,7 @@
 {"id": "g-contradict-0001", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "I enjoy evening walks by the canal", "new": "I do not enjoy evening walks by the canal anymore", "expect": "CONFLICT"}
 {"id": "g-contradict-0002", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "the workshop uses the old booking sheet", "new": "the old booking sheet is not part of our week anymore", "expect": "CONFLICT"}
 {"id": "g-contradict-0003", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "tea after dinner is a ritual", "new": "tea after dinner is not a ritual anymore", "expect": "CONFLICT"}
-{"id": "g-contradict-0004", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "the gallery opens at ten", "new": "the gallery does not open at ten anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0004", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "the west gallery opens at ten", "new": "the west gallery does not open at ten anymore", "expect": "CONFLICT"}
 {"id": "g-contradict-0005", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "monthly book club is a fixture", "new": "monthly book club is not a fixture anymore", "expect": "CONFLICT"}
 {"id": "g-contradict-0006", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "we keep printed receipts", "new": "we do not keep printed receipts anymore", "expect": "CONFLICT"}
 {"id": "g-contradict-0007", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "supper after the show happens", "new": "supper after the show is not happening anymore", "expect": "CONFLICT"}
@@ -120,12 +120,13 @@
 {"id": "g-contradict-0020", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the stone bench sits in the yard", "new": "the glass float rests on the sill", "expect": "KEEP"}
 {"id": "g-contradict-0021", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the wool shawl is in the chest", "new": "the tin whistle lies on the desk", "expect": "KEEP"}
 {"id": "g-contradict-0022", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the maple board hangs on the wall", "new": "the ash bucket is by the hearth", "expect": "KEEP"}
-{"id": "g-supersede-0001", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the office is at 12 Main Street", "new": "the office moved to 44 Harbor Road", "expect": "TOMBSTONE"}
-{"id": "g-supersede-0002", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the workshop is in the east wing", "new": "the workshop moved to the annex", "expect": "TOMBSTONE"}
+{"id": "g-contradict-0023", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the morning call is at 7", "new": "the evening call is not at 7 anymore", "expect": "KEEP"}
+{"id": "g-supersede-0001", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the office is at 12 Main Street", "new": "the office moved from 12 Main Street to 44 Harbor Road", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0002", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the workshop is in the east wing", "new": "the workshop moved from the east wing to the annex", "expect": "TOMBSTONE"}
 {"id": "g-supersede-0003", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the records room is on the lower deck", "new": "the records room is now on the upper deck", "expect": "TOMBSTONE"}
-{"id": "g-supersede-0004", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "we called the lab the green room", "new": "we renamed the lab to the studio", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0004", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "we called the lab the green room", "new": "we renamed the green room to the studio", "expect": "TOMBSTONE"}
 {"id": "g-supersede-0005", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the print shop was on Station Road", "new": "the print shop changed to the market square", "expect": "TOMBSTONE"}
-{"id": "g-supersede-0006", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the depot sits near the old mill", "new": "the depot moved to the county line", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0006", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the depot sits near the old mill", "new": "the depot moved from the old mill to the county line", "expect": "TOMBSTONE"}
 {"id": "g-supersede-0007", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the bike store is by the chapel lane", "new": "the bike store relocated to the high street", "expect": "TOMBSTONE"}
 {"id": "g-supersede-0008", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the juice bar is by the old chapel", "new": "the juice bar is now by the market cross", "expect": "TOMBSTONE"}
 {"id": "g-supersede-0009", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the repair desk was in the tool shed", "new": "the repair desk moved to the supply closet", "expect": "TOMBSTONE"}
@@ -142,6 +143,7 @@
 {"id": "g-supersede-0020", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the coal scuttle is half full", "new": "the water can is by the wall", "expect": "KEEP"}
 {"id": "g-supersede-0021", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the fruit net covers the bushes", "new": "the compost heap sits in the corner", "expect": "KEEP"}
 {"id": "g-supersede-0022", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the cold frame is open", "new": "the hose guide is on the wall", "expect": "KEEP"}
+{"id": "g-supersede-0023", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the studio opens at nine", "new": "the studio annex moved to the north lot", "expect": "KEEP"}
 {"id": "g-rerank-0001", "suite": "rerank", "kind": "gate-cut", "provenance": "hand-authored", "candidates": [["note a", 0.91], ["note b", 0.57], ["note c", 0.44]], "expect": ["note a"]}
 {"id": "g-rerank-0002", "suite": "rerank", "kind": "gate-cut", "provenance": "hand-authored", "candidates": [["note a", 0.58], ["note b", 0.57]], "expect": ["note a"]}
 {"id": "g-rerank-0003", "suite": "rerank", "kind": "gate-cut", "provenance": "hand-authored", "candidates": [["note a", 0.9], ["note b", 0.58], ["note c", 0.3]], "expect": ["note a", "note b"]}

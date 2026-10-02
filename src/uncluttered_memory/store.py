@@ -2,10 +2,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import logging
 import sqlite3
 import time
 
 from .gate import Gate  # noqa: F401  (used in the admit() annotation)
+from .jev_client import JevError
+
+_LOG = logging.getLogger(__name__)
 
 
 SCHEMA = """
@@ -57,6 +62,10 @@ def content_hash(text: str) -> str:
 class Store:
     def __init__(self, path=":memory:"):
         self.db = sqlite3.connect(path)
+        #: Explicit counter of unexpected exceptions raised inside
+        #: admit(). Judge halts quarantine and do not count; coding
+        #: bugs count here, are logged, and propagate.
+        self.error_count = 0
         self.db.executescript(SCHEMA)
         have = {r[1] for r in self.db.execute("PRAGMA table_info(facts)")}
         for col, typ in _MIGRATE_COLS.items():
@@ -210,14 +219,29 @@ class Store:
               user: str = "local") -> str:
         """Write path: gate decides, or quarantine when the judge halts.
 
-        A rate-limited judge never votes: the item lands in the quarantine
-        table and the action says so. Store and gate stay decoupled.
+        Only judge-halt exceptions quarantine: the JevError family
+        (rate limit, bad key, transport failure, malformed judge
+        answer) means the judge could not vote, so the item lands in
+        the quarantine table and nothing is stored, dropped, or
+        invented. Any other exception is a coding bug in the write
+        path: it increments the explicit error_count, emits one
+        structured log line (time, op, input hash, error type), and
+        propagates. It is never swallowed as a quarantine.
         """
         try:
             d = gate.decide(text, [], [])
-        except Exception:
+        except JevError:
             self.quarantine(text, "judge-halted", source, user)
             return "QUARANTINE"
+        except Exception as e:
+            self.error_count += 1
+            _LOG.error(json.dumps({
+                "time": time.time(),
+                "op": "admit",
+                "input_hash": content_hash(text),
+                "error_type": type(e).__name__,
+            }, sort_keys=True))
+            raise
         if d.action == "STORE":
             self.put(text, source, user)
         elif d.action == "QUARANTINE":

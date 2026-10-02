@@ -213,14 +213,46 @@ def artifact_strings(obj) -> list:
     return [obj] if isinstance(obj, str) else []
 
 
-def find_bad_artifacts(test_cases: list, paths: list) -> list:
-    """Flag tuning artifacts that touch an eval set.
+EXCERPT_MAX = 120
 
-    Exact strings and hashes, normalized form (casefold, punctuation
-    stripped, whitespace collapsed), and token overlap at or above
-    CONTAMINATION_SIM all flag. An unreadable or malformed artifact is
-    a hard ArtifactError listing the file: the scan fails closed and
-    never silently skips a target.
+
+def _excerpt(s: str, limit: int = EXCERPT_MAX) -> str:
+    s = " ".join(s.split())
+    return s if len(s) <= limit else s[:limit - 3] + "..."
+
+
+def artifact_flag(path, check: str, score, excerpt: str) -> dict:
+    """One machine-readable contamination flag.
+
+    check names the scan that fired (exact-text, content-hash,
+    normalized-text, token-overlap, split-field); score is the match
+    strength (1.0 for the equality checks, the best Jaccard score for
+    token-overlap, None when the check is metadata rather than text);
+    excerpt is the offending string (or field), truncated.
+    """
+    return {"path": str(path), "check": check, "score": score,
+            "excerpt": _excerpt(excerpt)}
+
+
+def format_artifact_flag(flag: dict) -> str:
+    """One report line: path, check, score, excerpt. No bare flags."""
+    score = "%.3f" % flag["score"] if flag["score"] is not None else "n/a"
+    return ("%s check=%s score=%s excerpt=%r"
+            % (flag["path"], flag["check"], score, flag["excerpt"]))
+
+
+def find_bad_artifacts(test_cases: list, paths: list) -> list:
+    """Flag tuning artifacts that touch an eval set. One flag per file.
+
+    Returns machine-readable flags (dicts with path, check, score,
+    excerpt). The first check that fires, in priority order, is the
+    one reported: exact-text; content-hash (the artifact embeds the
+    content hash of an eval text); normalized-text (casefold,
+    punctuation stripped, whitespace collapsed); token-overlap at or
+    above CONTAMINATION_SIM (with the best Jaccard score found); then
+    split-field (metadata says split=test or tuned_on=test). An
+    unreadable or malformed artifact is a hard ArtifactError listing
+    the file: the scan fails closed and never silently skips a target.
     """
     test_raw = set()
     test_norm = set()
@@ -242,28 +274,42 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
         except (OSError, ValueError) as e:
             raise ArtifactError(
                 "unreadable tuning artifact %s (%s)" % (p, e))
-        strs = set(artifact_strings(data))
-        hit = bool(strs & test_raw)
-        if not hit and {text_hash(s) for s in strs} & test_hashes:
-            hit = True
-        if not hit:
+        strs = sorted(set(artifact_strings(data)))
+        flag = None
+        for s in strs:
+            if s in test_raw:
+                flag = artifact_flag(p, "exact-text", 1.0, s)
+                break
+        if flag is None:
+            for s in strs:
+                if s in test_hashes:
+                    flag = artifact_flag(p, "content-hash", 1.0, s)
+                    break
+        if flag is None:
             for s in strs:
                 n = normalize_for_compare(s)
                 if n and n in test_norm:
-                    hit = True
+                    flag = artifact_flag(p, "normalized-text", 1.0, s)
                     break
+        if flag is None:
+            best = (0.0, "")
+            for s in strs:
                 toks = token_set(s)
-                if len(toks) >= CONTAMINATION_MIN_TOKENS and any(
-                        token_overlap(toks, tt) >= CONTAMINATION_SIM
-                        for tt in test_tokens):
-                    hit = True
-                    break
-        if hit:
-            bad.append(p)
-            continue
-        if isinstance(data, dict) and (
+                if len(toks) < CONTAMINATION_MIN_TOKENS:
+                    continue
+                for tt in test_tokens:
+                    ov = token_overlap(toks, tt)
+                    if ov > best[0]:
+                        best = (ov, s)
+            if best[0] >= CONTAMINATION_SIM:
+                flag = artifact_flag(p, "token-overlap", best[0], best[1])
+        if flag is None and isinstance(data, dict) and (
                 data.get("split") == "test" or data.get("tuned_on") == "test"):
-            bad.append(p)
+            field = ("split=test" if data.get("split") == "test"
+                     else "tuned_on=test")
+            flag = artifact_flag(p, "split-field", None, field)
+        if flag is not None:
+            bad.append(flag)
     return bad
 
 
@@ -431,8 +477,8 @@ def run_eval(cases_path=None, task: str = "general-qa",
         return 2
     if bad:
         print("CONTAMINATION: tuning artifacts touch test split:")
-        for p in bad:
-            print("  " + p)
+        for f in bad:
+            print("  " + format_artifact_flag(f))
         return 2
 
     golden = []
@@ -455,8 +501,8 @@ def run_eval(cases_path=None, task: str = "general-qa",
             return 2
         if badg:
             print("CONTAMINATION: tuning artifacts touch the golden set:")
-            for p in badg:
-                print("  " + p)
+            for f in badg:
+                print("  " + format_artifact_flag(f))
             return 2
 
     durable_min = th.DURABLE_MIN

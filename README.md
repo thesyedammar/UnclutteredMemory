@@ -5,14 +5,14 @@ Memory that proves itself: a tiny typed judge at the door of agent memory.
 - `src/uncluttered_memory/gate.py` - one batch of typed judge questions, code enforces drop / quarantine / store. Unseen input fails closed to quarantine, never an exception. RuleJudge is an offline heuristic stub keyed by text features; it is not Jev. Every decision cutoff (confidence, play, sensitive, stop, durable, importance) is a parameter whose default lives in `thresholds.py`.
 - `src/uncluttered_memory/thresholds.py` - the one home for every decision-threshold default. Logic paths read cutoffs from here; no other module hardcodes a numeric decision boundary. The per-task registry can override `admit.durable` only.
 - `src/uncluttered_memory/console.py` - report streams are forced to UTF-8 with a named error handler (`backslashreplace`), so a cp1252 console or pipe never mangles a report line.
-- `src/uncluttered_memory/store.py` - SQLite with content-hash dedupe (normalized text; the dead exact-text fallback branch was removed), provenance per row, soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, and per-user scoping.
-- `src/uncluttered_memory/supersede.py` - code-ordered candidate pairs, relation vote via the judge protocol (supersede / coexist / conflict_unresolved / unrelated). Only an agreed supersede soft-tombstones the old fact; an agreed clash marks both facts conflict_unresolved and keeps both live, never a tombstone. Named-human override for restore / retire.
+- `src/uncluttered_memory/store.py` - SQLite with content-hash dedupe (normalized text; the dead exact-text fallback branch was removed), provenance per row, soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, and per-user scoping. `Store.admit` quarantines only judge-halt exceptions (the JevError family: rate limit, bad key, transport, malformed judge answer); any other exception is a coding bug that increments an explicit `error_count`, emits one structured log line (time, op, input hash, error type), and propagates instead of vanishing as a quarantine.
+- `src/uncluttered_memory/supersede.py` - code-ordered candidate pairs, relation vote via the judge protocol (supersede / coexist / conflict_unresolved / unrelated). Only an agreed supersede soft-tombstones the old fact; an agreed clash marks both facts conflict_unresolved and keeps both live, never a tombstone. Named-human override for restore / retire / tombstone, each documented in the CLI help (`unclutter override --help`) and tested end to end.
 - `src/uncluttered_memory/recall.py` - the read path: gate, band, and cap are parameters defaulting to `thresholds.py`; code packs.
 - `src/uncluttered_memory/inject.py` - card-first packing, whole-card truncation, hard budget from `thresholds.py`.
 - `src/uncluttered_memory/calibrate.py` - per-task threshold registry fingerprinted to the task name, refuses mismatched files, UNCALIBRATED default, train-only tuning.
-- `src/uncluttered_memory/jev_client.py` - judge protocol with a native Jev client, plus the heterogeneous offline relation pair (StrictRelationJudge + LenientRelationJudge).
-- `eval/run.py` - one-command eval over two case sets: the hand-authored golden set (the claim) and the synthetic bulk set (self-consistency). Per-suite tables, admit precision/recall/F1, latency, cost-per-1k estimate, contamination scans that fail closed.
-- `eval/golden.jsonl` - 158 hand-authored cases written as data (text plus expected label), provenance `hand-authored`, sharing no code path with the stubs. This is where the headline numbers come from.
+- `src/uncluttered_memory/jev_client.py` - judge protocol with a native Jev client, plus the heterogeneous offline relation pair (StrictRelationJudge + LenientRelationJudge). StrictRelationJudge requires at least two shared content tokens beyond stopwords and numbers before it reads a marker as being about the same slot.
+- `eval/run.py` - one-command eval over two case sets: the hand-authored golden set (the claim) and the synthetic bulk set (self-consistency). Per-suite tables, admit precision/recall/F1, latency, cost-per-1k estimate, contamination scans that fail closed. Every contamination flag carries a machine-readable reason (which check fired, similarity score, offending excerpt) and the report prints it.
+- `eval/golden.jsonl` - 160 hand-authored cases written as data (text plus expected label), provenance `hand-authored`, sharing no code path with the stubs. This is where the headline numbers come from.
 - `eval/cases.py` - deterministic generator for the bulk `eval/frozen.jsonl` only (provenance `synthetic-rule`). It never reads or writes the golden set.
 - `scripts/live_spotcheck.py` - information-only live sample of 20 golden cases against `jev-1.13-free`.
 
@@ -21,6 +21,7 @@ Install and run:
     pip install -e .
     python3 -m pytest tests/
     unclutter run
+    unclutter override --help   # restore | retire | tombstone
     python3 scripts/live_spotcheck.py   # information only, skips without a key
 
 The live Jev test runs only when `HERMES_CUSTOM_OPENCODE_AI_API_KEY` is
@@ -58,20 +59,30 @@ provenance of both sets, and its own measured numbers on every run.
 
 The judge protocol is Jev-shaped: typed calls (noul / choice / score)
 that each return a verdict plus a confidence value. The offline stubs
-(RuleJudge, FakeJudge, RuleRelationJudge, StrictRelationJudge,
-LenientRelationJudge) are for unit tests and the offline eval only and
-are never labeled as Jev.
+(RuleJudge, FakeJudge, StrictRelationJudge, LenientRelationJudge) are
+for unit tests and the offline eval only and are never labeled as Jev.
 
 Offline relation judging is heterogeneous by construction. Every
 offline `decide()` call in the eval and the tests runs through
-`offline_relation_pair()`: StrictRelationJudge (conservative, requires
-a shared slot before accepting an update or a clash) paired with
-LenientRelationJudge (permissive, marker-driven). The two genuinely
-disagree on crafted near-misses (pinned in `tests/test_judge_pairs.py`),
-so a destructive act only proceeds when two distinct readings agree; a
-disagreement vetoes and keeps everything live. Two copies of one stub
-used to agree by construction, and that theater is gone: a test shows
-the copied pair would tombstone a case the heterogeneous pair vetoes.
+`offline_relation_pair()`: StrictRelationJudge (conservative) paired
+with LenientRelationJudge (permissive, marker-driven). The strict
+judge reads a marker as being about the same slot only with at least
+`RELATION_SHARED_TOKENS_MIN` (2) shared content tokens beyond
+stopwords and numbers: one shared token, a shared number, a
+near-homonym subject, or an address/number near-miss reads as
+unrelated, so the pair vetoes and both facts stay live. The two
+heuristics genuinely disagree on crafted near-misses (pinned in
+`tests/test_judge_pairs.py` and `tests/test_relation_boundary.py`), so
+a destructive act only proceeds when two distinct readings agree. Two
+copies of one stub used to agree by construction, and that theater is
+gone: a test shows the copied pair would tombstone a case the
+heterogeneous pair vetoes.
+
+When the strict minimum rose to two tokens, five golden cases whose
+texts shared a single content token were reworded so the shared slot
+is unambiguous (labels unchanged, same claims), and two single-token
+near-miss cases that must KEEP were added. A test pins that every
+destructive or marking golden claim meets the strict minimum.
 
 `JevJudgeClient` talks native Jev at `https://opencode.ai/zen/v1/systemone`
 with one model, `jev-1.13-free`, set via `UNCLUTTER_JEV_MODEL` (default
@@ -123,11 +134,29 @@ model, and never lets a stub answer in Jev's place.
 
 ## Lifecycle and store honesty
 
-`human_override` (restore / retire) and `Store.restore` are covered by
-tests including override-then-read-back and restore-of-tombstone. The
-exact-text fallback branch in `Store.put` was dead code (a row whose
-text matches also carries the hash of that text) and was removed; the
-dedupe contract is by normalized content hash only, pinned by tests.
+`human_override` documents and tests every action:
+
+- `restore` clears the tombstone fields on the fact; it goes live
+  again.
+- `retire` soft-tombstones the fact toward `--target-id` (required),
+  records the reason, and stores the actor as `human`.
+- `tombstone` is the explicit alias of `retire`: the same soft
+  tombstone toward `--target-id` (required), with the default reason
+  `human-tombstone`.
+
+All three are reachable from the CLI and documented in its help:
+
+    unclutter override --db memory.db --fact-id 3 --action restore
+    unclutter override --db memory.db --fact-id 3 --action retire \
+        --target-id 5 --reason "user said so"
+    unclutter override --db memory.db --fact-id 3 --action tombstone \
+        --target-id 5
+
+`Store.restore` is covered by tests including override-then-read-back
+and restore-of-tombstone. The exact-text fallback branch in `Store.put`
+was dead code (a row whose text matches also carries the hash of that
+text) and was removed; the dedupe contract is by normalized content
+hash only, pinned by tests.
 
 ## Honesty
 

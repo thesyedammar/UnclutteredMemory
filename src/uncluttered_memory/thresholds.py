@@ -26,5 +26,9 @@ INJECT_BUDGET_CHARS = 4000
 RECALL_PACK_BUDGET_CHARS = 4000
 
 # Offline relation judges: minimum shared content tokens before the
-# strict judge accepts a marker as being about the same slot.
-RELATION_SHARED_TOKENS_MIN = 1
+# strict judge accepts a marker as being about the same slot. Content
+# excludes stopwords and numbers (digits and spelled-out numerals), so
+# one shared token or a shared number is never a slot: near-homonym
+# subjects and address/number near-misses read as unrelated and the
+# pair vetoes the destructive act.
+RELATION_SHARED_TOKENS_MIN = 2

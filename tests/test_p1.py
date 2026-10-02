@@ -13,8 +13,7 @@ from uncluttered_memory.gate import (FakeJudge, Gate, GateVote, JudgeClient,
 from uncluttered_memory.jev_client import (BadKey, JevError,
                                             JevJudgeClient,
                                             RateLimited,
-                                            rate_limited_message,
-                                            RuleRelationJudge)
+                                            rate_limited_message)
 from uncluttered_memory.store import Store
 
 from eval.run import (find_bad_artifacts, run_eval, split_cases)
@@ -228,7 +227,9 @@ def test_eval_artifact_touching_test_exits_2(tmp_path):
     bad.parent.mkdir()
     bad.write_text(json.dumps(
         {"task": "general-qa", "trained_on": sample["text"]}))
-    assert find_bad_artifacts(test, [str(bad)]) == [str(bad)]
+    flags = find_bad_artifacts(test, [str(bad)])
+    assert [f["path"] for f in flags] == [str(bad)]
+    assert flags[0]["check"] == "exact-text"
     rc = run_eval(str(evalmod.CASES_FILE), task="general-qa",
                   registry_path=None, root=tmp_path)
     assert rc == 2
@@ -308,14 +309,6 @@ def test_user_scoping():
     assert len(s.live(user="bob")) == 1
 
 
-def test_rule_relation_judge_features():
-    rj = RuleRelationJudge()
-    assert rj.relation("x", "x") == "same"
-    assert rj.relation("old", "the plan changed now") == "supersede"
-    assert rj.relation("love tea", "not tea anymore") == "conflict_unresolved"
-    assert rj.relation("love tea", "no more tea") == "unrelated"
-
-
 def test_jev_client_parse_errors_fail_closed(monkeypatch):
     j = JevJudgeClient(api_key="k")
 
@@ -368,6 +361,19 @@ def test_jev_client_vote_propagates_rate_limited(monkeypatch):
     with pytest.raises(RateLimited):
         j.vote("anything", [], [])
     assert "Retry later" in rate_limited_message(RateLimited("x"))
+
+
+def test_rate_limited_message_formats_retry_after_minutes():
+    """Retry-after seconds render as whole minutes, floored at one."""
+    base = rate_limited_message(RateLimited("x"))
+    assert rate_limited_message(RateLimited("x", retry_after=0)) == base
+    assert rate_limited_message(RateLimited("x", retry_after=-5)) == base
+    assert rate_limited_message(RateLimited("x", retry_after=30)).endswith(
+        "retry-after says about 1 minute(s).")
+    assert rate_limited_message(RateLimited("x", retry_after=125)).endswith(
+        "retry-after says about 2 minute(s).")
+    assert rate_limited_message(RateLimited("x", retry_after=600)).endswith(
+        "retry-after says about 10 minute(s).")
 
 
 def test_model_allowlist_is_pinned():

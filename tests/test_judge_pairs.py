@@ -9,7 +9,6 @@ independent readings agreed, never one heuristic copied twice.
 from uncluttered_memory import supersede as supmod
 from uncluttered_memory.gate import Gate, RuleJudge
 from uncluttered_memory.jev_client import (LenientRelationJudge,
-                                           RuleRelationJudge,
                                            StrictRelationJudge,
                                            offline_relation_pair)
 from uncluttered_memory.store import Store
@@ -130,12 +129,15 @@ def test_agreed_conflict_marks_both_never_tombstones():
 def test_pair_vetoes_what_a_copied_stub_would_tombstone():
     """The old theater: two copies of one stub agreed by construction.
 
-    The heterogeneous pair turns the same crafted case into a veto, so
-    the eval can no longer pass a destructive act on tautological
-    agreement.
+    A copied pair (the same FakeRelationJudge votes twice) tombstones
+    by construction; the heterogeneous pair turns the same crafted
+    case into a veto, so the eval can no longer pass a destructive act
+    on tautological agreement.
     """
     old, new = "the kettle is blue", "everything moved to the annex"
-    copied = supmod.decide(old, new, RuleRelationJudge(), RuleRelationJudge())
+    copied = supmod.decide(old, new,
+                           supmod.FakeRelationJudge({(old, new): "supersede"}),
+                           supmod.FakeRelationJudge({(old, new): "supersede"}))
     paired = supmod.decide(old, new, *offline_relation_pair())
     assert copied.action == "TOMBSTONE"  # copy pair agrees by construction
     assert copied.agreed

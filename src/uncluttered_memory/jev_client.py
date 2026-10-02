@@ -17,10 +17,13 @@ as Jev.
 
 Offline relation judging is deliberately heterogeneous: the eval and
 the tests route decide() through offline_relation_pair(), which pairs
-StrictRelationJudge (conservative, shared-slot required) with
-LenientRelationJudge (permissive, marker-driven). The two genuinely
-disagree on crafted near-misses, so an agreed destructive act means
-two distinct heuristics agreed, never one heuristic copied twice.
+StrictRelationJudge (conservative: a marker only counts as being about
+the same slot with at least RELATION_SHARED_TOKENS_MIN shared content
+tokens beyond stopwords and numbers, so one shared token or a shared
+number is never a slot) with LenientRelationJudge (permissive,
+marker-driven). The two genuinely disagree on crafted near-misses, so
+an agreed destructive act means two distinct heuristics agreed, never
+one heuristic copied twice.
 
 Importance answers use the choice criteria s0..s4 (trivial .. critical
 constraint) and map onto the 1..5 design scale (s0 -> 1, s4 -> 5). A
@@ -254,27 +257,6 @@ class JevRelationJudge(RelationJudge):
         return (answers["rel"] or {}).get("choice", "")
 
 
-class RuleRelationJudge(RelationJudge):
-    """Deterministic offline relation stub, keyed by text features."""
-
-    def __init__(self, agree_both: str = "supersede"):
-        self.agree_both = agree_both
-
-    def relation(self, old_text: str, new_text: str) -> str:
-        old, new = old_text.lower(), new_text.lower()
-        if old == new:
-            return "same"
-        changed = (" now ", " changed ", " is now ", " moved ", " update",
-                   " address is ", " renamed ")
-        if any(w in new for w in changed):
-            return self.agree_both
-        if "not " in new and any(w in new for w in
-                                 ("anymore", "never", "no longer",
-                                  "stop", "hate")):
-            return "conflict_unresolved"
-        return "unrelated"
-
-
 # ---------------------------------------------------------------------------
 # Heterogeneous offline relation heuristics. These are the pair the eval
 # and the tests run decide() through: two distinct readings that disagree
@@ -290,6 +272,17 @@ _FUNCTION_WORDS = frozenset((
     "have", "had",
 ))
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
+#: Number-like tokens carry no slot evidence: pure digits (optionally
+#: with an ordinal suffix) and spelled-out numerals. Times such as
+#: "7am" stay content because they label a slot, they do not count.
+_NUMBER_RE = re.compile(r"^\d+(?:st|nd|rd|th)?$")
+_NUMBER_WORDS = frozenset((
+    "zero", "one", "two", "three", "four", "five", "six", "seven",
+    "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
+    "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+    "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+    "hundred", "thousand", "million", "first", "second", "third",
+))
 _NEGATION_RE = re.compile(
     r"\b(?:no longer|not|never|anymore|stopped|quit|hate|gave up|dropped"
     r"|gone)\b")
@@ -304,8 +297,11 @@ def _flat(text: str) -> str:
 
 
 def _content_tokens(text: str) -> set:
+    """Slot-bearing tokens: stopwords and numbers are not content."""
     return {t for t in _TOKEN_RE.findall(text.lower())
-            if t not in _FUNCTION_WORDS}
+            if t not in _FUNCTION_WORDS
+            and not _NUMBER_RE.match(t)
+            and t not in _NUMBER_WORDS}
 
 
 def _shared_content(old_text: str, new_text: str) -> int:
@@ -315,12 +311,14 @@ def _shared_content(old_text: str, new_text: str) -> int:
 class StrictRelationJudge(RelationJudge):
     """Conservative offline relation heuristic (half of the pair).
 
-    A supersede is accepted only when the new text carries a strong
-    update marker AND shares at least RELATION_SHARED_TOKENS_MIN content
-    tokens with the old text (same slot). A negation reads as an
-    unresolved clash only with the same shared-slot requirement.
-    Anything else is unrelated, so a vague update ("everything moved")
-    never tombstones an unrelated fact.
+    A supersede or a clash is accepted only when the new text carries
+    the matching marker AND shares at least RELATION_SHARED_TOKENS_MIN
+    content tokens with the old text, where content excludes stopwords
+    and numbers. One shared token, or a shared number, is never a
+    slot: near-homonym subjects and address/number near-misses read as
+    unrelated, so decide() vetoes the destructive act. Anything else
+    is unrelated, so a vague update ("everything moved") never
+    tombstones an unrelated fact.
     """
 
     def relation(self, old_text: str, new_text: str) -> str:

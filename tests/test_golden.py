@@ -108,6 +108,34 @@ def test_every_golden_case_passes_the_offline_system():
     assert fails == []
 
 
+def test_golden_relation_claims_meet_the_strict_minimum():
+    """Every destructive or marking golden claim shares a readable slot.
+
+    The strict judge only reads a marker as same-slot with
+    RELATION_SHARED_TOKENS_MIN shared content tokens beyond stopwords
+    and numbers. A claim set that demands TOMBSTONE or CONFLICT from a
+    one-token pair would demand what the documented contract forbids,
+    so destructive claims must carry the shared slot unambiguously.
+    Single-token near-misses live in the KEEP cases and in
+    tests/test_relation_boundary.py.
+    """
+    from uncluttered_memory import thresholds as th
+    from uncluttered_memory.jev_client import _shared_content
+
+    cases, err = load_golden(GOLDEN)
+    assert err is None
+    checked = 0
+    for c in cases:
+        if c["suite"] not in ("supersede", "contradict"):
+            continue
+        if c["expect"] not in ("TOMBSTONE", "CONFLICT"):
+            continue
+        checked += 1
+        assert _shared_content(c["old"], c["new"]) >= \
+            th.RELATION_SHARED_TOKENS_MIN, c["id"]
+    assert checked >= 20
+
+
 def test_run_eval_reports_golden_separately_with_headline(capsys):
     rc = evalmod.run_eval(str(evalmod.CASES_FILE), task="general-qa",
                           registry_path=None, root=ROOT)
@@ -134,7 +162,8 @@ def test_failing_golden_case_drives_failure_and_headline(tmp_path, capsys):
     assert rc == 1
     out = capsys.readouterr().out
     assert "[FAIL] GOLDEN" in out
-    assert "HEADLINE (golden, hand-authored): 157/158 ok, 1 failures" in out
+    assert ("HEADLINE (golden, hand-authored): %d/%d ok, 1 failures"
+            % (len(cases) - 1, len(cases))) in out
     assert "FAIL: golden 1 failures, bulk 0 failures" in out
 
 
