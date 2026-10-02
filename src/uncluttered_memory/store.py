@@ -45,6 +45,14 @@ CREATE TABLE IF NOT EXISTS conflicts (
   actor TEXT NOT NULL DEFAULT 'code',
   created REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS reviews (
+  id INTEGER PRIMARY KEY,
+  qid INTEGER NOT NULL,
+  decision TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  actor TEXT NOT NULL DEFAULT 'human',
+  created REAL NOT NULL
+);
 """
 
 _MIGRATE_COLS = {"text_hash": "TEXT", "user": "TEXT",
@@ -362,6 +370,75 @@ class Store:
         self.db.execute("DELETE FROM quarantine WHERE id=?", (qid,))
         self.db.commit()
         return fid
+
+    def reviews(self) -> list:
+        """Human quarantine decisions, oldest first.
+
+        Each row is (id, qid, decision, reason, actor): the audit log
+        for the approve/deny flow. approve and deny both append here;
+        the quarantined row is removed either way, so this table is
+        the only record of what the human decided and why.
+        """
+        return self.db.execute(
+            "SELECT id, qid, decision, reason, actor FROM reviews"
+            " ORDER BY id").fetchall()
+
+    def _log_review(self, qid: int, decision: str, reason: str,
+                    actor: str) -> int:
+        if not reason or not reason.strip():
+            raise ValueError("a human reason is required to %s qid %d"
+                             % (decision, qid))
+        cur = self.db.execute(
+            "INSERT INTO reviews(qid, decision, reason, actor, created)"
+            " VALUES(?,?,?,?,?)",
+            (qid, decision, reason.strip(), actor, time.time()))
+        self.db.commit()
+        assert cur.lastrowid is not None
+        return cur.lastrowid
+
+    def approve_quarantine(self, qid: int, reason: str,
+                           actor: str = "human",
+                           source: str = "") -> int:
+        """Human approve: release the row live and log the reason.
+
+        Requires a non-empty human reason, logged with actor human.
+        Unknown qid raises KeyError with nothing written. Returns the
+        live fact id.
+        """
+        if not reason or not reason.strip():
+            raise ValueError("a human reason is required to approve qid %d"
+                             % qid)
+        row = self.db.execute(
+            "SELECT text, source, user FROM quarantine WHERE id=?",
+            (qid,)).fetchone()
+        if row is None:
+            raise KeyError(qid)
+        text, qsource, user = row
+        fid = self.put(text, source or qsource, user)
+        self.db.execute("DELETE FROM quarantine WHERE id=?", (qid,))
+        self._log_review(qid, "approve", reason, actor)
+        self.db.commit()
+        return fid
+
+    def deny_quarantine(self, qid: int, reason: str,
+                        actor: str = "human") -> int:
+        """Human deny: drop the row and log the reason.
+
+        Requires a non-empty human reason, logged with actor human.
+        Unknown qid raises KeyError with nothing written. Returns the
+        review row id.
+        """
+        if not reason or not reason.strip():
+            raise ValueError("a human reason is required to deny qid %d"
+                             % qid)
+        row = self.db.execute(
+            "SELECT id FROM quarantine WHERE id=?", (qid,)).fetchone()
+        if row is None:
+            raise KeyError(qid)
+        self.db.execute("DELETE FROM quarantine WHERE id=?", (qid,))
+        rid = self._log_review(qid, "deny", reason, actor)
+        self.db.commit()
+        return rid
 
     def admit(self, text: str, source: str, gate: Gate,
               user: str = "local") -> str:

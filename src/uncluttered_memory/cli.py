@@ -1,5 +1,6 @@
 """Unclutter CLI: run the frozen eval, tune on the train split only,
-and apply named-human overrides (restore / retire / tombstone)."""
+apply named-human overrides (restore / retire / tombstone), and
+review the quarantine queue (review / approve / deny)."""
 from __future__ import annotations
 
 import argparse
@@ -39,6 +40,46 @@ def do_calibrate(task: str, out) -> int:
           " (test split untouched, n=%d)" %
           (out, task, reg["report"]["threshold"], len(train_admit),
            reg["report"]["f1"], len(test_admit)))
+    return 0
+
+
+def do_conformal(task: str, out, gate: str = "admit",
+                 target: float = calmod.CONFORMAL_TARGET_COVERAGE) -> int:
+    """Tune one per-gate min_conf cutoff on the train split only."""
+    mod = _eval()
+    cases = mod.load_cases(mod.CASES_FILE)
+    train, test = mod.split_cases(cases)
+    pool = [c for c in train if c.get("suite") == gate]
+    if gate == "admit":
+        judge = RuleJudge()
+
+        def _get_conf(c):
+            return judge.vote(c["text"], [], []).conf
+
+        def _is_correct(c):
+            from uncluttered_memory.gate import Gate as _Gate
+            got = _Gate(judge).decide(c["text"], [], []).action
+            return got == c["expect"]
+    elif gate == "importance":
+        judge = RuleJudge()
+
+        def _get_conf(c):
+            return judge.vote(c["text"], [], []).conf
+
+        def _is_correct(c):
+            return judge.vote(c["text"], [], []).importance == c["expect"]
+    else:
+        print("conformal error: gate must be admit or importance")
+        return 2
+    out = out or str(REPO / "thresholds" / (task + ".json"))
+    reg = calmod.calibrate_confidence(pool, task, out, _get_conf,
+                                      _is_correct,
+                                      target_coverage=target, gate=gate)
+    rep = reg["report"]
+    print("wrote %s task=%s %s.min_conf=%.2f coverage=%.3f abstention=%.3f "
+          "train_n=%d (test split untouched, n=%d)"
+          % (out, task, gate, rep["min_conf"], rep["coverage"],
+             rep["abstention"], len(pool), len(test)))
     return 0
 
 
@@ -84,6 +125,73 @@ def do_override(args) -> int:
     return report_error_count(store)
 
 
+def do_quarantine_review(args) -> int:
+    """List the quarantine queue for a human to triage."""
+    store = Store(str(args.db))
+    rows = store.quarantined()
+    if not rows:
+        print("quarantine: empty (nothing awaiting review in %s)" % args.db)
+        return 0
+    print("quarantine: %d item(s) awaiting human review in %s"
+          % (len(rows), args.db))
+    for qid, text, reason in rows:
+        excerpt = " ".join(text.split())
+        if len(excerpt) > 120:
+            excerpt = excerpt[:117] + "..."
+        print("qid=%d reason=%s text=%r" % (qid, reason, excerpt))
+    return 0
+
+
+def do_quarantine_approve(args) -> int:
+    """Human approve: release one quarantined row live, reason logged."""
+    store = Store(str(args.db))
+    try:
+        fid = store.approve_quarantine(args.qid, args.reason, actor="human")
+    except KeyError:
+        print("approve refused: no quarantined row qid %d in %s"
+              % (args.qid, args.db))
+        return 2
+    except ValueError as e:
+        print("approve refused: %s" % e)
+        return 2
+    print("approve: qid %d released as fact %d by human (reason=%r)"
+          % (args.qid, fid, args.reason))
+    return report_error_count(store)
+
+
+def do_quarantine_deny(args) -> int:
+    """Human deny: drop one quarantined row, reason logged."""
+    store = Store(str(args.db))
+    try:
+        store.deny_quarantine(args.qid, args.reason, actor="human")
+    except KeyError:
+        print("deny refused: no quarantined row qid %d in %s"
+              % (args.qid, args.db))
+        return 2
+    except ValueError as e:
+        print("deny refused: %s" % e)
+        return 2
+    print("deny: qid %d dropped by human (reason=%r)" % (args.qid, args.reason))
+    return report_error_count(store)
+
+
+def do_redteam() -> int:
+    """Fire the poison gauntlet: five attacks, all must fail closed."""
+    from eval.gauntlet import run_gauntlet
+    results, ok = run_gauntlet()
+    print("redteam: %d attacks, all must fail closed "
+          "(quarantine or deny, never admit)" % len(results))
+    for r in results:
+        print("%-18s %s (%s)" % (r["attack"],
+                                 "PASS" if r["passed"] else "FAIL",
+                                 r.get("detail", "")))
+    if ok:
+        print("REDTEAM PASS: every attack failed closed")
+        return 0
+    print("REDTEAM FAIL: an attack admitted what it should not")
+    return 1
+
+
 def main(argv=None) -> int:
     configure_console()
     parser = argparse.ArgumentParser(prog="unclutter", description="UnclutteredMemory CLI")
@@ -94,6 +202,18 @@ def main(argv=None) -> int:
     p_cal = sub.add_parser("calibrate", help="tune thresholds on train split only")
     p_cal.add_argument("--task", default="general-qa")
     p_cal.add_argument("--out", default=None)
+    p_conf = sub.add_parser(
+        "conformal",
+        help="tune per-gate confidence cutoffs on train split only "
+        "(abstention reported)")
+    p_conf.add_argument("--task", default="general-qa")
+    p_conf.add_argument("--out", default=None)
+    p_conf.add_argument("--gate", default="admit",
+                        choices=("admit", "importance"))
+    p_conf.add_argument("--target", type=float,
+                        default=calmod.CONFORMAL_TARGET_COVERAGE,
+                        help="target train coverage over non-abstained "
+                        "cases (default 0.9)")
     p_ov = sub.add_parser(
         "override",
         help="named-human fact override: restore | retire | tombstone")
@@ -113,6 +233,31 @@ def main(argv=None) -> int:
                            "tombstone")
     p_ov.add_argument("--reason", default="",
                       help="free-text reason recorded on the tombstone")
+    p_rev = sub.add_parser(
+        "review",
+        help="list the quarantine queue for human triage")
+    p_rev.add_argument("--db", default="uncluttered.db",
+                       help="SQLite store path (default: ./uncluttered.db)")
+    p_appr = sub.add_parser(
+        "approve",
+        help="human approve: release one quarantined row live "
+        "(reason logged, actor human)")
+    p_appr.add_argument("--db", default="uncluttered.db",
+                        help="SQLite store path (default: ./uncluttered.db)")
+    p_appr.add_argument("--qid", type=int, required=True,
+                        help="quarantine row id to release")
+    p_appr.add_argument("--reason", required=True,
+                        help="human reason, logged to the reviews table")
+    p_deny = sub.add_parser(
+        "deny",
+        help="human deny: drop one quarantined row "
+        "(reason logged, actor human)")
+    p_deny.add_argument("--db", default="uncluttered.db",
+                        help="SQLite store path (default: ./uncluttered.db)")
+    p_deny.add_argument("--qid", type=int, required=True,
+                        help="quarantine row id to drop")
+    p_deny.add_argument("--reason", required=True,
+                        help="human reason, logged to the reviews table")
     sub.add_parser("redteam", help="fire the poison gauntlet (P2)")
     sub.add_parser("gauntlet", help="record the gauntlet demo (P7)")
     args = parser.parse_args(argv)
@@ -123,8 +268,18 @@ def main(argv=None) -> int:
         return _eval().main(argv)
     if args.command == "calibrate":
         return do_calibrate(args.task, args.out)
+    if args.command == "conformal":
+        return do_conformal(args.task, args.out, args.gate, args.target)
     if args.command == "override":
         return do_override(args)
+    if args.command == "review":
+        return do_quarantine_review(args)
+    if args.command == "approve":
+        return do_quarantine_approve(args)
+    if args.command == "deny":
+        return do_quarantine_deny(args)
+    if args.command == "redteam":
+        return do_redteam()
     print("unclutter %s: not built until its phase" % args.command)
     return 2
 
