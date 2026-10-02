@@ -2,8 +2,18 @@
 """Live spot-check: a small golden sample against jev-1.13-free.
 
 Samples 20 golden cases (deterministic, spread across the judge-involved
-suites), asks the live judge the same question the offline stub answers,
-and prints the stub-vs-live agreement rate.
+suites), asks the live judges, and prints the stub-vs-live agreement rate.
+
+Relation independence: each relation case asks TWO differently worded
+live Jev questions (a direct phrasing plus a slot phrasing with
+different instructions and different criteria labels; see jev_client
+live_relation_pair) and also asks the offline heterogeneous pair
+(Strict plus Lenient). A destructive live verdict (TOMBSTONE or
+CONFLICT) proceeds only when the live pair agrees with each other AND
+the offline pair agrees with each other AND both agreed relations
+match; any disagreement vetoes to KEEP. Asking one identical live
+question twice is rejected by construction (live_confirmed_decide
+raises ValueError when the two live questions match).
 
 INFORMATION ONLY. The agreement rate gates nothing: no test, no eval
 exit code, no CI depends on it. Without the API key the script skips
@@ -11,8 +21,8 @@ cleanly with no network calls. On HTTP 429 it halts honestly with the
 rate-limit message; there is no fallback model and nothing is ever
 fabricated from a stub in place of a live answer.
 
-Relation cases cost two live calls each (one per judge slot of the
-two-judge decide()).
+Relation cases cost two live calls each (one per live question) plus
+offline strict plus lenient confirmation, which costs no calls.
 
 Exit codes: 0 completed or skipped (information only), 2 unreadable
 golden set or rejected key, 3 halted on the Jev rate limit.
@@ -34,8 +44,9 @@ from uncluttered_memory.console import configure_console  # noqa: E402
 from uncluttered_memory.gate import Gate, RuleJudge  # noqa: E402
 from uncluttered_memory.jev_client import (BadKey, JevError,  # noqa: E402
                                            JevJudgeClient,
-                                           JevRelationJudge,
                                            RateLimited,
+                                           live_confirmed_decide,
+                                           live_relation_pair,
                                            offline_relation_pair,
                                            rate_limited_message)
 
@@ -72,16 +83,24 @@ def stub_verdict(case: dict):
     raise ValueError("no offline verdict for suite %r" % suite)
 
 
-def live_verdict(case: dict, gate_judge, relation_judge):
+def live_verdict(case: dict, gate_judge, live_a, live_b,
+                 offline_a=None, offline_b=None):
     suite = case["suite"]
     if suite == "admit":
         return Gate(gate_judge).decide(case["text"], [], []).action
     if suite == "importance":
         return gate_judge.vote(case["text"], [], []).importance
     if suite in ("contradict", "supersede"):
-        # Two live calls: decide() asks both judge slots.
-        return supmod.decide(case["old"], case["new"],
-                             relation_judge, relation_judge).action
+        # Independent evidence: two differently worded live Jev
+        # questions must agree with each other AND the offline
+        # heterogeneous pair (Strict plus Lenient) must agree on the
+        # same pair; any disagreement vetoes to KEEP. A single live
+        # question passed twice raises ValueError by construction.
+        if offline_a is None or offline_b is None:
+            offline_a, offline_b = offline_relation_pair()
+        return live_confirmed_decide(case["old"], case["new"],
+                                     live_a, live_b,
+                                     offline_a, offline_b).action
     raise ValueError("no live verdict for suite %r" % suite)
 
 
@@ -111,16 +130,17 @@ def main(argv=None) -> int:
           "model in this project; no fallback exists)"
           % (len(picks), gate_judge.model))
     print("stub = offline RuleJudge/strict+lenient pair; live = "
-          "jev-1.13-free. Relation cases cost two live calls each.")
+          "jev-1.13-free. Relation cases cost two live calls each (two "
+          "differently worded questions) plus offline confirmation.")
     print("INFORMATION ONLY: the agreement rate below gates nothing.")
 
-    relation_judge = JevRelationJudge()
+    live_a, live_b = live_relation_pair()
     agree = 0
     done = 0
     for case in picks:
         try:
             stub = stub_verdict(case)
-            live = live_verdict(case, gate_judge, relation_judge)
+            live = live_verdict(case, gate_judge, live_a, live_b)
         except RateLimited as e:
             print("JEV RATE LIMITED: " + rate_limited_message(e))
             print("spotcheck halted honestly after %d of %d cases; nothing "

@@ -155,3 +155,76 @@ def test_restore_conflict_marked_fact_direct_store_call():
     # restoring a fact with no marks is a safe no-op
     s.restore(a)
     assert s.get(a)[7] is None and s.conflicts() == []
+
+
+def test_put_resurrects_conflict_marked_tombstoned_fact_fully_clean():
+    """Re-put of a conflict-marked then tombstoned fact reads clean."""
+    s = Store()
+    a = s.put("sky is blue", "email")
+    b = s.put("sky is green", "email")
+    other = s.put("unrelated row", "email")
+    s.mark_conflict(a, b)
+    s.tombstone(a, other, "supersede-agreed", "code")
+    assert s.get(a)[4] == other
+    assert s.get(a)[7] == b
+    back = s.put("sky  is   blue", "chat")
+    assert back == a
+    ra, rb = s.get(a), s.get(b)
+    assert ra[4] is None and ra[5] is None and ra[6] is None
+    assert ra[7] is None and rb[7] is None
+    assert s.conflicts() == []
+    assert {t for _, t, _ in s.live()} == {"sky  is   blue", "sky is green",
+                                           "unrelated row"}
+    assert s.tombstoned() == []
+
+
+def test_put_resurrection_keeps_newer_counterpart_clash():
+    """Resurrection clears only the back-pointer, like restore does."""
+    s = Store()
+    a = s.put("alpha fact", "email")
+    b = s.put("beta fact", "email")
+    c = s.put("gamma fact", "email")
+    s.mark_conflict(a, b)
+    s.mark_conflict(b, c)  # b now points at c; a still points at b
+    assert s.get(b)[7] == c
+    other = s.put("delta fact", "email")
+    s.tombstone(a, other, "supersede-agreed", "code")
+    back = s.put("alpha  fact", "chat")
+    assert back == a
+    assert s.get(a)[7] is None
+    assert s.get(a)[4] is None
+    # b moved on to c, so resurrection must not clobber that newer clash
+    assert s.get(b)[7] == c and s.get(c)[7] == b
+    assert [r for r in s.conflicts()
+            if r[0] == a or r[1] == a] == []
+
+
+def test_put_resurrection_shares_restore_path(monkeypatch):
+    """put() resurrection and restore() share one clean helper."""
+    import inspect
+    from uncluttered_memory.store import Store as StoreCls
+    assert "self._clear_tombstone_and_conflict_marks(fid)" in inspect.getsource(
+        StoreCls.put)
+    assert "self._clear_tombstone_and_conflict_marks(fact_id)" in (
+        inspect.getsource(StoreCls.restore))
+    # only one definition of the tombstone-clearing SQL lives in the helper
+    helper = inspect.getsource(
+        StoreCls._clear_tombstone_and_conflict_marks)
+    assert "tombstoned_by=NULL" in helper
+    assert "tombstoned_by=NULL" not in inspect.getsource(StoreCls.restore)
+    calls = []
+    real = StoreCls._clear_tombstone_and_conflict_marks
+
+    def counting(self, fact_id):
+        calls.append(fact_id)
+        return real(self, fact_id)
+
+    s = StoreCls()
+    fid = s.put("shared path fact", "email")
+    other = s.put("other fact", "email")
+    s.tombstone(fid, other, "manual", "code")
+    monkeypatch.setattr(StoreCls, "_clear_tombstone_and_conflict_marks",
+                        counting)
+    assert s.put("shared  path fact", "chat") == fid
+    assert calls == [fid]
+    assert s.get(fid)[4] is None

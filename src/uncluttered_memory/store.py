@@ -82,16 +82,45 @@ class Store:
         self.db.execute("UPDATE facts SET user='local' WHERE user IS NULL")
         self.db.commit()
 
+    def _clear_tombstone_and_conflict_marks(self, fact_id: int) -> None:
+        """Shared clean path for restore() and put() resurrection.
+
+        Clears the tombstone fields and the conflict marks on both
+        sides (own conflict_with, the counterpart mark only where it
+        still points back), plus any conflicts-table rows naming this
+        fact. Callers commit. Both restore() and the put() resurrect
+        branch call this helper so the two paths cannot drift.
+        """
+        row = self.db.execute(
+            "SELECT conflict_with FROM facts WHERE id=?",
+            (fact_id,)).fetchone()
+        counterpart = row[0] if row is not None else None
+        self.db.execute(
+            "UPDATE facts SET tombstoned_by=NULL, tombstone_reason=NULL,"
+            " tombstone_actor=NULL, conflict_with=NULL WHERE id=?",
+            (fact_id,))
+        if counterpart is not None:
+            self.db.execute(
+                "UPDATE facts SET conflict_with=NULL WHERE id=?"
+                " AND conflict_with=?", (counterpart, fact_id))
+        self.db.execute(
+            "DELETE FROM conflicts WHERE old_id=? OR new_id=?",
+            (fact_id, fact_id))
+
     def put(self, text: str, source: str, user: str = "local") -> int:
         """Insert or dedupe by normalized content hash.
 
         Dedupe key is (user, text_hash). A repeat put of live text
         returns the existing id (refreshing source when it changed).
         A repeat put of tombstoned text resurrects the row as live:
-        the tombstone fields are cleared, source and created take the
-        new put values (new put is new life), and the same id is
-        returned, now visible in live(). No silent-swallow path: every
-        put either returns a live id or inserts a new live row.
+        text, source and created take the new put values (new put is
+        new life), and the row is cleaned through the same shared
+        path as restore() (tombstone fields plus conflict marks on
+        both sides and conflicts-table rows), so a conflict-marked
+        then tombstoned fact re-put live reads fully clean. The same
+        id is returned, now visible in live(). No silent-swallow
+        path: every put either returns a live id or inserts a new
+        live row.
         """
         # Dedupe is by normalized content hash only. An exact-text
         # fallback used to sit here; it was dead (a row whose text
@@ -107,10 +136,10 @@ class Store:
             fid, old_source, tombstoned_by = row
             if tombstoned_by is not None:
                 self.db.execute(
-                    "UPDATE facts SET text=?, source=?, created=?,"
-                    " tombstoned_by=NULL, tombstone_reason=NULL,"
-                    " tombstone_actor=NULL WHERE id=?",
+                    "UPDATE facts SET text=?, source=?, created=?"
+                    " WHERE id=?",
                     (text, source, time.time(), fid))
+                self._clear_tombstone_and_conflict_marks(fid)
                 self.db.commit()
                 return fid
             if old_source != source:
@@ -168,23 +197,10 @@ class Store:
         pair property, so leaving one side marked after a human
         restore would read as a dangling unresolved clash; the
         restored fact and its former counterpart both read clean.
-        Repeat restores are safe no-ops.
+        Repeat restores are safe no-ops. Shares
+        _clear_tombstone_and_conflict_marks with put() resurrection.
         """
-        row = self.db.execute(
-            "SELECT conflict_with FROM facts WHERE id=?",
-            (fact_id,)).fetchone()
-        counterpart = row[0] if row is not None else None
-        self.db.execute(
-            "UPDATE facts SET tombstoned_by=NULL, tombstone_reason=NULL,"
-            " tombstone_actor=NULL, conflict_with=NULL WHERE id=?",
-            (fact_id,))
-        if counterpart is not None:
-            self.db.execute(
-                "UPDATE facts SET conflict_with=NULL WHERE id=?"
-                " AND conflict_with=?", (counterpart, fact_id))
-        self.db.execute(
-            "DELETE FROM conflicts WHERE old_id=? OR new_id=?",
-            (fact_id, fact_id))
+        self._clear_tombstone_and_conflict_marks(fact_id)
         self.db.commit()
 
     def mark_conflict(self, old_id: int, new_id: int,
