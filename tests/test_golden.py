@@ -49,7 +49,7 @@ def test_golden_set_exists_with_floor_and_all_suites():
 
 
 def test_golden_labels_are_data_not_generated():
-    """No shared code path with the stub generator."""
+    """No shared code path with the stub generator, at any length."""
     src = CASES_SRC.read_text(encoding="utf-8")
     assert GOLDEN_PROVENANCE not in src
     from eval.cases import build_cases
@@ -58,14 +58,14 @@ def test_golden_labels_are_data_not_generated():
     for c in generated:
         for s in evalmod.case_strings(c):
             n = evalmod.normalize_for_compare(s)
-            if len(n.split()) >= 3:
+            if n:
                 gen_texts.add(n)
     golden = load_cases(GOLDEN)
     golden_texts = set()
     for c in golden:
         for s in evalmod.case_strings(c):
             n = evalmod.normalize_for_compare(s)
-            if len(n.split()) >= 3:
+            if n:
                 golden_texts.add(n)
     assert gen_texts.isdisjoint(golden_texts)
     assert all(c["provenance"] == GOLDEN_PROVENANCE for c in golden)
@@ -75,6 +75,48 @@ def test_golden_disjoint_from_bulk():
     frozen = load_cases(evalmod.CASES_FILE)
     golden = load_cases(GOLDEN)
     assert cross_split_overlap(frozen, golden) == set()
+
+
+def test_cross_split_overlap_catches_short_thanks_leak():
+    """Sub-three-token reuse is an exact-match leak, not a free pass.
+
+    The old three-token floor ignored single-token play and filler
+    texts, exactly where the golden claim set lives. A bulk side
+    carrying "thanks" and a golden side carrying "Thanks" must
+    overlap after normalization.
+    """
+    bulk = [{"id": "b1", "suite": "admit", "kind": "filler",
+             "provenance": "synthetic-rule", "text": "thanks",
+             "expect": "DROP"}]
+    golden = [{"id": "g1", "suite": "admit", "kind": "filler",
+               "provenance": "hand-authored", "text": "Thanks",
+               "expect": "DROP"}]
+    assert cross_split_overlap(bulk, golden) == {"thanks"}
+    same = [dict(golden[0], id="g2", text="no"),
+            dict(bulk[0], id="b2", text="No")]
+    assert cross_split_overlap([same[1]], [same[0]]) == {"no"}
+
+
+def test_cross_split_overlap_catches_short_two_token_leak():
+    """Two-token reuse counts too: "got it" versus "GOT IT" overlaps."""
+    bulk = [{"id": "b1", "suite": "admit", "kind": "filler",
+             "provenance": "synthetic-rule", "text": "got it",
+             "expect": "DROP"}]
+    golden = [{"id": "g1", "suite": "admit", "kind": "filler",
+               "provenance": "hand-authored", "text": "GOT IT",
+               "expect": "DROP"}]
+    assert cross_split_overlap(bulk, golden) == {"got it"}
+
+
+def test_cross_split_overlap_still_empty_without_reuse():
+    """Distinct short texts do not overlap: kk and will do are clean."""
+    bulk = [{"id": "b1", "suite": "admit", "kind": "filler",
+             "provenance": "synthetic-rule", "text": "thanks",
+             "expect": "DROP"}]
+    golden = [{"id": "g1", "suite": "admit", "kind": "filler",
+               "provenance": "hand-authored", "text": "kk",
+               "expect": "DROP"}]
+    assert cross_split_overlap(bulk, golden) == set()
 
 
 def test_every_golden_case_passes_the_offline_system():

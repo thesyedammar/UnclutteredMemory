@@ -7,10 +7,15 @@ actually worth remembering, deliberately breaking the buckets: vital
 facts with no marker words, trivial facts carrying marker words, and
 near-boundary judgments.
 
-The independence claim rests ONLY on the label-side tests below:
-labels live in the data file (stripping every marker token leaves the
-stored labels unchanged), and a stub-mimicking marker predictor that
-reads only marker features misses widely. The scorer-competence
+The independence claim rests ONLY on the marker-feature tests below:
+a classifier that sees only marker features (hard mark present,
+durable mark present, digit present), trained on half the suite,
+cannot reproduce the held-out labels (accuracy under 0.7), and a
+stub-mimicking marker predictor that reads only marker features
+misses widely. If the labels were derived from markers, the trained
+classifier would score high on held out rows (relabeling the suite
+with the mimic scores 0.83 on the same split), so the 0.7 bound
+fails closed: derivation cannot pass it. The scorer-competence
 checks at the bottom of this file use RuleJudge as the scorer, so
 they prove a stub matches the labels on hard cells; they are kept as
 competence checks and are explicitly NOT independence evidence.
@@ -41,11 +46,19 @@ def _has_marker(text: str) -> bool:
     return any(m in low for m in MARKERS)
 
 
-def _strip_markers(text: str) -> str:
-    out = text
-    for m in MARKERS:
-        out = re.sub(re.escape(m), " ", out, flags=re.IGNORECASE)
-    return re.sub(r"\d", " ", out)
+def _marker_features(text: str) -> tuple:
+    """Only marker signals: hard mark, durable mark, digit. No text."""
+    low = text.lower()
+    return (
+        any(m in low for m in HARD_MARKS),
+        any(m in low for m in DURABLE_MARK),
+        re.search(r"\d", low) is not None,
+    )
+
+
+def _majority(vals: list) -> int:
+    """Most common label; ties break to the smaller label, fixed."""
+    return max(set(vals), key=lambda v: (vals.count(v), -v))
 
 
 def _stub_mimic(text: str) -> int:
@@ -68,17 +81,36 @@ def _stub_mimic(text: str) -> int:
     return 2
 
 
-def test_importance_labels_live_in_data_not_derived():
-    """Independence evidence (label side): stripping every marker
-    token leaves the stored labels unchanged, because the labels are
-    stored in the data file, not derived from text features."""
-    cases = _load_importance()
+def test_importance_marker_features_cannot_reproduce_labels():
+    """Independence evidence (falsifiable): marker features do not
+    determine the labels.
+
+    A classifier that sees ONLY marker features is trained on one
+    half of the suite (even rows by sorted id) and scored on the
+    held-out half. Each feature vector predicts its training
+    majority; unseen vectors fall back to the training global
+    majority. Held-out accuracy must stay under 0.7, far below what
+    derivation would give: relabeling this same suite with the
+    marker mimic below scores 0.83 on the identical split, so a
+    marker-derived label set FAILS this test. The interleaved split
+    is fixed so the bound cannot be gamed by reordering rows.
+    """
+    cases = sorted(_load_importance(), key=lambda c: c["id"])
     assert len(cases) == 24
-    before = [(c["id"], c["expect"]) for c in cases]
-    stripped = [_strip_markers(c["text"]) for c in cases]
-    assert any(s != c["text"] for s, c in zip(stripped, cases))
-    after = [(c["id"], c["expect"]) for c in _load_importance()]
-    assert after == before
+    train = [c for i, c in enumerate(cases) if i % 2 == 0]
+    held = [c for i, c in enumerate(cases) if i % 2 == 1]
+    assert len(train) == 12 and len(held) == 12
+    by_vector: dict = {}
+    for c in train:
+        by_vector.setdefault(_marker_features(c["text"]), []).append(
+            c["expect"])
+    mapping = {vec: _majority(vals) for vec, vals in by_vector.items()}
+    fallback = _majority([c["expect"] for c in train])
+    good = sum(1 for c in held
+               if mapping.get(_marker_features(c["text"]),
+                              fallback) == c["expect"])
+    accuracy = good / len(held)
+    assert accuracy < 0.7, (good, len(held), mapping)
 
 
 def test_importance_marker_mimic_misses_many():

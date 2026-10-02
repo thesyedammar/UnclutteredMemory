@@ -219,15 +219,22 @@ class Store:
         self.db.commit()
 
     def conflicts(self, user=None) -> list:
-        """Unresolved-clash pairs. Both member facts are still live."""
+        """Unresolved-clash pairs. Both member facts are still live.
+
+        A clash is a pair property, so a user filter attributes by
+        either side: rows where the old fact or the new fact belongs
+        to the user. Filtering by the old side only would hide a
+        clash from the new side owner, who is equally party to it.
+        """
         if user is None:
             return self.db.execute(
                 "SELECT old_id, new_id, relation, reason, actor"
                 " FROM conflicts ORDER BY id").fetchall()
         return self.db.execute(
             "SELECT c.old_id, c.new_id, c.relation, c.reason, c.actor"
-            " FROM conflicts c JOIN facts f ON f.id=c.old_id"
-            " WHERE f.user=? ORDER BY c.id", (user,)).fetchall()
+            " FROM conflicts c JOIN facts fo ON fo.id=c.old_id"
+            " JOIN facts fn ON fn.id=c.new_id"
+            " WHERE fo.user=? OR fn.user=? ORDER BY c.id", (user, user)).fetchall()
 
     def live(self, user=None) -> list:
         if user is None:

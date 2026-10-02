@@ -22,7 +22,7 @@
 {"id": "g-admit-0022", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "I prefer the earlier ferry on Sundays", "expect": "STORE"}
 {"id": "g-admit-0023", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "the deadline moved to Tuesday", "expect": "STORE"}
 {"id": "g-admit-0024", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "allergic to shellfish since childhood", "expect": "STORE"}
-{"id": "g-admit-0025", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "thanks", "expect": "DROP"}
+{"id": "g-admit-0025", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "kk", "expect": "DROP"}
 {"id": "g-admit-0026", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "okay", "expect": "DROP"}
 {"id": "g-admit-0027", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "got it", "expect": "DROP"}
 {"id": "g-admit-0028", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "sounds good", "expect": "DROP"}
@@ -41,7 +41,7 @@
 {"id": "g-admit-0041", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "account balance is 12,000", "expect": "DROP"}
 {"id": "g-admit-0042", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "her mobile is 94xxxx", "expect": "DROP"}
 {"id": "g-admit-0043", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "the wifi password is hunter2", "expect": "DROP"}
-{"id": "g-admit-0044", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "no", "expect": "DROP"}
+{"id": "g-admit-0044", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "will do", "expect": "DROP"}
 {"id": "g-admit-0045", "suite": "admit", "kind": "play", "provenance": "hand-authored", "text": "that meme is gold lmao", "expect": "DROP"}
 {"id": "g-admit-0046", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "hm", "expect": "DROP"}
 {"id": "g-admit-0047", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the archive boxes sit in the cellar", "expect": "QUARANTINE"}

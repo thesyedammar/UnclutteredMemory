@@ -468,11 +468,22 @@ def dedupe_distinct_crosscheck(cases: list, stride: int = 4) -> tuple:
     return (len(sample), len(distinct), bad)
 
 
-def cross_split_overlap(train: list, test: list) -> set:
+def cross_split_overlap(train: list, test: list, min_tokens: int = 1) -> set:
     """Normalized texts that appear in both splits.
 
-    Only strings of three or more tokens count: short labels (filler
-    words, card ids) are legitimately reused and carry no leak risk.
+    Every non-empty normalized string counts, by exact normalized
+    match, including short strings: golden play and filler cases
+    (thanks-style single tokens) live below three tokens, so a
+    three-token floor would blind the check exactly where the
+    hand-authored claim set sits. Short matches are exact equality
+    on the normalized form, the same bar the longer strings meet.
+    Callers that scan the template-built bulk split for tuning
+    leakage pass min_tokens=3: that set reuses a small closed
+    filler vocabulary across template cases by design, and
+    case-level duplication there is already caught by case_hash,
+    so shared filler vocabulary inside one synthetic set is reuse,
+    not leakage. Across sets (bulk versus hand-authored golden)
+    the default applies and any exact reuse, short or long, fails.
     """
     tr = set()
     te = set()
@@ -480,8 +491,8 @@ def cross_split_overlap(train: list, test: list) -> set:
         tr |= {normalize_for_compare(s) for s in case_strings(c)}
     for c in test:
         te |= {normalize_for_compare(s) for s in case_strings(c)}
-    tr = {s for s in tr if len(s.split()) >= 3}
-    te = {s for s in te if len(s.split()) >= 3}
+    tr = {s for s in tr if s and len(s.split()) >= min_tokens}
+    te = {s for s in te if s and len(s.split()) >= min_tokens}
     return tr & te
 
 
@@ -525,7 +536,7 @@ def run_eval(cases_path=None, task: str = "general-qa",
     if not tr_hashes.isdisjoint(te_hashes):
         print("CONTAMINATION: train/test case overlap")
         return 2
-    if cross_split_overlap(train, test):
+    if cross_split_overlap(train, test, min_tokens=3):
         print("CONTAMINATION: train/test normalized text overlap")
         return 2
     try:
@@ -547,6 +558,8 @@ def run_eval(cases_path=None, task: str = "general-qa",
             print("GOLDEN ERROR: %s" % gerr)
             return 2
         if cross_split_overlap(cases, golden):
+            # default min_tokens=1: short filler texts count here, so a
+            # thanks-style exact reuse across sets fails the run.
             print("GOLDEN ERROR: golden text overlaps the bulk set; the "
                   "claim set must be independent of the self-consistency "
                   "set")

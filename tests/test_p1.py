@@ -147,6 +147,30 @@ def test_conflicts_user_scoped():
     assert len(s.conflicts(user="bob")) == 1
 
 
+def test_conflicts_user_scoped_by_either_side():
+    """Cross-user clashes attribute to both owners, and to no one else.
+
+    A clash is a pair property: a conflict between an alice fact and
+    a bob fact must appear under conflicts(user="alice") and under
+    conflicts(user="bob"), and must not appear under carol. The old
+    old-side-only filter hid the clash from the new-side owner.
+    """
+    s = Store()
+    a = s.put("alice saw the comet", "user", user="alice")
+    b = s.put("bob missed the comet", "user", user="bob")
+    s.mark_conflict(a, b)
+    assert len(s.conflicts()) == 1
+    assert len(s.conflicts(user="alice")) == 1
+    assert len(s.conflicts(user="bob")) == 1
+    assert s.conflicts(user="alice") == s.conflicts(user="bob")
+    assert s.conflicts(user="carol") == []
+    other = s.put("carol notes the comet", "user", user="carol")
+    assert s.conflicts(user="carol") == []
+    assert len(s.conflicts()) == 1
+    assert other not in (s.conflicts(user="alice")[0][0],
+                         s.conflicts(user="alice")[0][1])
+
+
 def test_human_override_restore_and_retire():
     s = Store()
     old = s.put("meeting is at 3pm", "user")
@@ -376,13 +400,28 @@ def test_rate_limited_message_formats_retry_after_minutes():
         "retry-after says about 10 minute(s).")
 
 
+def _package_dir():
+    """Installed package dir: anchors repo scans, never the cwd.
+
+    pathlib.Path("src/...") resolves against the process cwd, so a
+    pytest run from another directory silently scans nothing and the
+    pins pass vacuously. The imported package file locates the real
+    source tree from any cwd, installed or src-layout alike.
+    """
+    import pathlib
+    from uncluttered_memory import jev_client as jc
+    return pathlib.Path(jc.__file__).resolve().parent
+
+
 def test_model_allowlist_is_pinned():
     """Only jev-1.13-free may appear as a model name in the package."""
     import ast
     import pathlib
     import tokenize
     bad = []
-    for p in pathlib.Path("src/uncluttered_memory").glob("*.py"):
+    scanned = 0
+    for p in _package_dir().glob("*.py"):
+        scanned += 1
         with tokenize.open(p) as f:
             for tok in tokenize.generate_tokens(f.readline):
                 if tok.type != tokenize.STRING:
@@ -398,6 +437,7 @@ def test_model_allowlist_is_pinned():
                 import re
                 if re.search(r"\bjev-1\.13(?!-free)\b", flat) or "deepseek" in flat:
                     bad.append((str(p), flat[:80]))
+    assert scanned > 0, "allowlist scan found no package files"
     assert bad == [], bad
     from uncluttered_memory import jev_client as jc
     assert jc.DEFAULT_MODEL == "jev-1.13-free"
@@ -425,7 +465,9 @@ def test_model_allowlist_ast_no_sneaked_call_sites():
         r"(?:\d|sonnet|opus|haiku)|llama|mistral|mixtral|gemini|grok"
         r"|command[-\s]?r|phi[-\s]?\d|qwen|fallback[-\s_]?model)")
     bad = []
-    for p in sorted(pathlib.Path("src/uncluttered_memory").rglob("*.py")):
+    scanned = 0
+    for p in sorted(_package_dir().rglob("*.py")):
+        scanned += 1
         tree = ast.parse(p.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Call):
@@ -444,7 +486,31 @@ def test_model_allowlist_ast_no_sneaked_call_sites():
             if (isinstance(node, ast.Attribute)
                     and "fallback" in node.attr.lower()):
                 bad.append((str(p), "attr", node.attr[:80]))
+    assert scanned > 0, "allowlist AST scan found no package files"
     assert bad == [], bad
+
+
+def test_allowlist_pins_scan_from_another_cwd(tmp_path):
+    """Pins hold from any cwd: the scans anchor to the package file.
+
+    Runs the two allowlist tests in a subprocess whose cwd is an
+    empty temp dir, addressing this test file by absolute path. With
+    the old cwd-relative globs the scans found nothing there and
+    passed vacuously; anchored scans still walk the real package
+    and the subprocess must report 2 passed.
+    """
+    import subprocess
+    import sys
+    import pathlib
+    this_file = pathlib.Path(__file__).resolve()
+    proc = subprocess.run(
+        [sys.executable, "-m", "pytest", str(this_file),
+         "-k", ("test_model_allowlist_is_pinned or "
+                 "test_model_allowlist_ast_no_sneaked_call_sites"),
+         "-q", "-p", "no:cacheprovider"],
+        cwd=str(tmp_path), capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "2 passed" in proc.stdout, proc.stdout + proc.stderr
 
 
 def test_primary_vote_composes_answers(monkeypatch):
