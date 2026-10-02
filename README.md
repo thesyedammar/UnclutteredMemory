@@ -3,9 +3,9 @@
 Memory that proves itself: a tiny typed judge at the door of agent memory.
 
 - `src/uncluttered_memory/gate.py` - one batch of typed judge questions, code enforces drop / quarantine / store. Unseen input fails closed to quarantine, never an exception. RuleJudge is an offline heuristic stub keyed by text features; it is not Jev. Every decision cutoff (confidence, play, sensitive, stop, durable, importance) is a parameter whose default lives in `thresholds.py`.
-- `src/uncluttered_memory/thresholds.py` - the one home for every decision-threshold default. Logic paths read cutoffs from here; no other module hardcodes a numeric decision boundary. The per-task registry can override `admit.durable` only.
+- `src/uncluttered_memory/thresholds.py` - the one home for every decision-threshold default and every RuleJudge vote level. Logic paths read cutoffs from here; no other module hardcodes a numeric decision boundary or vote literal. The per-task registry can override `admit.durable` only.
 - `src/uncluttered_memory/console.py` - report streams are forced to UTF-8 with a named error handler (`backslashreplace`), so a cp1252 console or pipe never mangles a report line.
-- `src/uncluttered_memory/store.py` - SQLite with content-hash dedupe (normalized text; the dead exact-text fallback branch was removed), provenance per row, soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, and per-user scoping. `Store.admit` quarantines only judge-halt exceptions (the JevError family: rate limit, bad key, transport, malformed judge answer); any other exception is a coding bug that increments an explicit `error_count`, emits one structured log line (time, op, input hash, error type), and propagates instead of vanishing as a quarantine.
+- `src/uncluttered_memory/store.py` - SQLite with two-stage dedupe (exact normalized content hash first, then token-set Jaccard at `DEDUP_JACCARD` = 0.85 over live same-user rows; the dead exact-text fallback branch was removed), provenance per row, soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, and per-user scoping. `Store.admit` quarantines only judge-halt exceptions (the JevError family: rate limit, bad key, transport, malformed judge answer); any other exception is a coding bug that increments an explicit `error_count`, emits one structured log line (time, op, input hash, error type), and propagates instead of vanishing as a quarantine.
 - `src/uncluttered_memory/supersede.py` - code-ordered candidate pairs, relation vote via the judge protocol (supersede / coexist / conflict_unresolved / unrelated). Only an agreed supersede soft-tombstones the old fact; an agreed clash marks both facts conflict_unresolved and keeps both live, never a tombstone. Named-human override for restore / retire / tombstone, each documented in the CLI help (`unclutter override --help`) and tested end to end.
 - `src/uncluttered_memory/recall.py` - the read path: gate, band, and cap are parameters defaulting to `thresholds.py`; code packs.
 - `src/uncluttered_memory/inject.py` - card-first packing, whole-card truncation, hard budget from `thresholds.py`.
@@ -182,8 +182,10 @@ script skips cleanly with no network calls. On full completion with
 the key present it refreshes `tests/fixtures/live_votes_20261002.json`
 with the recorded live votes; the offline ratchet test
 (`tests/test_live_ratchet.py`) reads that fixture and fails when
-stub-vs-live agreement on the fixed 20-case sample drops below 0.35
-(the recorded importance-audit 0.417 minus margin), so live drift is
+stub-vs-live agreement on the fixed 20-case sample drops below 0.40
+(the recorded importance-audit 0.417 truncated down to the n=20 grid:
+with 20 cases the floor moves in 0.05 steps, so 0.40 = 8/20 is the
+tightest on-grid value at or below the measurement), so live drift is
 a failing test instead of a footnote. On HTTP 429 it halts
 honestly with the rate-limit message, never falls back to another
 model, and never lets a stub answer in Jev's place. Pass
@@ -214,8 +216,19 @@ All three are reachable from the CLI and documented in its help:
 
 `Store.restore` is covered by tests including override-then-read-back,
 restore-of-tombstone, and restore-of-conflict (both sides read fully
-clean, conflicts rows removed). `Store.put` dedupes by normalized
-content hash only, and a repeat put of tombstoned text resurrects the
+clean, conflicts rows removed). `Store.put` dedupes in two stages:
+exact normalized content hash first (unchanged), then token-set
+Jaccard at `DEDUP_JACCARD` (0.85) over live rows in the same user
+scope, so same-fact near-duplicates (reordered words, a dropped word
+in a long fact) merge while near-miss distinct facts stay separate.
+Tokens are case- and punctuation-sensitive, matching the contract that
+case and punctuation are content; resurrection stays exact-only (a
+fuzzy match against tombstoned text inserts a fresh row); the
+threshold is a `put` parameter tests can override. Limits, stated
+plainly: a single-word change in a short fact still reads DISTINCT,
+and heavily reworded paraphrases with little token overlap stay
+DISTINCT. This stage catches near-duplicates, not deep semantic
+equivalence. A repeat put of tombstoned text resurrects the
 row as live with fresh source/created provenance (new put is new
 life), pinned by put-after-tombstone tests; `Store.supersede` routes
 its same-text path through `put` so it cannot silently return a dead
@@ -225,8 +238,9 @@ with nothing written, a missing id with an explicit user stores in
 that caller scope, and a missing id without a user raises KeyError
 instead of landing a row in the default scope. The exact-text fallback branch in `Store.put`
 was dead code (a row whose text matches also carries the hash of that
-text) and was removed; the dedupe contract is by normalized content
-hash only, pinned by tests.
+text) and was removed; exact dedupe is by normalized content
+hash, with the token-set near-duplicate stage above it, both pinned
+by tests.
 
 ## Honesty
 

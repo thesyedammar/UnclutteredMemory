@@ -75,8 +75,13 @@ def test_human_override_rejects_bad_actions():
         supmod.human_override(s, fid, "retire")  # target_id required
 
 
-def test_put_dedupes_by_normalized_content_hash_only():
-    """The removed exact-text fallback is gone: dedupe is the hash."""
+def test_put_exact_stage_dedupes_by_normalized_content_hash():
+    """Exact stage is the hash; the fuzzy stage leaves these pairs alone.
+
+    The whitespace variant merges at the exact stage, while the case
+    and punctuation variants score 0.50 token Jaccard, below
+    the 0.85 near-duplicate threshold, so they stay distinct rows.
+    """
     s = Store()
     a = s.put("ship the build", "email")
     assert s.put("ship  the\tbuild", "chat") == a

@@ -85,8 +85,8 @@ def record_fixture(picks: list, live_by_id: dict, path=None):
             agree, total, 100.0 * agree / total if total else 0.0),
         "agree_count": agree,
         "date": datetime.date.today().isoformat(),
-        "floor_note": ("ratchet floor 0.35 is the recorded "
-                       "importance-audit 0.417 minus margin"),
+        "floor_note": ("ratchet floor 0.40 is the recorded "
+                       "importance-audit 0.417 truncated to the n=20 grid"),
         "method": ("deterministic 20-case spread over judged suites "
                    "(admit, importance, contradict, supersede); stub = "
                    "offline RuleJudge/strict+lenient pair, live = "

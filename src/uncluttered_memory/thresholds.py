@@ -45,6 +45,58 @@ RECALL_GATE = 0.58
 RECALL_BAND = 0.45
 RECALL_CAP = 8
 
+# Near-duplicate dedupe (Store.put second stage).
+#
+# Exact normalized-hash match dedupes first (unchanged). When the hash
+# misses, put compares the token set of the new text against live rows
+# in the same user scope and merges at or above DEDUP_JACCARD.
+#
+# Threshold choice, stated plainly: tokens are whitespace splits of the
+# normalized text, case- and punctuation-sensitive, matching the
+# existing contract that case and punctuation are content (a test pins
+# that "Ship the build" and "ship the build." are distinct rows). On
+# that tokenization every frozen DISTINCT dedupe label scores at or
+# below 0.80, with the nearest miss g-dedupe-0013 ("fold the winter
+# coats today" vs "fold the winter coats", 4/5 = 0.80). DEDUP_JACCARD
+# sits one step above at 0.85, so the whole frozen set passes with
+# margin and no label moves.
+#
+# What 0.85 catches and what it does not: token reorderings always
+# score 1.0 and merge; a dropped or added word merges once the fact
+# is long enough (7 tokens: 6/7 = 0.857). A single-word change in a
+# short fact stays DISTINCT (4 tokens with one swap: 3/5 = 0.60), and
+# heavily reworded paraphrases with little token overlap stay
+# DISTINCT too. That limit is honest: this stage catches
+# near-duplicates, not deep semantic equivalence.
+DEDUP_JACCARD = 0.85
+
+# RuleJudge vote levels: heuristic stub outputs, not decision cutoffs.
+# The cutoffs that read these live above. Centralized here so the
+# threshold-pin test covers every numeric literal the judge path
+# emits; gate.py reads them as th.* and holds no numeric vote literal
+# of its own.
+FILLER_LEVELS = (0.05, 1, 0.1)
+FILLER_CONF = 0.9
+PLAY_LEVELS = (0.3, 1, 0.2)
+PLAY_SIGNAL = 0.85
+PLAY_CONF = 0.8
+SENSITIVE_LEVELS = (0.6, 2, 0.1)
+SENSITIVE_SIGNAL = 0.9
+SENSITIVE_CONF = 0.8
+DURABLE_DURABLE = 0.9
+DURABLE_STOP = 0.05
+DURABLE_CONF = 0.8
+DURABLE_HARD_IMPORTANCE = 5
+DURABLE_SOFT_IMPORTANCE = 4
+UNCERTAIN_LEVELS = (0.5, 2, 0.4)
+UNCERTAIN_CONF = 0.2
+
+# Fail-closed protocol defaults: the vote JudgeClient and FakeJudge
+# emit for unseen or unmapped input. Low confidence by construction,
+# so Gate.decide quarantines it under MIN_CONF.
+FAIL_CLOSED_LEVELS = (0.5, 2, 0.5)
+FAIL_CLOSED_CONF = 0.0
+
 # Packing budgets.
 #
 # Chars-as-proxy decision, stated plainly: INJECT_BUDGET_CHARS and

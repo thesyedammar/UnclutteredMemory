@@ -38,7 +38,7 @@ class JudgeClient:
     """Judge protocol. The base fails closed; real judges override vote()."""
 
     def vote(self, text: str, neighbors: list, facts: list) -> GateVote:
-        return GateVote(0.5, 2, 0.5, conf=0.0)
+        return GateVote(*th.FAIL_CLOSED_LEVELS, conf=th.FAIL_CLOSED_CONF)
 
 
 class FakeJudge(JudgeClient):
@@ -50,7 +50,7 @@ class FakeJudge(JudgeClient):
     def vote(self, text, neighbors, facts):
         v = self.votes.get(text)
         if v is None:
-            return GateVote(0.5, 2, 0.5, conf=0.0)
+            return GateVote(*th.FAIL_CLOSED_LEVELS, conf=th.FAIL_CLOSED_CONF)
         return v
 
 
@@ -65,22 +65,25 @@ DURABLE_MARK = ("prefer", "standup", "deadline", "allerg", "stop-loss",
                 "stoploss", "limit", "always", "never", "%")
 
 # RuleJudge vote levels: heuristic stub outputs, not decision cutoffs.
-# The cutoffs that read these live in thresholds.py.
-FILLER_LEVELS = (0.05, 1, 0.1)
-FILLER_CONF = 0.9
-PLAY_LEVELS = (0.3, 1, 0.2)
-PLAY_SIGNAL = 0.85
-PLAY_CONF = 0.8
-SENSITIVE_LEVELS = (0.6, 2, 0.1)
-SENSITIVE_SIGNAL = 0.9
-SENSITIVE_CONF = 0.8
-DURABLE_DURABLE = 0.9
-DURABLE_STOP = 0.05
-DURABLE_CONF = 0.8
-DURABLE_HARD_IMPORTANCE = 5
-DURABLE_SOFT_IMPORTANCE = 4
-UNCERTAIN_LEVELS = (0.5, 2, 0.4)
-UNCERTAIN_CONF = 0.2
+# The cutoffs that read these live in thresholds.py, and the numeric
+# values live there too: these names are aliases of the th.* outputs
+# so existing import sites keep working. New code should read
+# thresholds.py directly.
+FILLER_LEVELS = th.FILLER_LEVELS
+FILLER_CONF = th.FILLER_CONF
+PLAY_LEVELS = th.PLAY_LEVELS
+PLAY_SIGNAL = th.PLAY_SIGNAL
+PLAY_CONF = th.PLAY_CONF
+SENSITIVE_LEVELS = th.SENSITIVE_LEVELS
+SENSITIVE_SIGNAL = th.SENSITIVE_SIGNAL
+SENSITIVE_CONF = th.SENSITIVE_CONF
+DURABLE_DURABLE = th.DURABLE_DURABLE
+DURABLE_STOP = th.DURABLE_STOP
+DURABLE_CONF = th.DURABLE_CONF
+DURABLE_HARD_IMPORTANCE = th.DURABLE_HARD_IMPORTANCE
+DURABLE_SOFT_IMPORTANCE = th.DURABLE_SOFT_IMPORTANCE
+UNCERTAIN_LEVELS = th.UNCERTAIN_LEVELS
+UNCERTAIN_CONF = th.UNCERTAIN_CONF
 HARD_MARKS = ("%", "stop-loss", "deadline", "allerg", "limit")
 
 # Offline importance rubric: 5/4 are earned from compositional signals
@@ -283,7 +286,7 @@ class RuleJudge(JudgeClient):
 
 
 def _num(v: float) -> str:
-    """Compact threshold rendering for reasons: 0.7 -> '0.7'."""
+    """Compact threshold rendering for reasons (renders the cutoff)."""
     return "%g" % v
 
 

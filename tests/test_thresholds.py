@@ -25,6 +25,96 @@ def test_thresholds_module_owns_the_defaults():
     assert th.RECALL_GATE == 0.58
     assert th.RECALL_BAND == 0.45
     assert th.RECALL_CAP == 8
+    assert th.DEDUP_JACCARD == 0.85
+
+
+def test_thresholds_module_owns_the_judge_vote_levels():
+    # Every numeric RuleJudge output lives in thresholds.py: the
+    # vote-level block moved out of gate.py, which keeps aliases only.
+    assert th.FILLER_LEVELS == (0.05, 1, 0.1)
+    assert th.FILLER_CONF == 0.9
+    assert th.PLAY_LEVELS == (0.3, 1, 0.2)
+    assert th.PLAY_SIGNAL == 0.85
+    assert th.PLAY_CONF == 0.8
+    assert th.SENSITIVE_LEVELS == (0.6, 2, 0.1)
+    assert th.SENSITIVE_SIGNAL == 0.9
+    assert th.SENSITIVE_CONF == 0.8
+    assert th.DURABLE_DURABLE == 0.9
+    assert th.DURABLE_STOP == 0.05
+    assert th.DURABLE_CONF == 0.8
+    assert th.DURABLE_HARD_IMPORTANCE == 5
+    assert th.DURABLE_SOFT_IMPORTANCE == 4
+    assert th.UNCERTAIN_LEVELS == (0.5, 2, 0.4)
+    assert th.UNCERTAIN_CONF == 0.2
+    assert th.FAIL_CLOSED_LEVELS == (0.5, 2, 0.5)
+    assert th.FAIL_CLOSED_CONF == 0.0
+
+
+def test_gate_vote_level_names_alias_thresholds():
+    import uncluttered_memory.gate as gate_mod
+    for name in ("FILLER_LEVELS", "FILLER_CONF", "PLAY_LEVELS",
+                 "PLAY_SIGNAL", "PLAY_CONF", "SENSITIVE_LEVELS",
+                 "SENSITIVE_SIGNAL", "SENSITIVE_CONF", "DURABLE_DURABLE",
+                 "DURABLE_STOP", "DURABLE_CONF", "DURABLE_HARD_IMPORTANCE",
+                 "DURABLE_SOFT_IMPORTANCE", "UNCERTAIN_LEVELS",
+                 "UNCERTAIN_CONF"):
+        assert getattr(gate_mod, name) == getattr(th, name), name
+
+
+def test_rule_judge_emits_thresholds_values():
+    from uncluttered_memory.gate import RuleJudge
+    j = RuleJudge()
+    filler = j.vote("ok", [], [])
+    assert (filler.durable, filler.importance, filler.stop) == tuple(
+        th.FILLER_LEVELS)
+    assert filler.conf == th.FILLER_CONF
+    play = j.vote("lol that meeting", [], [])
+    assert (play.durable, play.importance, play.stop) == tuple(
+        th.PLAY_LEVELS)
+    assert play.play == th.PLAY_SIGNAL and play.conf == th.PLAY_CONF
+    sens = j.vote("call 5551234567 now", [], [])
+    assert (sens.durable, sens.importance, sens.stop) == tuple(
+        th.SENSITIVE_LEVELS)
+    assert (sens.sensitive == th.SENSITIVE_SIGNAL
+            and sens.conf == th.SENSITIVE_CONF)
+    hard = j.vote("insulin dose at 8am or she faints", [], [])
+    assert (hard.durable, hard.importance, hard.stop) == (
+        th.DURABLE_DURABLE, th.DURABLE_HARD_IMPORTANCE, th.DURABLE_STOP)
+    assert hard.conf == th.DURABLE_CONF
+    soft = j.vote("i prefer morning standup", [], [])
+    assert (soft.durable, soft.importance, soft.stop) == (
+        th.DURABLE_DURABLE, th.DURABLE_SOFT_IMPORTANCE, th.DURABLE_STOP)
+    unsure = j.vote("some ordinary tuesday note", [], [])
+    assert (unsure.durable, unsure.importance, unsure.stop) == tuple(
+        th.UNCERTAIN_LEVELS)
+    assert unsure.conf == th.UNCERTAIN_CONF
+    closed = FakeJudge({}).vote("anything", [], [])
+    assert (closed.durable, closed.importance, closed.stop) == tuple(
+        th.FAIL_CLOSED_LEVELS)
+    assert closed.conf == th.FAIL_CLOSED_CONF
+
+
+def test_no_numeric_vote_literal_in_gate_source():
+    import re
+    gate_src = (SRC / "gate.py").read_text(encoding="utf-8")
+    code_lines = [ln for ln in gate_src.splitlines()
+                  if not ln.lstrip().startswith("#")]
+    code = "\n".join(code_lines)
+    floats = set(re.findall(r"(?<![\w.])\d+\.\d+", code))
+    # Only the neutral GateVote dataclass defaults may appear: zero
+    # signals and full confidence are type plumbing, not tuned levels.
+    assert floats == {"0.0", "1.0"}, floats
+
+
+def test_put_threshold_is_a_parameter_defaulting_to_thresholds():
+    from uncluttered_memory.store import Store
+    sig = inspect.signature(Store.put)
+    assert sig.parameters["dedup_jaccard"].default == th.DEDUP_JACCARD
+    s = Store()
+    a = s.put("pack the picnic hamper for sunday", "email")
+    assert s.put("sunday hamper picnic the pack for", "chat") == a
+    assert s.put("sunday hamper picnic the pack for", "chat",
+                 dedup_jaccard=2.0) != a
 
 
 def test_no_decision_cutoff_hardcoded_in_logic_modules():

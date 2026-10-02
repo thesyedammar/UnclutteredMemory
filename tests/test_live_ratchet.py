@@ -5,8 +5,11 @@ come from real jev-1.13-free runs on 2026-10-02 over the fixed 20-case
 spotcheck sample. This suite recomputes the offline stub side and
 checks the agreement against the recording, fully offline.
 
-The floor is 0.35: the recorded importance-audit agreement of 0.417
-(10/24, docs/label-audit-20261002.md) minus margin. A stub change
+The floor is 0.40: the recorded importance-audit agreement of 0.417
+(10/24, docs/label-audit-20261002.md) truncated down to the n=20 grid.
+With 20 cases the floor moves in 0.05 steps, so 0.40 (8/20) is the
+tightest on-grid value at or below the independent measurement; the
+old 0.35 (7/20) sat a full case below it. A stub change
 that tanks live agreement trips this ratchet loudly instead of
 becoming a footnote.
 """
@@ -19,8 +22,10 @@ from eval.run import load_cases
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "live_votes_20261002.json"
 
-#: Documented floor: measured importance-audit 0.417 minus margin.
-LIVE_AGREEMENT_FLOOR = 0.35
+#: Documented floor: measured importance-audit 0.417 truncated to the
+#: n=20 grid (0.40 = 8/20). The recorded spotcheck itself is 12/20 =
+#: 0.60, so the floor clears with four cases of headroom.
+LIVE_AGREEMENT_FLOOR = 0.40
 
 
 def _load_spotcheck():
@@ -64,7 +69,7 @@ def test_recorded_agreement_is_honest():
 
 
 def test_stub_vs_live_agreement_holds_the_floor():
-    """Ratchet: agreement below 0.35 fails loudly (live drift)."""
+    """Ratchet: agreement below 0.40 fails loudly (live drift)."""
     mod = _load_spotcheck()
     cases = load_cases(ROOT / "eval" / "golden.jsonl")
     picks = mod.sample_cases(cases, 20)

@@ -1,4 +1,4 @@
-"""SQLite store: content-hash dedupe, provenance per row, soft tombstones."""
+"""SQLite store: two-stage dedupe (exact hash, then token-set near-dupe)."""
 from __future__ import annotations
 
 import hashlib
@@ -8,6 +8,7 @@ import sqlite3
 import time
 
 from .gate import Gate  # noqa: F401  (used in the admit() annotation)
+from . import thresholds as th
 from .jev_client import JevError
 
 _LOG = logging.getLogger(__name__)
@@ -59,6 +60,32 @@ def content_hash(text: str) -> str:
     return hashlib.sha256(normalize(text).encode()).hexdigest()
 
 
+def token_set(text: str) -> frozenset:
+    """Whitespace tokens of the normalized text.
+
+    Case- and punctuation-sensitive, matching the dedupe contract that
+    case and punctuation are content. (A separate casefolding helper
+    lives in the eval harness for contamination scans; the store
+    deliberately does not share it.)
+    """
+    return frozenset(normalize(text).split())
+
+
+def token_jaccard(a: str, b: str) -> float:
+    """Token-set Jaccard similarity in [0.0, 1.0].
+
+    Both empty reads 1.0, one empty reads 0.0. In put() the both-empty
+    case never reaches here (equal normalized text shares a content
+    hash and merges at the exact stage first).
+    """
+    ta, tb = token_set(a), token_set(b)
+    if not ta and not tb:
+        return 1.0
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / len(ta | tb)
+
+
 class Store:
     def __init__(self, path=":memory:"):
         self.db = sqlite3.connect(path)
@@ -107,22 +134,35 @@ class Store:
             "DELETE FROM conflicts WHERE old_id=? OR new_id=?",
             (fact_id, fact_id))
 
-    def put(self, text: str, source: str, user: str = "local") -> int:
-        """Insert or dedupe by normalized content hash.
+    def put(self, text: str, source: str, user: str = "local",
+            dedup_jaccard: float = th.DEDUP_JACCARD) -> int:
+        """Insert or dedupe: exact normalized content hash, then near-duplicate.
 
-        Dedupe key is (user, text_hash). A repeat put of live text
-        returns the existing id (refreshing source when it changed).
-        A repeat put of tombstoned text resurrects the row as live:
-        text, source and created take the new put values (new put is
-        new life), and the row is cleaned through the same shared
-        path as restore() (tombstone fields plus conflict marks on
-        both sides and conflicts-table rows), so a conflict-marked
-        then tombstoned fact re-put live reads fully clean. The same
-        id is returned, now visible in live(). No silent-swallow
-        path: every put either returns a live id or inserts a new
-        live row.
+        Stage one is the exact dedupe key (user, text_hash). A repeat
+        put of live text returns the existing id (refreshing source
+        when it changed). A repeat put of tombstoned text resurrects
+        the row as live: text, source and created take the new put
+        values (new put is new life), and the row is cleaned through
+        the same shared path as restore() (tombstone fields plus
+        conflict marks on both sides and conflicts-table rows), so a
+        conflict-marked then tombstoned fact re-put live reads fully
+        clean. The same id is returned, now visible in live().
+
+        Stage two fires only on an exact miss: the new text is scored
+        by token-set Jaccard against live rows in the same user scope,
+        and at or above dedup_jaccard (default thresholds.DEDUP_JACCARD)
+        it merges into the best match (lowest id wins ties), refreshing
+        source when it changed, and returns that id. Tombstoned rows
+        are never near-dupe targets: a fuzzy match against dead text
+        inserts a fresh live row instead of resurrecting a possibly
+        unrelated one, so resurrection stays exact-only. Cross-user
+        near-duplicates never merge: the scan is scoped to user, like
+        the exact key.
+
+        No silent-swallow path: every put either returns a live id or
+        inserts a new live row.
         """
-        # Dedupe is by normalized content hash only. An exact-text
+        # Exact dedupe is by normalized content hash. An exact-text
         # fallback used to sit here; it was dead (a row whose text
         # matches also carries the hash of that text, because every
         # write computes the hash and the migration backfills legacy
@@ -147,6 +187,22 @@ class Store:
                                 (source, fid))
                 self.db.commit()
             return fid
+        best_id = None
+        best_source = None
+        best_score = 0.0
+        for fid, old_text, old_source in self.db.execute(
+                "SELECT id, text, source FROM facts"
+                " WHERE user=? AND tombstoned_by IS NULL ORDER BY id",
+                (user,)).fetchall():
+            score = token_jaccard(text, old_text)
+            if score > best_score:
+                best_id, best_source, best_score = fid, old_source, score
+        if best_id is not None and best_score >= dedup_jaccard:
+            if best_source != source:
+                self.db.execute("UPDATE facts SET source=? WHERE id=?",
+                                (source, best_id))
+                self.db.commit()
+            return best_id
         cur = self.db.execute(
             "INSERT INTO facts(text, text_hash, source, user, created)"
             " VALUES(?,?,?,?,?)", (text, h, source, user, time.time()))
