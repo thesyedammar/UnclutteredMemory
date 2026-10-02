@@ -1,11 +1,17 @@
 """Deterministic generator for eval/frozen.jsonl.
 
 Every case is rule-labeled: expectations are pinned to the documented
-rule stubs (RuleJudge for the write gate, RuleRelationJudge for pair
-relations, the store for dedupe, Recall for rerank) and the generator
-refuses to write unless every case matches its stub exactly and every
-text is unique. All cases carry provenance=synthetic-rule. Nothing here
-is a human label, and docs must never present it as one.
+rule stubs (RuleJudge for the write gate, the strict + lenient relation
+pair for pair relations, the store for dedupe, Recall for rerank) and
+the generator refuses to write unless every case matches its stub
+exactly and every text is unique. All cases carry
+provenance=synthetic-rule. Nothing here is a human label, and docs must
+never present it as one.
+
+This generator does not touch eval/golden.jsonl. The golden set is
+hand-written data whose labels come from a human reading of the gate
+contract, not from this file; the two sets share no code path and no
+label string.
 
 Regenerate with:
 
@@ -533,7 +539,7 @@ def assert_counts(cases):
 def check_against_stubs(cases):
     from uncluttered_memory import supersede as supmod
     from uncluttered_memory.gate import Gate, RuleJudge
-    from uncluttered_memory.jev_client import RuleRelationJudge
+    from uncluttered_memory.jev_client import offline_relation_pair
     from uncluttered_memory.recall import Recall
     from uncluttered_memory.store import Store
 
@@ -553,8 +559,9 @@ def check_against_stubs(cases):
             got = "DUP" if a == b2 else "DISTINCT"
             want = c["expect"]
         elif suite in ("contradict", "supersede"):
-            dec = supmod.decide(c["old"], c["new"],
-                                RuleRelationJudge(), RuleRelationJudge())
+            # Same heterogeneous offline pair the eval routes through:
+            # strict + lenient, two distinct heuristics, never a copy.
+            dec = supmod.decide(c["old"], c["new"], *offline_relation_pair())
             got = dec.action
             want = c["expect"]
         elif suite == "rerank":
@@ -571,7 +578,7 @@ def check_against_stubs(cases):
 
 def write_cases(cases, path=OUT):
     path = Path(path)
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         for c in cases:
             f.write(json.dumps(c, sort_keys=True) + "\n")
     return path

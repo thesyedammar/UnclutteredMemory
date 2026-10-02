@@ -15,18 +15,27 @@ items sit in quarantine and are never voted by any stub. The stubs are
 for offline unit tests only, by explicit opt-in, and are never labeled
 as Jev.
 
-Importance answers use the choice criteria s0..s4 (trivial ..
-critical constraint) and map onto the 1..5 design scale (s0 -> 1,
-s4 -> 5). A choice that cannot be read maps to -1 and fails closed.
+Offline relation judging is deliberately heterogeneous: the eval and
+the tests route decide() through offline_relation_pair(), which pairs
+StrictRelationJudge (conservative, shared-slot required) with
+LenientRelationJudge (permissive, marker-driven). The two genuinely
+disagree on crafted near-misses, so an agreed destructive act means
+two distinct heuristics agreed, never one heuristic copied twice.
+
+Importance answers use the choice criteria s0..s4 (trivial .. critical
+constraint) and map onto the 1..5 design scale (s0 -> 1, s4 -> 5). A
+choice that cannot be read maps to -1 and fails closed.
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 import time
 import urllib.error
 import urllib.request
 
+from . import thresholds as th
 from .gate import GateVote, JudgeClient
 from .supersede import RelationJudge
 
@@ -264,3 +273,98 @@ class RuleRelationJudge(RelationJudge):
                                   "stop", "hate")):
             return "conflict_unresolved"
         return "unrelated"
+
+
+# ---------------------------------------------------------------------------
+# Heterogeneous offline relation heuristics. These are the pair the eval
+# and the tests run decide() through: two distinct readings that disagree
+# on crafted near-misses, so agreement is evidence, not construction.
+# ---------------------------------------------------------------------------
+
+_FUNCTION_WORDS = frozenset((
+    "a", "an", "the", "i", "we", "you", "he", "she", "it", "they",
+    "is", "are", "was", "were", "be", "been", "am",
+    "at", "in", "on", "of", "to", "for", "with", "by", "from", "as",
+    "and", "or", "but", "so", "if", "then", "than", "that", "this",
+    "do", "does", "did", "not", "no", "my", "our", "your", "has",
+    "have", "had",
+))
+_TOKEN_RE = re.compile(r"[a-z0-9]+")
+_NEGATION_RE = re.compile(
+    r"\b(?:no longer|not|never|anymore|stopped|quit|hate|gave up|dropped"
+    r"|gone)\b")
+_STRONG_UPDATE_RE = re.compile(
+    r"\b(?:moved|relocated|renamed|changed|updated)\b|\bis now\b"
+    r"|\bnow at\b|\baddress is\b")
+_WEAK_UPDATE_RE = re.compile(r"\b(?:now|update|latest|new)\b")
+
+
+def _flat(text: str) -> str:
+    return " ".join(text.split()).lower()
+
+
+def _content_tokens(text: str) -> set:
+    return {t for t in _TOKEN_RE.findall(text.lower())
+            if t not in _FUNCTION_WORDS}
+
+
+def _shared_content(old_text: str, new_text: str) -> int:
+    return len(_content_tokens(old_text) & _content_tokens(new_text))
+
+
+class StrictRelationJudge(RelationJudge):
+    """Conservative offline relation heuristic (half of the pair).
+
+    A supersede is accepted only when the new text carries a strong
+    update marker AND shares at least RELATION_SHARED_TOKENS_MIN content
+    tokens with the old text (same slot). A negation reads as an
+    unresolved clash only with the same shared-slot requirement.
+    Anything else is unrelated, so a vague update ("everything moved")
+    never tombstones an unrelated fact.
+    """
+
+    def relation(self, old_text: str, new_text: str) -> str:
+        if _flat(old_text) == _flat(new_text):
+            return "same"
+        shared = _shared_content(old_text, new_text)
+        if _NEGATION_RE.search(new_text.lower()):
+            return ("conflict_unresolved"
+                    if shared >= th.RELATION_SHARED_TOKENS_MIN
+                    else "unrelated")
+        if _STRONG_UPDATE_RE.search(new_text.lower()):
+            return ("supersede" if shared >= th.RELATION_SHARED_TOKENS_MIN
+                    else "unrelated")
+        return "unrelated"
+
+
+class LenientRelationJudge(RelationJudge):
+    """Permissive offline relation heuristic (the other half of the pair).
+
+    Any update wording (strong or weak marker) reads as a supersede
+    claim and any negation as an unresolved clash, without checking
+    that the two texts concern the same slot. Deliberately more
+    generous than StrictRelationJudge; on crafted near-misses the two
+    disagree and decide() vetoes the destructive act.
+    """
+
+    def relation(self, old_text: str, new_text: str) -> str:
+        if _flat(old_text) == _flat(new_text):
+            return "same"
+        new = new_text.lower()
+        if _STRONG_UPDATE_RE.search(new) or _WEAK_UPDATE_RE.search(new):
+            return "supersede"
+        if _NEGATION_RE.search(new):
+            return "conflict_unresolved"
+        return "unrelated"
+
+
+def offline_relation_pair() -> tuple:
+    """The heterogeneous offline pair used by every offline decide().
+
+    Strict + lenient: two genuinely distinct heuristics that disagree
+    on crafted near-misses (see tests/test_judge_pairs.py). The eval and
+    the tests always route decide() through this mismatched pair, so an
+    agreed destructive act means two independent readings agreed, never
+    one heuristic copied twice.
+    """
+    return (StrictRelationJudge(), LenientRelationJudge())

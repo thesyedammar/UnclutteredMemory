@@ -1,9 +1,11 @@
 """Honcho-order packing: card-likes first, whole-card truncation, fixed budget."""
 from __future__ import annotations
 
+from . import thresholds as th
+
 
 class Injector:
-    def __init__(self, budget_chars: int = 4000):
+    def __init__(self, budget_chars: int = th.INJECT_BUDGET_CHARS):
         self.budget = budget_chars
 
     def pack(self, cards: list) -> str:

@@ -74,14 +74,15 @@ class Store:
         self.db.commit()
 
     def put(self, text: str, source: str, user: str = "local") -> int:
+        # Dedupe is by normalized content hash only. An exact-text
+        # fallback used to sit here; it was dead (a row whose text
+        # matches also carries the hash of that text, because every
+        # write computes the hash and the migration backfills legacy
+        # rows), so it was removed instead of kept as unreachable code.
         h = content_hash(text)
         row = self.db.execute(
             "SELECT id, source FROM facts WHERE user=? AND text_hash=?",
             (user, h)).fetchone()
-        if row is None:
-            row = self.db.execute(
-                "SELECT id, source FROM facts WHERE user=? AND text=?",
-                (user, text)).fetchone()
         if row is not None:
             fid, old_source = row
             if old_source != source:

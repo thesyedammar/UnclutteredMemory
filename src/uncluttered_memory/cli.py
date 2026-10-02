@@ -6,6 +6,7 @@ import importlib.util
 from pathlib import Path
 
 from uncluttered_memory import calibrate as calmod
+from uncluttered_memory.console import configure_console
 from uncluttered_memory.gate import RuleJudge
 
 REPO = Path(__file__).resolve().parents[2]
@@ -39,6 +40,7 @@ def do_calibrate(task: str, out) -> int:
 
 
 def main() -> int:
+    configure_console()
     parser = argparse.ArgumentParser(prog="unclutter", description="UnclutteredMemory CLI")
     sub = parser.add_subparsers(dest="command", required=True)
     p_run = sub.add_parser("run", help="run the frozen eval")

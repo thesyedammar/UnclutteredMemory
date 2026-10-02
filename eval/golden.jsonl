@@ -1,0 +1,158 @@
+{"id": "g-admit-0001", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "my stop-loss for the index position is 2%", "expect": "STORE"}
+{"id": "g-admit-0002", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "I prefer window seats on long flights", "expect": "STORE"}
+{"id": "g-admit-0003", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "standup moved to 9:45 on weekdays", "expect": "STORE"}
+{"id": "g-admit-0004", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "the allergy list says no peanuts", "expect": "STORE"}
+{"id": "g-admit-0005", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "the lease renewal deadline is the 31st of March", "expect": "STORE"}
+{"id": "g-admit-0006", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "always book the 6:40 train home", "expect": "STORE"}
+{"id": "g-admit-0007", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "I never schedule calls before 10am", "expect": "STORE"}
+{"id": "g-admit-0008", "suite": "admit", "kind": "store-digit", "provenance": "hand-authored", "text": "the sprint demo is every second Thursday at 4pm", "expect": "STORE"}
+{"id": "g-admit-0009", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "keep the position limit at 12 lots", "expect": "STORE"}
+{"id": "g-admit-0010", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "my emergency contact prefers morning calls", "expect": "STORE"}
+{"id": "g-admit-0011", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "the team standup notes live in the shared drive", "expect": "STORE"}
+{"id": "g-admit-0012", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "prefer aisle seats when booking rail tickets", "expect": "STORE"}
+{"id": "g-admit-0013", "suite": "admit", "kind": "store-digit", "provenance": "hand-authored", "text": "the mortgage payment clears on the 5th", "expect": "STORE"}
+{"id": "g-admit-0014", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "I always pack the blue adapter for trips", "expect": "STORE"}
+{"id": "g-admit-0015", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "never deploy on Friday afternoons", "expect": "STORE"}
+{"id": "g-admit-0016", "suite": "admit", "kind": "store-digit", "provenance": "hand-authored", "text": "the doctor advised a 30 minute walk daily", "expect": "STORE"}
+{"id": "g-admit-0017", "suite": "admit", "kind": "store-digit", "provenance": "hand-authored", "text": "my sister's birthday is March 14", "expect": "STORE"}
+{"id": "g-admit-0018", "suite": "admit", "kind": "store-digit", "provenance": "hand-authored", "text": "the wifi router resets at 3am", "expect": "STORE"}
+{"id": "g-admit-0019", "suite": "admit", "kind": "store-digit", "provenance": "hand-authored", "text": "the spare key is under flowerpot 3", "expect": "STORE"}
+{"id": "g-admit-0020", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "stop-loss at 2% on the index", "expect": "STORE"}
+{"id": "g-admit-0021", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "the invoice deadline is the 28th", "expect": "STORE"}
+{"id": "g-admit-0022", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "I prefer the earlier ferry on Sundays", "expect": "STORE"}
+{"id": "g-admit-0023", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "the deadline moved to Tuesday", "expect": "STORE"}
+{"id": "g-admit-0024", "suite": "admit", "kind": "store-marker", "provenance": "hand-authored", "text": "allergic to shellfish since childhood", "expect": "STORE"}
+{"id": "g-admit-0025", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "thanks", "expect": "DROP"}
+{"id": "g-admit-0026", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "okay", "expect": "DROP"}
+{"id": "g-admit-0027", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "got it", "expect": "DROP"}
+{"id": "g-admit-0028", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "sounds good", "expect": "DROP"}
+{"id": "g-admit-0029", "suite": "admit", "kind": "play", "provenance": "hand-authored", "text": "that was hilarious lol", "expect": "DROP"}
+{"id": "g-admit-0030", "suite": "admit", "kind": "play", "provenance": "hand-authored", "text": "we shipped it lmao", "expect": "DROP"}
+{"id": "g-admit-0031", "suite": "admit", "kind": "play", "provenance": "hand-authored", "text": "hahaha classic", "expect": "DROP"}
+{"id": "g-admit-0032", "suite": "admit", "kind": "play", "provenance": "hand-authored", "text": "I am Zorro", "expect": "DROP"}
+{"id": "g-admit-0033", "suite": "admit", "kind": "play", "provenance": "hand-authored", "text": "I am Mothra", "expect": "DROP"}
+{"id": "g-admit-0034", "suite": "admit", "kind": "play", "provenance": "hand-authored", "text": "I am Gimli", "expect": "DROP"}
+{"id": "g-admit-0035", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "call me at 5551234", "expect": "DROP"}
+{"id": "g-admit-0036", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "her otp is 449921", "expect": "DROP"}
+{"id": "g-admit-0037", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "card ending 7788", "expect": "DROP"}
+{"id": "g-admit-0038", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "ssn 123-45-6789", "expect": "DROP"}
+{"id": "g-admit-0039", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "email backup code 552211", "expect": "DROP"}
+{"id": "g-admit-0040", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "the access passcode is 778899", "expect": "DROP"}
+{"id": "g-admit-0041", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "account balance is 12,000", "expect": "DROP"}
+{"id": "g-admit-0042", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "her mobile is 94xxxx", "expect": "DROP"}
+{"id": "g-admit-0043", "suite": "admit", "kind": "sensitive", "provenance": "hand-authored", "text": "the wifi password is hunter2", "expect": "DROP"}
+{"id": "g-admit-0044", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "no", "expect": "DROP"}
+{"id": "g-admit-0045", "suite": "admit", "kind": "play", "provenance": "hand-authored", "text": "that meme is gold lmao", "expect": "DROP"}
+{"id": "g-admit-0046", "suite": "admit", "kind": "filler", "provenance": "hand-authored", "text": "hm", "expect": "DROP"}
+{"id": "g-admit-0047", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the archive boxes sit in the cellar", "expect": "QUARANTINE"}
+{"id": "g-admit-0048", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "we met at the corner bakery", "expect": "QUARANTINE"}
+{"id": "g-admit-0049", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the cat naps on the windowsill every noon", "expect": "QUARANTINE"}
+{"id": "g-admit-0050", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "there is a new bakery near the station", "expect": "QUARANTINE"}
+{"id": "g-admit-0051", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the river bends behind the pasture", "expect": "QUARANTINE"}
+{"id": "g-admit-0052", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the office move is still undecided", "expect": "QUARANTINE"}
+{"id": "g-admit-0053", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "we should probably repaint the hallway", "expect": "QUARANTINE"}
+{"id": "g-admit-0054", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the printer jams when the tray is full", "expect": "QUARANTINE"}
+{"id": "g-admit-0055", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the lollipop jar is empty", "expect": "QUARANTINE"}
+{"id": "g-admit-0056", "suite": "admit", "kind": "fail-closed", "provenance": "hand-authored", "text": "the chandelier hangs above the stairs", "expect": "QUARANTINE"}
+{"id": "g-importance-0001", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the compliance deadline is the 15th", "expect": 5}
+{"id": "g-importance-0002", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "stop-loss at 6% for the swing trade", "expect": 5}
+{"id": "g-importance-0003", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the peanut allergy note stays on the profile", "expect": 5}
+{"id": "g-importance-0004", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the position limit is 10 lots", "expect": 5}
+{"id": "g-importance-0005", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "the passport renewal deadline is in April", "expect": 5}
+{"id": "g-importance-0006", "suite": "importance", "kind": "imp5", "provenance": "hand-authored", "text": "keep the daily loss limit at 2 percent", "expect": 5}
+{"id": "g-importance-0007", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "standup is at 9:20 every weekday", "expect": 4}
+{"id": "g-importance-0008", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "I prefer the 7am slot for deep work", "expect": 4}
+{"id": "g-importance-0009", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the meeting room is 4B", "expect": 4}
+{"id": "g-importance-0010", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "always take the later bus on Fridays", "expect": 4}
+{"id": "g-importance-0011", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "never accept the first offer", "expect": 4}
+{"id": "g-importance-0012", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the venue holds 200 people", "expect": 4}
+{"id": "g-importance-0013", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "we meet on 5th street at the cafe", "expect": 4}
+{"id": "g-importance-0014", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the backup drive holds 4 terabytes", "expect": 4}
+{"id": "g-importance-0015", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "prefer the morning slot for reviews", "expect": 4}
+{"id": "g-importance-0016", "suite": "importance", "kind": "imp4", "provenance": "hand-authored", "text": "the kettle boils at 100 degrees", "expect": 4}
+{"id": "g-importance-0017", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "ok", "expect": 1}
+{"id": "g-importance-0018", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "thanks", "expect": 1}
+{"id": "g-importance-0019", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "that worked lol", "expect": 1}
+{"id": "g-importance-0020", "suite": "importance", "kind": "imp1", "provenance": "hand-authored", "text": "I am Zuko", "expect": 1}
+{"id": "g-importance-0021", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "otp 362514", "expect": 2}
+{"id": "g-importance-0022", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "card 554433", "expect": 2}
+{"id": "g-importance-0023", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "the chimes ring above the doorway", "expect": 2}
+{"id": "g-importance-0024", "suite": "importance", "kind": "imp2", "provenance": "hand-authored", "text": "the rowboat waits by the jetty", "expect": 2}
+{"id": "g-dedupe-0001", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "pack the picnic hamper", "candidate": "pack  the picnic hamper", "expect": "DUP"}
+{"id": "g-dedupe-0002", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "paint the garden shed", "candidate": " paint the garden shed ", "expect": "DUP"}
+{"id": "g-dedupe-0003", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "fold the winter coats", "candidate": "fold\tthe\twinter coats", "expect": "DUP"}
+{"id": "g-dedupe-0004", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "rinse the clay pots", "candidate": "rinse the clay  pots", "expect": "DUP"}
+{"id": "g-dedupe-0005", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "sort the seed packets", "candidate": "sort the seed packets ", "expect": "DUP"}
+{"id": "g-dedupe-0006", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "label the spice jars", "candidate": "label  the spice jars", "expect": "DUP"}
+{"id": "g-dedupe-0007", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "trim the hedge line", "candidate": "trim the hedge line", "expect": "DUP"}
+{"id": "g-dedupe-0008", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "stack the fire logs", "candidate": "stack  the  fire  logs", "expect": "DUP"}
+{"id": "g-dedupe-0009", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "wipe the kitchen table", "candidate": "wipe the kitchen table  ", "expect": "DUP"}
+{"id": "g-dedupe-0010", "suite": "dedupe", "kind": "dup", "provenance": "hand-authored", "text": "hang the porch lights", "candidate": "hang\t the porch lights", "expect": "DUP"}
+{"id": "g-dedupe-0011", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "Pack the picnic hamper", "candidate": "pack the picnic hamper", "expect": "DISTINCT"}
+{"id": "g-dedupe-0012", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "paint the garden shed.", "candidate": "paint the garden shed", "expect": "DISTINCT"}
+{"id": "g-dedupe-0013", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "fold the winter coats today", "candidate": "fold the winter coats", "expect": "DISTINCT"}
+{"id": "g-dedupe-0014", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "rinse the clay pots", "candidate": "rinse the clay pans", "expect": "DISTINCT"}
+{"id": "g-dedupe-0015", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "sort seed packets", "candidate": "sort the seed packets", "expect": "DISTINCT"}
+{"id": "g-dedupe-0016", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "label the spice jars", "candidate": "label the jam jars", "expect": "DISTINCT"}
+{"id": "g-dedupe-0017", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "trim the hedge lines", "candidate": "trim the hedge line", "expect": "DISTINCT"}
+{"id": "g-dedupe-0018", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "stack the fire logs", "candidate": "the fire logs are stacked", "expect": "DISTINCT"}
+{"id": "g-dedupe-0019", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "wipe the kitchen table", "candidate": "wipe the kitchen bench", "expect": "DISTINCT"}
+{"id": "g-dedupe-0020", "suite": "dedupe", "kind": "distinct", "provenance": "hand-authored", "text": "Hang the porch lights.", "candidate": "hang the porch lights", "expect": "DISTINCT"}
+{"id": "g-contradict-0001", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "I enjoy evening walks by the canal", "new": "I do not enjoy evening walks by the canal anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0002", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "the workshop uses the old booking sheet", "new": "the old booking sheet is not part of our week anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0003", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "tea after dinner is a ritual", "new": "tea after dinner is not a ritual anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0004", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "the gallery opens at ten", "new": "the gallery does not open at ten anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0005", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "monthly book club is a fixture", "new": "monthly book club is not a fixture anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0006", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "we keep printed receipts", "new": "we do not keep printed receipts anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0007", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "supper after the show happens", "new": "supper after the show is not happening anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0008", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "the porch bell works", "new": "the porch bell is not working anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0009", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "I take the south path", "new": "I do not take the south path anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0010", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "the studio wifi is shared", "new": "the studio wifi is not shared anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0011", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "Sunday calls run long", "new": "Sunday calls do not run long anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0012", "suite": "contradict", "kind": "conflict", "provenance": "hand-authored", "old": "the roof terrace is open", "new": "the roof terrace is not open anymore", "expect": "CONFLICT"}
+{"id": "g-contradict-0013", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the tin lantern sits on the sill", "new": "the canvas stool leans by the wall", "expect": "KEEP"}
+{"id": "g-contradict-0014", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the brass bell hangs by the gate", "new": "the glass vase rests on the ledge", "expect": "KEEP"}
+{"id": "g-contradict-0015", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the linen napkin is in the drawer", "new": "the wooden spoon is by the stove", "expect": "KEEP"}
+{"id": "g-contradict-0016", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the copper wire coils in the box", "new": "the marble tile leans in the hall", "expect": "KEEP"}
+{"id": "g-contradict-0017", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the bamboo tray dries on the rack", "new": "the felt mouse waits in the basket", "expect": "KEEP"}
+{"id": "g-contradict-0018", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the paper kite hangs in the shed", "new": "the clay cup sits on the shelf", "expect": "KEEP"}
+{"id": "g-contradict-0019", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the rope hammock swings on the porch", "new": "the reed basket is by the door", "expect": "KEEP"}
+{"id": "g-contradict-0020", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the stone bench sits in the yard", "new": "the glass float rests on the sill", "expect": "KEEP"}
+{"id": "g-contradict-0021", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the wool shawl is in the chest", "new": "the tin whistle lies on the desk", "expect": "KEEP"}
+{"id": "g-contradict-0022", "suite": "contradict", "kind": "keep", "provenance": "hand-authored", "old": "the maple board hangs on the wall", "new": "the ash bucket is by the hearth", "expect": "KEEP"}
+{"id": "g-supersede-0001", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the office is at 12 Main Street", "new": "the office moved to 44 Harbor Road", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0002", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the workshop is in the east wing", "new": "the workshop moved to the annex", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0003", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the records room is on the lower deck", "new": "the records room is now on the upper deck", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0004", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "we called the lab the green room", "new": "we renamed the lab to the studio", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0005", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the print shop was on Station Road", "new": "the print shop changed to the market square", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0006", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the depot sits near the old mill", "new": "the depot moved to the county line", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0007", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the bike store is by the chapel lane", "new": "the bike store relocated to the high street", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0008", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the juice bar is by the old chapel", "new": "the juice bar is now by the market cross", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0009", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the repair desk was in the tool shed", "new": "the repair desk moved to the supply closet", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0010", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the photo lab is near the orchard row", "new": "the photo lab moved to the creekside", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0011", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the training room is in the west quay", "new": "the training room changed to the glass tower", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0012", "suite": "supersede", "kind": "tombstone", "provenance": "hand-authored", "old": "the reading nook is by the park edge", "new": "the reading nook moved to the hill road", "expect": "TOMBSTONE"}
+{"id": "g-supersede-0013", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the hose reel hangs by the tap", "new": "the seed trays wait on the bench", "expect": "KEEP"}
+{"id": "g-supersede-0014", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the porch swing creaks in the wind", "new": "the stone urn sits by the steps", "expect": "KEEP"}
+{"id": "g-supersede-0015", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the cellar shelf holds the jars", "new": "the paint tins rest on the floor", "expect": "KEEP"}
+{"id": "g-supersede-0016", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the camping lamp is in the attic", "new": "the fishing net dries on the fence", "expect": "KEEP"}
+{"id": "g-supersede-0017", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the ladder leans on the wall", "new": "the rake stands by the shed", "expect": "KEEP"}
+{"id": "g-supersede-0018", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the gate hinge needs oil", "new": "the brick path is uneven", "expect": "KEEP"}
+{"id": "g-supersede-0019", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the pond skimmer floats by the reeds", "new": "the shed window faces west", "expect": "KEEP"}
+{"id": "g-supersede-0020", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the coal scuttle is half full", "new": "the water can is by the wall", "expect": "KEEP"}
+{"id": "g-supersede-0021", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the fruit net covers the bushes", "new": "the compost heap sits in the corner", "expect": "KEEP"}
+{"id": "g-supersede-0022", "suite": "supersede", "kind": "keep", "provenance": "hand-authored", "old": "the cold frame is open", "new": "the hose guide is on the wall", "expect": "KEEP"}
+{"id": "g-rerank-0001", "suite": "rerank", "kind": "gate-cut", "provenance": "hand-authored", "candidates": [["note a", 0.91], ["note b", 0.57], ["note c", 0.44]], "expect": ["note a"]}
+{"id": "g-rerank-0002", "suite": "rerank", "kind": "gate-cut", "provenance": "hand-authored", "candidates": [["note a", 0.58], ["note b", 0.57]], "expect": ["note a"]}
+{"id": "g-rerank-0003", "suite": "rerank", "kind": "gate-cut", "provenance": "hand-authored", "candidates": [["note a", 0.9], ["note b", 0.58], ["note c", 0.3]], "expect": ["note a", "note b"]}
+{"id": "g-rerank-0004", "suite": "rerank", "kind": "band-cut", "provenance": "hand-authored", "candidates": [["note a", 0.9], ["note b", 0.52], ["note c", 0.49]], "gate": 0.3, "expect": ["note a", "note b"]}
+{"id": "g-rerank-0005", "suite": "rerank", "kind": "band-cut", "provenance": "hand-authored", "candidates": [["note a", 0.8], ["note b", 0.43], ["note c", 0.42]], "gate": 0.3, "expect": ["note a"]}
+{"id": "g-rerank-0006", "suite": "rerank", "kind": "order", "provenance": "hand-authored", "candidates": [["note a", 0.62], ["note b", 0.88], ["note c", 0.71]], "expect": ["note b", "note c", "note a"]}
+{"id": "g-rerank-0007", "suite": "rerank", "kind": "order", "provenance": "hand-authored", "candidates": [["note a", 0.6], ["note b", 0.59], ["note c", 0.61]], "expect": ["note c", "note a", "note b"]}
+{"id": "g-rerank-0008", "suite": "rerank", "kind": "cap", "provenance": "hand-authored", "candidates": [["note a", 0.6], ["note b", 0.61], ["note c", 0.62], ["note d", 0.63], ["note e", 0.64], ["note f", 0.65], ["note g", 0.66], ["note h", 0.67], ["note i", 0.68], ["note j", 0.69]], "expect": ["note j", "note i", "note h", "note g", "note f", "note e", "note d", "note c"]}
+{"id": "g-rerank-0009", "suite": "rerank", "kind": "cap", "provenance": "hand-authored", "candidates": [["note a", 0.7], ["note b", 0.71], ["note c", 0.72], ["note d", 0.73], ["note e", 0.74], ["note f", 0.75], ["note g", 0.76], ["note h", 0.77], ["note i", 0.78]], "expect": ["note i", "note h", "note g", "note f", "note e", "note d", "note c", "note b"]}
+{"id": "g-rerank-0010", "suite": "rerank", "kind": "empty", "provenance": "hand-authored", "candidates": [["note a", 0.57], ["note b", 0.41]], "expect": []}
+{"id": "g-rerank-0011", "suite": "rerank", "kind": "empty", "provenance": "hand-authored", "candidates": [["note a", 0.5], ["note b", 0.3], ["note c", 0.55]], "expect": []}
+{"id": "g-rerank-0012", "suite": "rerank", "kind": "empty", "provenance": "hand-authored", "candidates": [["note a", 0.0], ["note b", 0.57]], "expect": []}
+{"id": "g-rerank-0013", "suite": "rerank", "kind": "gate-cut", "provenance": "hand-authored", "candidates": [["note a", 0.95], ["note b", 0.58]], "expect": ["note a", "note b"]}
+{"id": "g-rerank-0014", "suite": "rerank", "kind": "order", "provenance": "hand-authored", "candidates": [["note a", 0.66], ["note b", 0.6], ["note c", 0.59]], "gate": 0.3, "expect": ["note a", "note b", "note c"]}

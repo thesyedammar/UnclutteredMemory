@@ -4,6 +4,12 @@ Judges only cast the relation vote. Code owns ordering, agreement,
 application, and rollback. A soft tombstone is applied only when both
 judges agree the new text supersedes the old one.
 
+Offline, the two judges are heterogeneous by construction: the eval and
+the tests pair StrictRelationJudge with LenientRelationJudge (see
+jev_client.offline_relation_pair), two distinct heuristics that
+genuinely disagree on crafted near-misses, so agreement is evidence
+rather than a tautology.
+
 An agreed clash never tombstones: the pair is marked
 conflict_unresolved (both facts stay live, both carry the counterpart
 mark, and the pair lands in the conflicts table for a human). Coexist

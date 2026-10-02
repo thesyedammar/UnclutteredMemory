@@ -1,14 +1,29 @@
 """One-command frozen eval: frozen train/test split, per-suite pass table,
 admit precision/recall/F1, latency, cost estimate.
 
-Labels are rule-generated templates and paraphrase variants; every case
-carries provenance=synthetic-rule and no case is presented as a human
-label. The report prints the case-file hash and the provenance on every
-run. The judge here is the offline rule stub, never Jev; the report
-says so.
+Two case sets, two jobs:
 
-Exit codes: 1 on any case failing, 2 on split, provenance, or tuning
-contamination (unreadable artifacts fail closed), 3 on Jev rate limit.
+- eval/frozen.jsonl is the BULK set: rule-generated templates and
+  paraphrase variants whose labels are pinned to the documented rule
+  stubs. It is a self-consistency check of the frozen harness, never a
+  benchmark claim, and its numbers are reported as such.
+- eval/golden.jsonl is the GOLDEN set: hand-authored cases written as
+  data (text plus expected label), authored against the documented gate
+  contract, sharing no code path with the stubs. The headline numbers
+  come from golden; the runner refuses to run without it.
+
+The judge here is the offline rule stub, never Jev; the report says so.
+Every offline decide() call runs through the heterogeneous strict +
+lenient relation pair, so an agreed destructive act means two distinct
+heuristics agreed.
+
+The report stream is forced to UTF-8 with an explicit error handler
+(uncluttered_memory.console) and the success line is pinned byte for
+byte by tests.
+
+Exit codes: 1 on any golden or bulk case failing (headline is golden),
+2 on split, provenance, golden, or tuning contamination (unreadable
+artifacts fail closed), 3 on Jev rate limit.
 """
 from __future__ import annotations
 
@@ -21,20 +36,27 @@ import time
 from pathlib import Path
 
 from uncluttered_memory import supersede as supmod
+from uncluttered_memory import thresholds as th
 from uncluttered_memory.calibrate import effective, load_registry
+from uncluttered_memory.console import configure_console
 from uncluttered_memory.gate import Gate, RuleJudge
 from uncluttered_memory.jev_client import (JevJudgeClient, RateLimited,
-                                            RuleRelationJudge,
+                                            offline_relation_pair,
                                             rate_limited_message)
 from uncluttered_memory.recall import Recall
 from uncluttered_memory.store import Store
 
 CASES_FILE = Path(__file__).resolve().parents[1] / "eval" / "frozen.jsonl"
+GOLDEN_FILE = Path(__file__).resolve().parents[1] / "eval" / "golden.jsonl"
 
 SUITES = ("admit", "importance", "dedupe", "contradict", "supersede",
           "rerank")
 
 PROVENANCE = "synthetic-rule"
+GOLDEN_PROVENANCE = "hand-authored"
+
+#: The golden claim set may not shrink below this floor unnoticed.
+GOLDEN_MIN_CASES = 120
 
 PRICE_INR_PER_M = 4.0
 TOKENS_PER_ITEM = 475
@@ -79,7 +101,7 @@ def token_overlap(a: frozenset, b: frozenset) -> float:
 
 def load_cases(path) -> list:
     cases = []
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -117,8 +139,13 @@ def case_hash(c: dict) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
-def validate_cases(cases: list):
-    """Return an error string, or None when every case is well formed."""
+def validate_cases(cases: list, provenance: str = PROVENANCE):
+    """Return an error string, or None when every case is well formed.
+
+    The expected provenance is a parameter: the bulk set carries
+    synthetic-rule labels only, the golden set carries hand-authored
+    labels only, and neither is ever presented as the other.
+    """
     if not cases:
         return "no cases"
     for i, c in enumerate(cases):
@@ -129,10 +156,11 @@ def validate_cases(cases: list):
                 i + 1, c.get("suite"), ", ".join(SUITES))
         if not c.get("kind"):
             return "case %d missing kind" % (i + 1)
-        if c.get("provenance") != PROVENANCE:
-            return ("case %d provenance=%r; the frozen set carries only "
-                    "%s labels, never implied human labels"
-                    % (i + 1, c.get("provenance"), PROVENANCE))
+        if c.get("provenance") != provenance:
+            return ("case %d provenance=%r; expected %r "
+                    "(bulk cases carry %s, golden cases carry %s)"
+                    % (i + 1, c.get("provenance"), provenance,
+                       PROVENANCE, GOLDEN_PROVENANCE))
     return None
 
 
@@ -186,7 +214,7 @@ def artifact_strings(obj) -> list:
 
 
 def find_bad_artifacts(test_cases: list, paths: list) -> list:
-    """Flag tuning artifacts that touch the test split.
+    """Flag tuning artifacts that touch an eval set.
 
     Exact strings and hashes, normalized form (casefold, punctuation
     stripped, whitespace collapsed), and token overlap at or above
@@ -209,7 +237,7 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
     bad = []
     for p in paths:
         try:
-            with open(p) as f:
+            with open(p, encoding="utf-8") as f:
                 data = json.load(f)
         except (OSError, ValueError) as e:
             raise ArtifactError(
@@ -255,14 +283,25 @@ def case_label(c: dict) -> str:
     return c.get("id", "case")
 
 
+def relation_judge_pair() -> tuple:
+    """The offline decide() pair: two distinct heuristics, never a copy.
+
+    Strict + lenient, heterogeneous by construction (see
+    jev_client.offline_relation_pair). Every offline relation call in
+    the eval routes through this mismatched pair, so a destructive act
+    only proceeds when two genuinely different readings agree.
+    """
+    return offline_relation_pair()
+
+
 def evaluate_suite(suite: str, cases: list, gate: Gate,
-                   durable_min: float = 0.58) -> tuple:
+                   durable_min: float = th.DURABLE_MIN) -> tuple:
     """Run one suite. Returns (rows, latencies_ms)."""
     rows, lat = [], []
     for c in cases:
         t0 = time.perf_counter()
         if suite == "admit":
-            got = gate.decide(c["text"], importance_min=3,
+            got = gate.decide(c["text"], importance_min=th.IMPORTANCE_MIN,
                               durable_min=durable_min).action
             ok = got == c["expect"]
         elif suite == "importance":
@@ -278,8 +317,7 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
             s = Store()
             old_id = s.put(c["old"], "eval")
             new_id = s.put(c["new"], "eval")
-            dec = supmod.decide(c["old"], c["new"],
-                                RuleRelationJudge(), RuleRelationJudge())
+            dec = supmod.decide(c["old"], c["new"], *relation_judge_pair())
             applied = supmod.apply(s, old_id, new_id, dec)
             got = dec.action
             if c["expect"] == "CONFLICT":
@@ -302,8 +340,7 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
             s = Store()
             old_id = s.put(c["old"], "eval")
             new_id = s.put(c["new"], "eval")
-            dec = supmod.decide(c["old"], c["new"],
-                                RuleRelationJudge(), RuleRelationJudge())
+            dec = supmod.decide(c["old"], c["new"], *relation_judge_pair())
             applied = supmod.apply(s, old_id, new_id, dec)
             got = dec.action
             if c["expect"] == "TOMBSTONE":
@@ -316,7 +353,8 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
                       and s.get(new_id)[4] is None)
         elif suite == "rerank":
             cands = [(t, float(s)) for t, s in c["candidates"]]
-            got = Recall().select(cands, gate=float(c.get("gate", 0.58)))
+            got = Recall().select(cands, gate=float(c.get("gate",
+                                                           th.RECALL_GATE)))
             ok = got == c["expect"]
         else:
             raise ValueError("unknown suite %r" % suite)
@@ -342,8 +380,32 @@ def cross_split_overlap(train: list, test: list) -> set:
     return tr & te
 
 
+def load_golden(path) -> tuple:
+    """Load and validate the golden claim set. Returns (cases, error)."""
+    p = Path(path)
+    if not p.exists():
+        return [], ("no golden set at %s; the headline claim rests on "
+                    "golden, so this is a hard error" % p)
+    try:
+        cases = load_cases(p)
+    except (OSError, ValueError) as e:
+        return [], "unreadable golden set %s (%s)" % (p, e)
+    err = validate_cases(cases, GOLDEN_PROVENANCE)
+    if err:
+        return [], "golden set invalid: %s" % err
+    if len(cases) < GOLDEN_MIN_CASES:
+        return [], ("golden set has %d cases; the documented floor is %d"
+                    % (len(cases), GOLDEN_MIN_CASES))
+    missing = [s for s in SUITES if not any(c["suite"] == s for c in cases)]
+    if missing:
+        return [], ("golden set misses suite(s): %s" % ", ".join(missing))
+    return cases, None
+
+
 def run_eval(cases_path=None, task: str = "general-qa",
-             registry_path=None, root=None, judge=None) -> int:
+             registry_path=None, root=None, judge=None,
+             golden_path: "str | Path | None" = GOLDEN_FILE) -> int:
+    configure_console()
     cases_path = cases_path or CASES_FILE
     root = root or Path(cases_path).resolve().parents[1]
     cases = load_cases(cases_path)
@@ -373,7 +435,31 @@ def run_eval(cases_path=None, task: str = "general-qa",
             print("  " + p)
         return 2
 
-    durable_min = 0.58
+    golden = []
+    if golden_path is not None:
+        golden, gerr = load_golden(golden_path)
+        if gerr:
+            print("GOLDEN ERROR: %s" % gerr)
+            return 2
+        if cross_split_overlap(cases, golden):
+            print("GOLDEN ERROR: golden text overlaps the bulk set; the "
+                  "claim set must be independent of the self-consistency "
+                  "set")
+            return 2
+        try:
+            badg = find_bad_artifacts(
+                golden, default_artifact_paths(root, registry_path))
+        except ArtifactError as e:
+            print("CONTAMINATION: %s; scan fails closed, nothing was scored"
+                  % e)
+            return 2
+        if badg:
+            print("CONTAMINATION: tuning artifacts touch the golden set:")
+            for p in badg:
+                print("  " + p)
+            return 2
+
+    durable_min = th.DURABLE_MIN
     reg_note = "uncalibrated defaults"
     if registry_path:
         try:
@@ -397,41 +483,99 @@ def run_eval(cases_path=None, task: str = "general-qa",
             te_rows, te_lat = evaluate_suite(suite, te_cases, gate, durable_min)
             results[suite] = (tr_rows, te_rows)
             lat += tr_lat + te_lat
+        golden_results = {}
+        for suite in SUITES:
+            g_cases = [c for c in golden if c["suite"] == suite]
+            g_rows, g_lat = evaluate_suite(suite, g_cases, gate, durable_min)
+            golden_results[suite] = g_rows
+            lat += g_lat
     except RateLimited as e:
         print("JEV RATE LIMITED: " + rate_limited_message(e))
         print("eval halted: nothing was voted or charged")
         return 3
 
-    print("unclutter eval: n=%d train=%d test=%d (%s)" %
+    print("unclutter eval: bulk n=%d train=%d test=%d (%s)" %
           (len(cases), len(train), len(test), reg_note))
+    if golden:
+        print("golden: n=%d hand-authored cases (headline claim; evaluated "
+              "whole, never split, never tuned on)" % len(golden))
+    else:
+        print("golden: skipped (no golden path); bulk only, no headline "
+              "claim")
     print("cases sha256: %s" % file_sha256(cases_path))
-    print("labels: provenance=%s (rule-generated; no human labels)"
-          % PROVENANCE)
+    if golden:
+        print("golden sha256: %s" % file_sha256(golden_path))
+    label_line = ("labels: bulk provenance=%s (rule-generated "
+                  "self-consistency; no human labels)" % PROVENANCE)
+    if golden:
+        label_line += ("; golden provenance=%s (the claim set)"
+                       % GOLDEN_PROVENANCE)
+    print(label_line)
     print("judge=rule-stub (offline heuristic, not Jev)"
           if not isinstance(gate.judge, JevJudgeClient) else
           "judge=jev-1.13-free (live)")
-    total_fails = 0
+
+    bulk_fails = 0
+    bulk_total = 0
+    bulk_ok = 0
+    if golden:
+        print("GOLDEN (hand-authored claim set, evaluated whole)")
+        for suite in SUITES:
+            rows = golden_results[suite]
+            ok_n = sum(1 for r in rows if r[3])
+            fails = len(rows) - ok_n
+            if suite == "admit" and rows:
+                p, r, f = admit_prf(rows)
+                print("%-10s %-6s p=%.3f r=%.3f f=%.3f  n=%d ok=%d fail=%d"
+                      % (suite, "golden", p, r, f, len(rows), ok_n, fails))
+            else:
+                print("%-10s %-6s n=%d ok=%d fail=%d"
+                      % (suite, "golden", len(rows), ok_n, fails))
+    print("BULK (synthetic-rule; self-consistency only, NOT a benchmark "
+          "claim)")
     for suite in SUITES:
         for name, rows in (("train", results[suite][0]),
                            ("test", results[suite][1])):
             ok_n = sum(1 for r in rows if r[3])
             fails = len(rows) - ok_n
-            total_fails += fails
+            bulk_fails += fails
+            bulk_total += len(rows)
+            bulk_ok += ok_n
             if suite == "admit" and rows:
                 p, r, f = admit_prf(rows)
-                print("%-10s %-5s p=%.3f r=%.3f f=%.3f  n=%d ok=%d fail=%d"
+                print("%-10s %-6s p=%.3f r=%.3f f=%.3f  n=%d ok=%d fail=%d"
                       % (suite, name, p, r, f, len(rows), ok_n, fails))
             else:
-                print("%-10s %-5s n=%d ok=%d fail=%d"
+                print("%-10s %-6s n=%d ok=%d fail=%d"
                       % (suite, name, len(rows), ok_n, fails))
 
+    golden_fails = 0
+    golden_total = 0
+    golden_ok = 0
+    if golden:
+        for suite in SUITES:
+            rows = golden_results[suite]
+            for label, got, exp, ok in rows:
+                golden_total += 1
+                if ok:
+                    golden_ok += 1
+                else:
+                    golden_fails += 1
+                    print("[FAIL] GOLDEN %s %r: got %r, expect %r"
+                          % (suite, label, got, exp))
     for suite in SUITES:
         for name, rows in (("train", results[suite][0]),
                            ("test", results[suite][1])):
             for label, got, exp, ok in rows:
                 if not ok:
-                    print("[FAIL] %s/%s %r: got %r, expect %r"
+                    print("[FAIL] BULK %s/%s %r: got %r, expect %r"
                           % (suite, name, label, got, exp))
+
+    if golden:
+        print("HEADLINE (golden, hand-authored): %d/%d ok, %d failures"
+              % (golden_ok, golden_total, golden_fails))
+    print("bulk self-consistency (synthetic-rule): %d/%d ok, %d failures"
+          % (bulk_ok, bulk_total, bulk_fails))
     print("latency judge ms: p50=%.3f p95=%.3f (n=%d, offline stub)"
           % (pct(lat, 0.5), pct(lat, 0.95), len(lat)))
     cost = 1000 * TOKENS_PER_ITEM * PRICE_INR_PER_M / 1e6
@@ -439,19 +583,29 @@ def run_eval(cases_path=None, task: str = "general-qa",
           " (formula 1000*%d tokens * INR %.1f/1M, NOT VERIFIED)" %
           (cost, TOKENS_PER_ITEM, PRICE_INR_PER_M))
     print("contamination: ok (train/test disjoint by case hash and"
-          " normalized text, artifacts fail closed)")
-    print("%s: %d failures" % ("PASS" if not total_fails else "FAIL",
-                               total_fails))
-    return 1 if total_fails else 0
+          " normalized text, golden disjoint from bulk, artifacts fail"
+          " closed)")
+    if golden:
+        status = "PASS" if not (golden_fails or bulk_fails) else "FAIL"
+        print("%s: golden %d failures, bulk %d failures"
+              % (status, golden_fails, bulk_fails))
+        return 1 if (golden_fails or bulk_fails) else 0
+    status = "PASS" if not bulk_fails else "FAIL"
+    print("%s: bulk %d failures (no golden set loaded)" % (status, bulk_fails))
+    return 1 if bulk_fails else 0
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="unclutter-eval")
     parser.add_argument("--cases", default=str(CASES_FILE))
+    parser.add_argument("--golden", default=str(GOLDEN_FILE),
+                        help="golden case file; 'none' skips it")
     parser.add_argument("--registry", default=None)
     parser.add_argument("--task", default="general-qa")
     args = parser.parse_args(argv)
-    return run_eval(args.cases, task=args.task, registry_path=args.registry)
+    golden = None if args.golden.lower() == "none" else args.golden
+    return run_eval(args.cases, task=args.task, registry_path=args.registry,
+                    golden_path=golden)
 
 
 if __name__ == "__main__":

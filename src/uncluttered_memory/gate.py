@@ -4,11 +4,18 @@ The judge answers typed questions per line. Code owns every
 decision after that: drop / quarantine / store. No meaning in the ifs.
 Unseen or low-confidence input fails closed to quarantine, never an
 exception. RuleJudge is an offline heuristic stub, not Jev.
+
+Every decision cutoff is a parameter of Gate.decide whose default
+lives in thresholds.py; no numeric decision boundary is hardcoded in
+this module's logic paths. The reason strings echo the effective
+cutoff so an override is visible in the decision record.
 """
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+
+from . import thresholds as th
 
 
 @dataclass
@@ -47,17 +54,38 @@ class FakeJudge(JudgeClient):
         return v
 
 
-LAUGH = ("lol", "lmao", "haha", "rofl")
+# Word-ish laugh tokens only: "lollipop" must not read as play.
+LAUGH_RE = re.compile(r"(?<![a-z])(?:lol|lmao|rofl|(?:ha){2,})(?![a-z])")
 FILLER = {"ok", "k", "fine", "sure", "yes", "no", "hey", "hi", "hello",
-          "thanks", "thx", "cool", "nice", "yo"}
+          "thanks", "thx", "cool", "nice", "yo", "okay", "okey", "kk",
+          "got it", "sounds good", "will do"}
 CONTACT = ("number", "phone", "mobile", "ssn", "otp", "card", "account",
-           "address", "email", "passcode")
+           "address", "email", "passcode", "password")
 DURABLE_MARK = ("prefer", "standup", "deadline", "allerg", "stop-loss",
                 "stoploss", "limit", "always", "never", "%")
 
+# RuleJudge vote levels: heuristic stub outputs, not decision cutoffs.
+# The cutoffs that read these live in thresholds.py.
+FILLER_LEVELS = (0.05, 1, 0.1)
+FILLER_CONF = 0.9
+PLAY_LEVELS = (0.3, 1, 0.2)
+PLAY_SIGNAL = 0.85
+PLAY_CONF = 0.8
+SENSITIVE_LEVELS = (0.6, 2, 0.1)
+SENSITIVE_SIGNAL = 0.9
+SENSITIVE_CONF = 0.8
+DURABLE_DURABLE = 0.9
+DURABLE_STOP = 0.05
+DURABLE_CONF = 0.8
+DURABLE_HARD_IMPORTANCE = 5
+DURABLE_SOFT_IMPORTANCE = 4
+UNCERTAIN_LEVELS = (0.5, 2, 0.4)
+UNCERTAIN_CONF = 0.2
+HARD_MARKS = ("%", "stop-loss", "deadline", "allerg", "limit")
+
 
 def _laugh(low: str) -> bool:
-    return re.search(r"lol|lmao|haha|rofl", low) is not None
+    return LAUGH_RE.search(low) is not None
 
 
 def _identity_claim(raw: str, low: str) -> bool:
@@ -95,21 +123,24 @@ class RuleJudge(JudgeClient):
         t = " ".join(text.split())
         low = t.lower()
         if low in FILLER or len(t) <= 2:
-            return GateVote(0.05, 1, 0.1, conf=0.9)
+            return GateVote(*FILLER_LEVELS, conf=FILLER_CONF)
         if _laugh(low) or _identity_claim(t, low):
-            return GateVote(0.3, 1, 0.2, play=0.85, conf=0.8)
+            return GateVote(*PLAY_LEVELS, play=PLAY_SIGNAL, conf=PLAY_CONF)
         if _sensitive(low):
-            return GateVote(0.6, 2, 0.1, sensitive=0.9, conf=0.8)
+            return GateVote(*SENSITIVE_LEVELS, sensitive=SENSITIVE_SIGNAL,
+                            conf=SENSITIVE_CONF)
         if _durable(low):
-            hard = ("%", "stop-loss", "deadline", "allerg", "limit")
-            imp = 5 if any(w in low for w in hard) else 4
-            return GateVote(0.9, imp, 0.05, conf=0.8)
-        return GateVote(0.5, 2, 0.4, conf=0.2)
+            imp = (DURABLE_HARD_IMPORTANCE
+                   if any(w in low for w in HARD_MARKS)
+                   else DURABLE_SOFT_IMPORTANCE)
+            return GateVote(DURABLE_DURABLE, imp, DURABLE_STOP,
+                            conf=DURABLE_CONF)
+        return GateVote(*UNCERTAIN_LEVELS, conf=UNCERTAIN_CONF)
 
 
-PLAY_DROP = 0.7
-SENSITIVE_DROP = 0.7
-MIN_CONF = 0.6
+def _num(v: float) -> str:
+    """Compact threshold rendering for reasons: 0.7 -> '0.7'."""
+    return "%g" % v
 
 
 class Gate:
@@ -117,16 +148,22 @@ class Gate:
         self.judge = judge
 
     def decide(self, text: str, neighbors=None, facts=None,
-               importance_min: int = 3, durable_min: float = 0.58) -> GateDecision:
+               importance_min: int = th.IMPORTANCE_MIN,
+               durable_min: float = th.DURABLE_MIN,
+               stop_block: float = th.STOP_BLOCK,
+               min_conf: float = th.MIN_CONF,
+               play_drop: float = th.PLAY_DROP,
+               sensitive_drop: float = th.SENSITIVE_DROP) -> GateDecision:
         v = self.judge.vote(text, neighbors or [], facts or [])
-        if v.conf < MIN_CONF:
+        if v.conf < min_conf:
             return GateDecision("QUARANTINE", ["uncertain-low-conf"])
-        if v.play > PLAY_DROP:
-            return GateDecision("DROP", ["play>0.7"])
-        if v.sensitive > SENSITIVE_DROP:
-            return GateDecision("DROP", ["sensitive>0.7"])
-        if v.stop >= 0.58:
-            return GateDecision("QUARANTINE", ["stop>=0.58"])
+        if v.play > play_drop:
+            return GateDecision("DROP", ["play>" + _num(play_drop)])
+        if v.sensitive > sensitive_drop:
+            return GateDecision("DROP", ["sensitive>" + _num(sensitive_drop)])
+        if v.stop >= stop_block:
+            return GateDecision("QUARANTINE",
+                                ["stop>=" + _num(stop_block)])
         if v.durable >= durable_min and v.importance >= importance_min:
             return GateDecision("STORE", ["durable+important"])
         return GateDecision("DROP", ["not-durable-or-trivial"])
