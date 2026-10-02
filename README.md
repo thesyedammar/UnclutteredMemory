@@ -340,7 +340,13 @@ the live path shares the server rate limiter (offline votes spend
 no budget; an exhausted budget stops the run, and a halted judge
 keeps both facts live and reports it). Limits, stated plainly: the
 screen nominates, never decides; deep paraphrases with little token
-overlap stay below it by construction, same as dedupe.
+overlap stay below it by construction, same as dedupe. Failure
+modes, argued: the offline default lets two heuristics tombstone a
+live fact with no human in the loop, at the same
+heterogeneous-agreement bar as the manual committee (any
+disagreement vetoes to KEEP); a wrong-but-agreed verdict costs one
+soft, restorable row with auto-spot provenance pointing at the
+cause, and `auto_spot=False` keeps a human in the loop.
 
 Row provenance, exactly as stored: each facts row carries
 `gate_action` (the gate verdict, `STORE` on judged rows),

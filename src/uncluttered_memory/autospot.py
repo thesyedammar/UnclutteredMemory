@@ -18,13 +18,28 @@ conflict_unresolved and records the pair; both write reason
 apart from manual committee rows (actor "code") and human rows.
 KEEP and every veto write nothing.
 
+Failure modes, argued as accepted risk: the offline-only default
+lets two heuristics tombstone a live fact during an ordinary put
+with no human and no live rater. That is the same evidence bar as
+the manual committee path, not a weaker one: the pair is
+heterogeneous by construction (Strict plus Lenient genuinely
+disagree on crafted near-misses, pinned by tests), any
+disagreement vetoes to KEEP, and a tombstone is soft (the row and
+its reason survive; restore and put-resurrection clear it through
+the tested shared path). The blast radius of a wrong-but-agreed
+verdict is one restorable row with auto-spot provenance pointing
+at the cause, versus the alternative of silent contradictions
+living on unflagged. Operators who want a human in the loop pass
+auto_spot=False and run the committee manually.
+
 Caps: at most max_pairs flagged pairs reach the committee per
 write (strongest suspicion first); the live path additionally
 checks the server rate limiter before each pair and stops with
 rate_limited=True when the budget is spent. A halted judge
 (RateLimited, transport failure, malformed answer) never
-fabricates a vote: the pair keeps both facts live and the run
-reports halted=True.
+fabricates a vote: the pair keeps both facts live, the run stops
+at the first halt instead of hitting a demonstrably failed judge
+again for the remaining pairs, and the run reports halted=True.
 
 The screen reuses the exact committee signals (the jev_client
 marker patterns and content-token slot definition) so the
@@ -143,7 +158,8 @@ def find_candidates(store, new_id: int, new_text: str, user: str,
             continue
         scored.append((fid, text, suspicion_score(text, new_text)))
     scored.sort(key=lambda c: (-c[2], c[0]))
-    return scored[:max_pairs], max(len(scored) - len(scored[:max_pairs]), 0)
+    kept = scored[:max_pairs]
+    return kept, len(scored) - len(kept)
 
 
 def _resolve_offline(relation_pair):
@@ -232,7 +248,14 @@ def run_after_put(store, new_id: int, new_text: str, user: str,
                     {"old_id": old_id, "new_id": new_id,
                      "relation": "unrelated", "action": "KEEP",
                      "applied": False, "reason": "judge-halted"})
-                continue
+                for rest_id, _t, _s in pairs[idx + 1:]:
+                    summary["kept"].append(rest_id)
+                    summary["outcomes"].append(
+                        {"old_id": rest_id, "new_id": new_id,
+                         "relation": "unrelated", "action": "KEEP",
+                         "applied": False,
+                         "reason": "judge-halted-skipped"})
+                break
         else:
             dec = supmod.decide(old_text, new_text, off_a, off_b)
         summary["checked"] += 1

@@ -334,6 +334,8 @@ def test_live_rate_limit_halts_and_keeps_both_live():
     from uncluttered_memory.jev_client import JevRelationJudge
     s = Store(auto_spot=False)
     old_id = s.put(OFFICE_OLD, "t", auto_spot=False)
+    extra_id = s.put("the office relocated to 3 Main St", "t",
+                     auto_spot=False)
     new_id = s.put(OFFICE_MOVED, "t", auto_spot=False)
 
     class _HaltedLive(JevRelationJudge):
@@ -346,33 +348,41 @@ def test_live_rate_limit_halts_and_keeps_both_live():
                                     live_pair=limited)
     assert summary["halted"] is True
     assert summary["tombstoned"] == [] and s.tombstoned() == []
-    assert {t for _, t, *_ in s.live()} == {OFFICE_OLD, OFFICE_MOVED}
+    assert {t for _, t, *_ in s.live()} == {
+        OFFICE_OLD, "the office relocated to 3 Main St", OFFICE_MOVED}
     assert s.get(old_id)[7] is None
+    assert len(summary["outcomes"]) == 2
+    assert summary["outcomes"][0]["reason"] == "judge-rate-limited"
+    assert summary["outcomes"][1]["reason"] == "judge-halted-skipped"
+    assert {old_id, extra_id} == set(summary["kept"])
 
 
-def test_halt_itemizes_pairs_never_voted():
-    from uncluttered_memory.jev_client import JevRelationJudge
+def test_transport_halt_stops_the_run_and_skips_the_rest():
+    # Any judge halt stops live voting: a transport failure on the
+    # first pair breaks the loop instead of hitting the failed
+    # judge again, and the remainder is itemized as skipped.
+    from uncluttered_memory.jev_client import JevError, JevRelationJudge
     s = Store(auto_spot=False)
     first_id = s.put(OFFICE_OLD, "t", auto_spot=False)
     second_id = s.put("the office relocated to 3 Main St", "t",
                       auto_spot=False)
     new_id = s.put(OFFICE_MOVED, "t", auto_spot=False)
 
-    class _HaltedLive(JevRelationJudge):
+    class _FlakyLive(JevRelationJudge):
         def relation(self, old_text, new_text):
-            raise RateLimited("free window spent")
+            raise JevError("transport blew up")
 
-    limited = (_HaltedLive(variant="direct"),
-               _HaltedLive(variant="slot"))
+    flaky = (_FlakyLive(variant="direct"), _FlakyLive(variant="slot"))
     summary = autospot.run_after_put(s, new_id, OFFICE_MOVED, "local",
-                                    live_pair=limited)
+                                    live_pair=flaky)
     assert summary["halted"] is True and summary["checked"] == 0
     assert len(summary["outcomes"]) == 2
-    assert summary["outcomes"][0]["reason"] == "judge-rate-limited"
+    assert summary["outcomes"][0]["reason"] == "judge-halted"
     assert summary["outcomes"][1]["reason"] == "judge-halted-skipped"
-    assert summary["outcomes"][1]["applied"] is False
     assert {first_id, second_id} == set(summary["kept"])
     assert s.tombstoned() == [] and s.conflicts() == []
+    assert {t for _, t, *_ in s.live()} == {
+        OFFICE_OLD, "the office relocated to 3 Main St", OFFICE_MOVED}
 
 
 def test_exhausted_rate_budget_stops_live_votes_without_network():
@@ -426,7 +436,8 @@ def test_server_shares_its_limiter_and_optional_live_pair():
 
 
 def test_store_defaults_bridge_on_with_threshold_caps():
-    assert Store.__init__.__defaults__[2] is True
+    assert inspect.signature(
+        Store.__init__).parameters["auto_spot"].default is True
     sig = inspect.signature(Store.put)
     assert sig.parameters["auto_spot"].default is None
     assert sig.parameters["relation_pair"].default is None
