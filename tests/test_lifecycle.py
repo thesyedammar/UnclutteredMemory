@@ -199,6 +199,51 @@ def test_put_resurrection_keeps_newer_counterpart_clash():
             if r[0] == a or r[1] == a] == []
 
 
+def test_supersede_matching_user_threads_caller_scope():
+    """Supersede with the row owner user proceeds in that scope."""
+    s = Store()
+    old = s.put("alice fact one", "email", user="alice")
+    new = s.supersede(old, "alice fact two", "chat", user="alice")
+    assert new != old
+    assert [t for _, t, _ in s.live(user="alice")] == ["alice fact two"]
+    assert s.live(user="bob") == []
+    assert [fid for fid, _, _, _ in s.tombstoned(user="alice")] == [old]
+
+
+def test_supersede_cross_user_refused_and_writes_nothing():
+    """A caller user that differs from the row owner is an error."""
+    s = Store()
+    old = s.put("alice private fact", "email", user="alice")
+    with pytest.raises(ValueError):
+        s.supersede(old, "bob replacement", "chat", user="bob")
+    assert [t for _, t, _ in s.live(user="alice")] == ["alice private fact"]
+    assert s.live(user="bob") == []
+    assert s.tombstoned() == []
+    assert s.get(old)[4] is None
+
+
+def test_supersede_missing_id_without_user_raises_and_writes_nothing():
+    """No silent default-scope insert on a missing fact id."""
+    s = Store()
+    n_before = len(s.live())
+    with pytest.raises(KeyError):
+        s.supersede(9999, "orphan text", "chat")
+    assert len(s.live()) == n_before
+    assert s.live(user="alice") == []
+
+
+def test_supersede_missing_id_with_explicit_user_lands_in_scope():
+    """Missing id plus an explicit user stores in that caller scope."""
+    s = Store()
+    alice_old = s.put("alice kept fact", "email", user="alice")
+    new = s.supersede(9999, "bob fresh fact", "chat", user="bob")
+    assert [t for _, t, _ in s.live(user="bob")] == ["bob fresh fact"]
+    assert [t for _, t, _ in s.live(user="alice")] == ["alice kept fact"]
+    assert "bob fresh fact" not in [t for _, t, _ in s.live(user="alice")]
+    assert s.get(alice_old)[4] is None
+    assert new in [r[0] for r in s.live(user="bob")]
+
+
 def test_put_resurrection_shares_restore_path(monkeypatch):
     """put() resurrection and restore() share one clean helper."""
     import inspect

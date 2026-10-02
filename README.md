@@ -38,9 +38,13 @@ Two case sets, two jobs, reported separately on every run:
   contradict, supersede, rerank). The labels never come from stub code;
   the generator does not touch this file, and a test proves the two
   sets share no text. The runner refuses to start without it, refuses
-  fewer than 120 cases, refuses any suite missing, and refuses any
-  overlap with the bulk set. The headline numbers are the golden
-  numbers.
+  fewer than 120 cases, refuses any suite missing, refuses any suite
+  below its per-suite floor (admit 40, importance 15, dedupe 12,
+  contradict 12, supersede 12, rerank 8), and refuses any
+  overlap with the bulk set. The current census is 160 cases: admit
+  56, importance 24, dedupe 20, contradict 23, supersede 23, rerank
+  14, pinned exactly by `tests/test_golden.py`. The headline numbers
+  are the golden numbers.
 - **Bulk (`eval/frozen.jsonl`, provenance `synthetic-rule`).** Templates
   and paraphrase variants whose labels are pinned to the documented
   stubs. This set is a self-consistency check of the frozen harness, not
@@ -56,14 +60,22 @@ so the hand-authored claim was overstated there. That suite has
 been rewritten from human judgment of what is actually worth
 remembering, deliberately breaking the buckets: vital facts with
 no marker words, trivial facts carrying marker words, and
-near-boundary judgments. Three checks pin it:
+near-boundary judgments. Four checks pin it:
 `tests/test_importance_independence.py` proves labels live in the
 data file (stripping every marker token leaves stored labels
-unchanged while a stub-mimicking marker predictor misses widely)
-and proves the offline scorer earns at least 3 marker-free vitals
-and at least 3 marker-bearing trivials; the scoring signals are
-documented as compositional pairings in `gate.py`, not marker
-lists.
+unchanged while a stub-mimicking marker predictor misses widely),
+proves a coarse marker-only classifier trained on half the suite
+cannot reproduce the held-out labels (accuracy under 0.7), and
+proves the same at full resolution with a mirror-image classifier
+that extracts the FULL stub feature set (every list and signal the
+offline scorer reads, taken from the scorer's own lists and
+predicates) under the same strict 0.7 bound; it also proves the
+offline scorer earns at least 3 marker-free vitals and at least 3
+marker-bearing trivials. The scoring signals are documented as
+compositional pairings in `gate.py`, not marker lists. A label set
+tuned against the stub would score high on the mirror-image split
+and fail the test, so such a failure means the labels must be
+rewritten until it cannot.
 
 The final status line names both, golden first, for example:
 `PASS: golden 0 failures, bulk 0 failures`. Exit code 1 means a golden
@@ -180,7 +192,11 @@ content hash only, and a repeat put of tombstoned text resurrects the
 row as live with fresh source/created provenance (new put is new
 life), pinned by put-after-tombstone tests; `Store.supersede` routes
 its same-text path through `put` so it cannot silently return a dead
-id. The exact-text fallback branch in `Store.put`
+id. Supersede is scope-explicit: the caller user threads every path,
+a caller scope that differs from the row owner raises ValueError
+with nothing written, a missing id with an explicit user stores in
+that caller scope, and a missing id without a user raises KeyError
+instead of landing a row in the default scope. The exact-text fallback branch in `Store.put`
 was dead code (a row whose text matches also carries the hash of that
 text) and was removed; the dedupe contract is by normalized content
 hash only, pinned by tests.

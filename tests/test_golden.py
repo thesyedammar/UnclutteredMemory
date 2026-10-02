@@ -6,10 +6,12 @@ self-consistency check. These tests pin the floor, the provenance, the
 independence from eval/cases.py, and the headline wiring.
 """
 import json
+from collections import Counter
 from pathlib import Path
 
 from eval import run as evalmod
-from eval.run import (GOLDEN_MIN_CASES, GOLDEN_PROVENANCE, SUITES,
+from eval.run import (GOLDEN_MIN_CASES, GOLDEN_MIN_PER_SUITE,
+                      GOLDEN_PROVENANCE, SUITES,
                       cross_split_overlap, load_cases, load_golden)
 from uncluttered_memory import supersede as supmod
 from uncluttered_memory.gate import Gate, RuleJudge
@@ -27,6 +29,45 @@ def _write_cases(path, cases):
         for c in cases:
             f.write(json.dumps(c) + "\n")
     return path
+
+
+#: Documented golden census, kept in sync with the README and the
+#: GOLDEN_MIN_PER_SUITE comment in eval/run.py. Any hand edit that
+#: adds or removes a golden case must update this census and the
+#: README together; the test below fails otherwise.
+GOLDEN_TOTAL_CASES = 160
+GOLDEN_SUITE_COUNTS = {
+    "admit": 56,
+    "importance": 24,
+    "dedupe": 20,
+    "contradict": 23,
+    "supersede": 23,
+    "rerank": 14,
+}
+
+
+def test_golden_total_and_per_suite_counts_pinned():
+    """The 160 total and the per-suite census hold exactly as stated."""
+    cases, err = load_golden(GOLDEN)
+    assert err is None
+    by_suite = Counter(c["suite"] for c in cases)
+    assert len(cases) == GOLDEN_TOTAL_CASES, len(cases)
+    assert dict(by_suite) == GOLDEN_SUITE_COUNTS, dict(by_suite)
+    for suite, floor in GOLDEN_MIN_PER_SUITE.items():
+        assert by_suite[suite] >= floor, (suite, by_suite[suite], floor)
+
+
+def test_golden_thin_suite_rejected(tmp_path):
+    """One gutted suite fails even when the global total clears 120."""
+    cases, err = load_golden(GOLDEN)
+    assert err is None
+    keep = [c for c in cases if c["suite"] != "rerank"]
+    keep += [c for c in cases if c["suite"] == "rerank"][:5]
+    assert len(keep) >= GOLDEN_MIN_CASES
+    assert {c["suite"] for c in keep} == set(SUITES)
+    gpath = _write_cases(tmp_path / "golden.jsonl", keep)
+    _, gerr = load_golden(gpath)
+    assert gerr is not None and "per-suite floor" in gerr, gerr
 
 
 def test_golden_set_exists_with_floor_and_all_suites():

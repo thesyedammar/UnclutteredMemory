@@ -58,6 +58,23 @@ GOLDEN_PROVENANCE = "hand-authored"
 #: The golden claim set may not shrink below this floor unnoticed.
 GOLDEN_MIN_CASES = 120
 
+#: Per-suite minimum floors: no single suite may thin out unnoticed
+#: while the global total still clears GOLDEN_MIN_CASES. The floors
+#: sum below the global floor on purpose, so both checks bind: the
+#: global floor catches across-the-board shrinkage, the per-suite
+#: floors catch one suite being gutted. Current golden counts
+#: (admit 56, importance 24, dedupe 20, contradict 23, supersede 23,
+#: rerank 14, total 160) clear every floor; the exact counts are
+#: pinned by tests/test_golden.py and stated in the README.
+GOLDEN_MIN_PER_SUITE = {
+    "admit": 40,
+    "importance": 15,
+    "dedupe": 12,
+    "contradict": 12,
+    "supersede": 12,
+    "rerank": 8,
+}
+
 PRICE_INR_PER_M = 4.0
 TOKENS_PER_ITEM = 475
 
@@ -585,6 +602,18 @@ def load_golden(path) -> tuple:
     missing = [s for s in SUITES if not any(c["suite"] == s for c in cases)]
     if missing:
         return [], ("golden set misses suite(s): %s" % ", ".join(missing))
+    thin = ["%s has %d, floor %d" % (s, sum(1 for c in cases
+                                            if c["suite"] == s),
+                                     GOLDEN_MIN_PER_SUITE[s])
+            for s in SUITES
+            if sum(1 for c in cases if c["suite"] == s)
+            < GOLDEN_MIN_PER_SUITE[s]]
+    if thin:
+        return [], ("golden set below per-suite floor: %s "
+                    "(documented floors: %s)"
+                    % ("; ".join(thin),
+                       ", ".join("%s=%d" % (s, GOLDEN_MIN_PER_SUITE[s])
+                                 for s in SUITES)))
     return cases, None
 
 

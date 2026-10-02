@@ -161,19 +161,41 @@ class Store:
             " FROM facts WHERE id=?", (fact_id,)).fetchone()
 
     def supersede(self, old_id: int, new_text: str, source: str,
+                  user: "str | None" = None,
                   reason: str = "supersede", actor: str = "code") -> int:
+        """Scope-explicit supersede: the caller user threads every path.
+
+        The dedupe key is (user, text_hash) and live(user=...) pairs
+        with it, so a supersede that silently falls back to the
+        default user would land the row in a scope the caller never
+        reads. There is no silent fallback here:
+
+        - known id: the row owner scope applies; an explicit caller
+          user that differs from the row owner raises ValueError
+          (cross-user supersede is refused, nothing is written).
+        - missing id with an explicit user: the new text is stored
+          in that caller scope and the new id is returned.
+        - missing id without a user: KeyError(old_id); no row is
+          silently inserted into the default scope.
+        """
         old = self.db.execute("SELECT text, user FROM facts WHERE id=?",
                               (old_id,)).fetchone()
         if old is None:
-            return self.put(new_text, source)
-        old_text, user = old
+            if user is None:
+                raise KeyError(old_id)
+            return self.put(new_text, source, user)
+        old_text, row_user = old
+        if user is not None and user != row_user:
+            raise ValueError(
+                "supersede scope mismatch: fact %d belongs to user %r,"
+                " caller asked as user %r" % (old_id, row_user, user))
         if normalize(new_text) == normalize(old_text):
             # Same content would otherwise return the id without
             # touching the row, which silently swallows a
             # put-after-tombstone. Route through put() so a
             # tombstoned row is resurrected as live.
-            return self.put(new_text, source, user)
-        new_id = self.put(new_text, source, user)
+            return self.put(new_text, source, row_user)
+        new_id = self.put(new_text, source, row_user)
         if new_id == old_id:
             return old_id
         self.tombstone(old_id, new_id, reason, actor)
