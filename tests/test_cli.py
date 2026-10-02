@@ -100,6 +100,15 @@ def test_cli_run_forwards_registry_flag(monkeypatch):
                                 "--registry", "/tmp/reg.json"]
 
 
+def test_cli_unbuilt_phases_fail_loudly(capsys):
+    """redteam (P2) and gauntlet (P7) are stubs until their phase."""
+    for cmd in ("redteam", "gauntlet"):
+        rc = climod.main([cmd])
+        out = capsys.readouterr().out
+        assert rc == 2
+        assert "not built until its phase" in out
+
+
 def test_cli_run_registry_flag_reaches_the_eval(tmp_path, capsys):
     """End to end: the forwarded registry is actually loaded."""
     reg = tmp_path / "registry.json"

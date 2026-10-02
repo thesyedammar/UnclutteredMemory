@@ -240,3 +240,31 @@ on every run beside the recorded independent-rater agreement
 checks run before anything is scored (train/test disjointness by case
 hash and normalized text, golden disjoint from bulk, artifacts fail
 closed).
+
+## Known limit: paraphrase coverage on the read path
+
+The offline recall and rerank path matches on surface text signals
+(token overlap plus the documented stub features), not on deep semantic
+equivalence. A heavily reworded query can therefore miss a stored fact:
+recall returns fewer results or an empty list, and a supersede or
+conflict vote over a paraphrased pair vetoes to KEEP with both facts
+staying live. That miss is loud by design. An empty recall list is
+visible to the caller, a vetoed pair leaves both rows live and
+inspectable, and low-confidence gate input lands in the quarantine table
+instead of being stored or dropped silently. Nothing on this path raises
+on unseen input. `tests/test_recall_robust.py` pins it: 20 novel
+paraphrases, disjoint from both eval sets, run through the offline read
+path and must return without raising and with sane output shape (a list
+of stored texts within cap, a pack string within budget). Raising
+paraphrase catch rate without breaking frozen golden labels is future
+work, tracked as a residual in `docs/master-plan.md`.
+
+## Not built yet: red-team gauntlet and MCP server
+
+`unclutter redteam` (poison gauntlet, P2) and `unclutter gauntlet`
+(recorded demo, P7) are stubs, not features. Each prints
+`not built until its phase` and exits 2, pinned by
+`tests/test_cli.py`. There is no red-team fixture, no gauntlet
+recorder, and no MCP or HTTP server in this repo. Server and MCP
+transport is a later phase per `research/track-S3-server.md` and
+`docs/master-plan.md`, and nothing in this README claims otherwise.
