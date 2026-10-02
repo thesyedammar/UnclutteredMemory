@@ -16,6 +16,30 @@ STOP_BLOCK = 0.58  # stop at or above this -> QUARANTINE
 DURABLE_MIN = 0.58  # durable at or above this can STORE
 IMPORTANCE_MIN = 3  # importance at or above this can STORE
 
+# Live-judge stop answer mapping (JevJudgeClient._judge_vote).
+# The stop question is choice-bimodal with criteria s0 block / s1
+# allow: s1 maps to a stop signal of 0.0 (pass) and anything else maps
+# to 1.0 (block), which quarantines at STOP_BLOCK. Anything else covers
+# s0, a missing stop answer, and an unreadable choice: a judge that
+# fails to pick allow is read as block, fail closed. Rationale: block
+# is the safe default (an over-held memory waits in quarantine for
+# review, while a wrongly admitted one is already stored), and the
+# bimodal map keeps the safety call one crisp bit instead of a graded
+# score whose middle voltages could smuggle a block past the cutoff.
+STOP_ALLOW_CHOICE = "s1"
+# When the judge is split on the stop question its vote carries little
+# signal, so confidence is capped near chance: conf is at most
+# STOP_AGREE_CAP plus the |p(allow) - p(block)| margin read from the
+# stop answer probabilities. A near-tie caps conf near 0.5, below
+# MIN_CONF, so Gate.decide quarantines on low confidence even when the
+# raw values would STORE. A comfortable margin leaves the
+# durable-derived confidence untouched. Missing probabilities (older or
+# stub answer shapes) mean no cap. Only the stop question feeds this
+# cap: spread across the five importance levels is normal granularity,
+# while a split on the binary safety call means the safety call itself
+# is uncertain.
+STOP_AGREE_CAP = 0.5
+
 # Read path (Recall.select).
 RECALL_GATE = 0.58
 RECALL_BAND = 0.45

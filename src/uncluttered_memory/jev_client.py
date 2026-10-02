@@ -172,6 +172,29 @@ class JevJudgeClient(JudgeClient):
         body = {"model": self.model, "state": state, "questions": questions}
         return self._answer_map(self._ask_primary(body, self.model), questions)
 
+    @staticmethod
+    def _stop_agreement_cap(a_stop: dict) -> float:
+        """Cap on vote confidence from stop-question agreement.
+
+        Reads |p(allow) - p(block)| from the stop answer probabilities
+        and returns STOP_AGREE_CAP plus that margin. Unreadable or
+        missing probabilities mean an older or stub answer shape, so no
+        cap (1.0). Only the binary safety call feeds this: importance
+        spread across five levels is normal granularity.
+        """
+        probs = a_stop.get("probabilities")
+        if not isinstance(probs, dict):
+            return 1.0
+        try:
+            p_allow = float(probs.get(th.STOP_ALLOW_CHOICE, 0.0) or 0.0)
+            margin = abs(p_allow - float(
+                probs.get("s0", 0.0) or 0.0))
+        except (TypeError, ValueError):
+            return 1.0
+        if not (margin == margin and 0.0 <= margin <= 1.0):
+            return 1.0
+        return th.STOP_AGREE_CAP + margin
+
     def _judge_vote(self, text: str) -> GateVote:
         state = {"memory": {"text": text}}
         q = {}
@@ -215,10 +238,11 @@ class JevJudgeClient(JudgeClient):
             raise JevError("out-of-range Jev answer")
         importance = self._importance_choice(a_imp.get("choice"))
         sensitive = float(self._answer_value(a_sens, "noul"))
-        stopv = 0.0 if a_stop.get("choice") == "s1" else 1.0
+        stopv = 0.0 if a_stop.get("choice") == th.STOP_ALLOW_CHOICE else 1.0
         if importance < 1 or importance > 5 or not 0.0 <= sensitive <= 1.0:
             raise JevError("out-of-range Jev answer")
         conf = 0.9 - abs(durable - 0.5) * 0.05
+        conf = min(conf, self._stop_agreement_cap(a_stop))
         return GateVote(durable, importance, stopv,
                         sensitive=min(1.0, sensitive), conf=min(1.0, conf))
 

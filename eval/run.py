@@ -248,8 +248,8 @@ def find_bad_artifacts(test_cases: list, paths: list) -> list:
     excerpt). The first check that fires, in priority order, is the
     one reported: exact-text; content-hash (the artifact embeds the
     content hash of an eval text); normalized-text (casefold,
-    punctuation stripped, whitespace collapsed); token-overlap at or
-    token-overlap at or above CONTAMINATION_SIM (with the best Jaccard score found); then
+    punctuation stripped, whitespace collapsed); token-overlap at or above
+    CONTAMINATION_SIM (with the best Jaccard score found); then
     split-field (metadata says split/test, tuned_on/test, trained_on/test,
     train_on/test, or fitted_on/test). An
     unreadable or malformed artifact is a hard ArtifactError listing
@@ -413,6 +413,37 @@ def evaluate_suite(suite: str, cases: list, gate: Gate,
         lat.append((time.perf_counter() - t0) * 1000.0)
         rows.append((case_label(c), got, c["expect"], ok))
     return rows, lat
+
+
+def _direct_norm(text: str) -> str:
+    """Whitespace normalization without touching Store.
+
+    Intentionally duplicates the whitespace rule inline (no import, no
+    Store instance) so this check cannot share Store wiring bugs.
+    """
+    return " ".join(text.split())
+
+
+def dedupe_distinct_crosscheck(cases: list, stride: int = 4) -> tuple:
+    """Store-free spot check of bulk DISTINCT dedupe labels.
+
+    Re-verifies a deterministic stride sample of DISTINCT labels by
+    direct normalized text comparison, with no Store instance involved.
+    Returns (sampled, distinct_total, mismatch_ids) where a mismatch is
+    a sampled DISTINCT label whose pair is equal after normalization.
+
+    Residual circularity, stated plainly: this check shares the
+    whitespace-normalization rule with the bulk generator, so a wrong
+    rule would fool both. It guards the Store path wiring (user scope,
+    id reuse, tombstone interplay), not the rule itself. The
+    hand-authored golden set is the independent claim.
+    """
+    distinct = [c for c in cases
+                if c.get("suite") == "dedupe" and c.get("expect") == "DISTINCT"]
+    sample = [c for i, c in enumerate(distinct) if i % stride == 0]
+    bad = [c.get("id", "?") for c in sample
+           if _direct_norm(c["text"]) == _direct_norm(c["candidate"])]
+    return (len(sample), len(distinct), bad)
 
 
 def cross_split_overlap(train: list, test: list) -> set:
@@ -600,6 +631,15 @@ def run_eval(cases_path=None, task: str = "general-qa",
             else:
                 print("%-10s %-6s n=%d ok=%d fail=%d"
                       % (suite, name, len(rows), ok_n, fails))
+
+    cc_sampled, cc_total, cc_bad = dedupe_distinct_crosscheck(cases)
+    print("dedupe cross-check (Store-free direct text comparison): %d/%d"
+          " sampled of %d DISTINCT confirmed, %d mismatches (shares the"
+          " whitespace rule with the generator; guards Store wiring only)"
+          % (cc_sampled - len(cc_bad), cc_sampled, cc_total, len(cc_bad)))
+    for bid in cc_bad:
+        print("[CROSS-CHECK] BULK dedupe %s: label DISTINCT but direct"
+              " comparison reads DUP" % bid)
 
     golden_fails = 0
     golden_total = 0

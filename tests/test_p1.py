@@ -404,6 +404,49 @@ def test_model_allowlist_is_pinned():
     assert not hasattr(jc, "DEFAULT_FALLBACK_MODEL")
 
 
+def test_model_allowlist_ast_no_sneaked_call_sites():
+    """AST check: no Call node may reference a model outside the allowlist.
+
+    String greps see literals; this sees call sites, so a future edit
+    cannot sneak a model in through a call argument, a model= keyword,
+    or a fallback attribute. Model-shaped string constants under any
+    Call must be exactly the allowlist entry; a model= style keyword
+    carrying a string constant must equal the allowlist entry (dynamic
+    values such as self.model trace back to __init__, which the pinned
+    DEFAULT_MODEL assertion covers); any attribute read with
+    fallback in its name is rejected outright.
+    """
+    import ast
+    import pathlib
+    import re
+    allow = {"jev-1.13-free"}
+    model_like = re.compile(
+        r"(?i)(?:jev[-\s]?\d|deepseek|gpt[-\s]?\d|claude[-\s]?"
+        r"(?:\d|sonnet|opus|haiku)|llama|mistral|mixtral|gemini|grok"
+        r"|command[-\s]?r|phi[-\s]?\d|qwen|fallback[-\s_]?model)")
+    bad = []
+    for p in sorted(pathlib.Path("src/uncluttered_memory").rglob("*.py")):
+        tree = ast.parse(p.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                for sub in ast.walk(node):
+                    if (isinstance(sub, ast.Constant)
+                            and isinstance(sub.value, str)
+                            and model_like.search(sub.value)
+                            and " ".join(sub.value.split()) not in allow):
+                        bad.append((str(p), "const", sub.value[:80]))
+                    if (isinstance(sub, ast.keyword) and sub.arg
+                            and "model" in sub.arg.lower()
+                            and isinstance(sub.value, ast.Constant)
+                            and isinstance(sub.value.value, str)
+                            and sub.value.value not in allow):
+                        bad.append((str(p), "kwarg", sub.value.value[:80]))
+            if (isinstance(node, ast.Attribute)
+                    and "fallback" in node.attr.lower()):
+                bad.append((str(p), "attr", node.attr[:80]))
+    assert bad == [], bad
+
+
 def test_primary_vote_composes_answers(monkeypatch):
     j = JevJudgeClient(api_key="k")
 
