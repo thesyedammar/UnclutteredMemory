@@ -79,14 +79,51 @@ def test_screen_never_flags_exact_duplicates():
 
 
 def test_screen_needs_a_change_signal_or_differing_detail():
-    # Same content tokens, only stopwords differ, no marker: overlap
-    # without any change signal reads as no suspicion.
+    # Same content tokens, only stopwords differ, no marker, no
+    # number move: overlap without any change signal reads as no
+    # suspicion.
     assert autospot.is_suspicious("the cat sat on the mat",
                                   "a cat sat on a mat") is False
-    # A bare number swap carries no marker and numbers are not slot
-    # evidence, so the committee would veto: the screen spares it.
+    # A bare number swap moves the slot value with no marker
+    # wording: the screen nominates it and the committee decides.
     assert autospot.is_suspicious(OFFICE_OLD,
-                                  "the office is at 2 Main St") is False
+                                  "the office is at 2 Main St") is True
+    assert autospot.number_detail_tokens("demo at 4pm") == {"4pm"}
+    assert autospot.number_detail_differs("demo at 4pm",
+                                          "demo at 5pm") is True
+    assert autospot.is_suspicious(
+        "sprint demo is every thursday at 4pm",
+        "sprint demo is every thursday at 5pm") is True
+
+
+def test_number_swap_nominates_but_committee_keeps_both():
+    # Marker-free number swaps are nominated, then the offline pair
+    # agrees they are unrelated (no update marker on either side):
+    # veto to KEEP, both facts live, nothing marked.
+    s = Store()
+    old_id = s.put("the office is at 1 Main St", "user")
+    new_id = s.put("the office is at 2 Main St", "user")
+    assert s.tombstoned() == [] and s.conflicts() == []
+    assert s.get(old_id)[4] is None and s.get(new_id)[7] is None
+    assert isinstance(s.last_autospot, dict)
+    assert s.last_autospot["checked"] == 1
+    assert s.last_autospot["kept"] == [old_id]
+
+
+def test_committee_coding_bug_propagates_loudly():
+    # A raising committee judge is a coding bug, never a quiet KEEP:
+    # put propagates, the fresh row stays live, nothing is marked.
+    class _Boom(supmod.RelationJudge):
+        def relation(self, old_text, new_text):
+            raise RuntimeError("committee blew up")
+
+    s = Store(auto_spot=False)
+    s.put(RUNS_OLD, "user", auto_spot=False)
+    with pytest.raises(RuntimeError):
+        s.put(RUNS_STOPPED, "user", auto_spot=True,
+              relation_pair=(_Boom(), _Boom()))
+    assert {t for _, t, *_ in s.live()} == {RUNS_OLD, RUNS_STOPPED}
+    assert s.tombstoned() == [] and s.conflicts() == []
 
 
 def test_screen_minimum_is_a_parameter_defaulting_to_thresholds():

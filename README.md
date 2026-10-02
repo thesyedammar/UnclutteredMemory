@@ -324,8 +324,9 @@ fresh `Store.put` insert runs it (on by default; `auto_spot=False`
 for a raw insert, and the eval harness uses raw inserts so the
 contradict/supersede suites keep measuring committee votes in
 isolation). A free suspicion screen (token overlap at
-`AUTOSPOT_MIN_JACCARD` = 0.30 plus a change marker or a differing
-content detail, same-user live rows only) nominates pairs, and the
+`AUTOSPOT_MIN_JACCARD` = 0.30 plus a change marker, a differing
+content detail, or a changed number detail such as a moved time,
+same-user live rows only) nominates pairs, and the
 existing committee decides: the offline Strict+Lenient pair by
 default (no network), the live dual-Jev path where the operator
 wired a live pair (live plus offline agreement required for any

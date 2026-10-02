@@ -139,8 +139,9 @@ DEDUP_JACCARD = 0.85
 # After every fresh insert, put scores the new text by token-set
 # Jaccard against live rows in the same user scope and flags pairs
 # at or above AUTOSPOT_MIN_JACCARD that also carry a change signal
-# (an update/negation marker in the new text, or a differing
-# content detail). Flagged pairs go to the existing committee
+# (an update/negation marker in the new text, a differing content
+# detail, or a changed number detail such as a moved time or
+# count). Flagged pairs go to the existing committee
 # (offline Strict+Lenient pair, live dual-Jev path where wired);
 # the committee verdict applies, never the screen.
 #

@@ -34,9 +34,9 @@ from __future__ import annotations
 
 from . import thresholds as th
 from .jev_client import (JevError, RateLimited, _NEGATION_RE,
-                         _STRONG_UPDATE_RE, _WEAK_UPDATE_RE,
-                         _content_tokens, live_confirmed_decide,
-                         offline_relation_pair)
+                         _NUMBER_WORDS, _STRONG_UPDATE_RE, _TOKEN_RE,
+                         _WEAK_UPDATE_RE, _content_tokens,
+                         live_confirmed_decide, offline_relation_pair)
 from .store import normalize, token_jaccard
 from . import supersede as supmod
 
@@ -65,9 +65,36 @@ def detail_differs(old_text: str, new_text: str) -> bool:
     Content excludes stopwords and numbers (the committee slot
     definition), so a pure rewording with identical content reads
     as no differing detail; a changed number alone does not count
-    either, matching the strict judge.
+    here, it counts in number_detail_differs below.
     """
     return _content_tokens(old_text) != _content_tokens(new_text)
+
+
+def number_detail_tokens(text: str) -> set:
+    """Digit-bearing and spelled-out number tokens in a text.
+
+    Any alphanumeric token containing a digit counts ("4pm" and
+    "5pm" differ as details, as do "12" and "44"), plus the
+    spelled-out numerals the committee treats as numbers. Reuses
+    the committee tokenizer and number-word set so the screen and
+    the committee read the same tokens.
+    """
+    return {t for t in _TOKEN_RE.findall(text.lower())
+            if t in _NUMBER_WORDS or any(ch.isdigit() for ch in t)}
+
+
+def number_detail_differs(old_text: str, new_text: str) -> bool:
+    """A number detail changed between the texts.
+
+    The canonical update shape the first judge round caught this
+    screen missing: "demo at 4pm" revised to "demo at 5pm" shares
+    every content token and carries no update marker, so neither
+    the marker check nor the content check fires, yet the slot
+    value moved. Flagging nominates only: the committee still
+    decides, and a marker-free number swap the offline pair reads
+    as unrelated vetoes to KEEP with both facts live.
+    """
+    return number_detail_tokens(old_text) != number_detail_tokens(new_text)
 
 
 def suspicion_score(old_text: str, new_text: str) -> float:
@@ -82,16 +109,18 @@ def is_suspicious(old_text: str, new_text: str,
     Exact normalized duplicates never flag (dedupe owns them, never
     a clash). Below min_jaccard the pair is unrelated wording and
     the committee never sees it. Above it, the pair still needs a
-    reason to suspect a clash: a change marker in the new text or a
-    differing content detail. The screen nominates only; the
-    committee decides.
+    reason to suspect a clash: a change marker in the new text, a
+    differing content detail, or a changed number detail (times,
+    counts, and versions move slots without any marker wording).
+    The screen nominates only; the committee decides.
     """
     if normalize(old_text) == normalize(new_text):
         return False
     if token_jaccard(old_text, new_text) < min_jaccard:
         return False
-    return has_change_signal(new_text) or detail_differs(old_text,
-                                                         new_text)
+    return (has_change_signal(new_text)
+            or detail_differs(old_text, new_text)
+            or number_detail_differs(old_text, new_text))
 
 
 def find_candidates(store, new_id: int, new_text: str, user: str,
