@@ -222,10 +222,10 @@ def test_candidates_stay_in_user_scope_and_skip_the_new_row():
     new_id = s.put("the office key changed to steel", "user", user="bea",
                    relation_pair=supmod.FakeRelationJudge({}),
                    auto_spot=False)
-    cands, dropped = autospot.find_candidates(s, new_id,
+    cands, cut = autospot.find_candidates(s, new_id,
                                               "the office key changed to steel",
                                               "bea")
-    assert dropped == 0
+    assert cut == []
     assert [c[0] for c in cands] == [other]
     assert new_id not in [c[0] for c in cands]
 
@@ -238,10 +238,10 @@ def test_candidates_cap_keeps_strongest_first_and_counts_dropped():
         "the standup moved to half past nine")]
     assert len({t for _, t, *_ in s.live()}) == 3  # all DISTINCT rows
     new = "standup moved to half past ten on weekdays"
-    cands, dropped = autospot.find_candidates(
+    cands, cut = autospot.find_candidates(
         s, 9999, new, "local",
         min_jaccard=th.AUTOSPOT_MIN_JACCARD, max_pairs=1)
-    assert dropped == 2
+    assert [c["old_id"] for c in cut] == [ids[1], ids[2]]
     assert len(cands) == 1 and cands[0][0] == ids[0]
     full, _ = autospot.find_candidates(
         s, 9999, new, "local",
@@ -332,6 +332,67 @@ def test_bridge_runs_only_on_fresh_inserts():
     assert b == a and s.last_autospot is None
     c = s.put("pack the picnic hamper for sunday", "email")  # exact hit
     assert c == a and s.last_autospot is None
+
+
+def test_stale_targets_skipped_mid_run():
+    # An earlier pair in the same run tombstoned this row: the
+    # bridge never votes or marks a dead row, and the skip is
+    # itemized instead of silently dropped.
+    s = Store(auto_spot=False)
+    a_id = s.put("the office is at 1 Main St", "t", auto_spot=False)
+    b_id = s.put("the office moved within 1 Main St", "t", auto_spot=False)
+    new_id = s.put(OFFICE_MOVED, "t", auto_spot=False)
+
+    class _Scheming(supmod.RelationJudge):
+        def relation(self, old_text, new_text):
+            if old_text == "the office moved within 1 Main St":
+                s.tombstone(a_id, new_id, "scheme", "code")
+                return "supersede"
+            return "unrelated"
+
+    judge = _Scheming()
+    summary = autospot.run_after_put(s, new_id, OFFICE_MOVED, "local",
+                                    relation_pair=(judge, judge))
+    assert summary["tombstoned"] == [b_id]
+    assert s.get(b_id)[5] == "supersede-auto-spot"
+    assert s.get(a_id)[5] == "scheme"  # bridge left the dead row alone
+    assert s.conflicts() == []
+    stale = [o for o in summary["outcomes"] if o["old_id"] == a_id]
+    assert len(stale) == 1
+    assert stale[0]["applied"] is False
+    assert stale[0]["reason"] == "stale-target-skipped"
+
+
+def test_memory_cap_refuses_before_screen_and_marks_never_trip_it():
+    from uncluttered_memory.store import MemoryCapExceeded
+    s = Store(per_user_memory_cap=2)
+    s.put(RUNS_OLD, "user")
+    s.put(RUNS_STOPPED, "user")
+    # The verdict applied (conflict marking adds no row), the scope
+    # is now full, and a further fresh insert is refused before any
+    # screening: nothing stored, no stale summary.
+    assert len(s.conflicts()) == 1
+    with pytest.raises(MemoryCapExceeded):
+        s.put("a third fact that fits nowhere", "user")
+    assert s.last_autospot is None
+    assert {t for _, t, *_ in s.live()} == {RUNS_OLD, RUNS_STOPPED}
+    assert len(s.conflicts()) == 1
+
+
+def test_admit_answer_carries_bridge_summary():
+    s = Store()
+    app = MemoryApp(s, FakeJudge({RUNS_OLD: GateVote(0.9, 5, 0.0),
+                                  RUNS_STOPPED: GateVote(0.9, 5, 0.0)}))
+    status, body = app.handle(
+        "admit", {"user": "u", "text": RUNS_OLD, "source": "chat"}, 0)
+    assert status == 200 and body["action"] == "STORE"
+    assert body["autospot"]["flagged"] == 0
+    status, body = app.handle(
+        "admit", {"user": "u", "text": RUNS_STOPPED, "source": "chat"}, 0)
+    assert status == 200 and body["action"] == "STORE"
+    assert body["autospot"]["checked"] == 1
+    assert len(body["autospot"]["conflicts"]) == 1
+    assert body["autospot"]["halted"] is False
 
 
 def test_bridge_opt_out_per_store_and_per_call():

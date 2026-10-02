@@ -29,8 +29,12 @@ its reason survive; restore and put-resurrection clear it through
 the tested shared path). The blast radius of a wrong-but-agreed
 verdict is one restorable row with auto-spot provenance pointing
 at the cause, versus the alternative of silent contradictions
-living on unflagged. Operators who want a human in the loop pass
-auto_spot=False and run the committee manually.
+living on unflagged. The default stays on deliberately: silent
+contradictions are the failure mode the bridge exists to kill,
+so every ordinary write is screened unless the operator opts a
+store, a call, or the serve command out. Operators who want a
+human in the loop pass auto_spot=False and run the committee
+manually.
 
 Caps: at most max_pairs flagged pairs reach the committee per
 write (strongest suspicion first); the live path additionally
@@ -159,10 +163,12 @@ def find_candidates(store, new_id: int, new_text: str, user: str,
     write time only and never re-screens older pairs when later
     state changes; a changed fact is re-nominated by its own next
     fresh write.
-    Returns (candidates, dropped), where candidates holds at
-    most max_pairs (old_id, old_text, score) entries ordered by
-    score descending (lowest id wins ties), and dropped counts the
-    flagged pairs cut by the cap.
+    Returns (candidates, cut), where candidates holds at most
+    max_pairs (old_id, old_text, score) entries ordered by score
+    descending (lowest id wins ties), and cut lists every flagged
+    pair the cap removed as {"old_id", "score"} dicts, so the audit
+    record names the pairs the committee never saw instead of
+    counting them into silence.
     """
     scored = []
     for fid, text, *_rest in store.live(user=user):
@@ -173,7 +179,21 @@ def find_candidates(store, new_id: int, new_text: str, user: str,
         scored.append((fid, text, suspicion_score(text, new_text)))
     scored.sort(key=lambda c: (-c[2], c[0]))
     kept = scored[:max_pairs]
-    return kept, len(scored) - len(kept)
+    cut = [{"old_id": fid, "score": score}
+           for fid, _text, score in scored[len(kept):]]
+    return kept, cut
+
+
+def _is_live(store, fact_id: int) -> bool:
+    """The row exists and is not tombstoned right now.
+
+    Re-checked before every committee vote: an earlier pair in the
+    same run may have tombstoned this row, and a verdict must never
+    mark a dead row.
+    """
+    row = store.db.execute("SELECT tombstoned_by FROM facts WHERE id=?",
+                           (fact_id,)).fetchone()
+    return row is not None and row[0] is None
 
 
 def _resolve_offline(relation_pair):
@@ -201,8 +221,9 @@ def run_after_put(store, new_id: int, new_text: str, user: str,
     budget stops the run with rate_limited=True, leaving the
     remaining pairs unvoted and live.
 
-    Returns a plain summary: flagged, dropped_by_cap, checked,
-    tombstoned, conflicts, kept, halted, rate_limited, outcomes.
+    Returns a plain summary: flagged, dropped_by_cap, dropped (the
+    cut pairs as old_id plus score), checked, tombstoned,
+    conflicts, kept, halted, rate_limited, outcomes.
     Every outcome names old_id, new_id, relation, action, applied,
     and the reason each applied row carries. Pairs never voted
     (rate budget spent, or a judge halt stopped the run) are
@@ -210,11 +231,12 @@ def run_after_put(store, new_id: int, new_text: str, user: str,
     always account for every flagged pair: no skipped pair is
     inferable only by arithmetic.
     """
-    candidates, dropped = find_candidates(store, new_id, new_text, user,
-                                          min_jaccard=min_jaccard,
-                                          max_pairs=max_pairs)
-    summary = {"flagged": len(candidates) + dropped,
-               "dropped_by_cap": dropped, "checked": 0,
+    candidates, cut = find_candidates(store, new_id, new_text, user,
+                                      min_jaccard=min_jaccard,
+                                      max_pairs=max_pairs)
+    summary = {"flagged": len(candidates) + len(cut),
+               "dropped_by_cap": len(cut), "dropped": cut,
+               "checked": 0,
                "tombstoned": [], "conflicts": [], "kept": [],
                "halted": False, "rate_limited": False, "outcomes": []}
     if not candidates:
@@ -222,6 +244,14 @@ def run_after_put(store, new_id: int, new_text: str, user: str,
     off_a, off_b = _resolve_offline(relation_pair)
     pairs = list(candidates)
     for idx, (old_id, old_text, _score) in enumerate(pairs):
+        if not _is_live(store, old_id):
+            # An earlier pair in this run tombstoned this row (or it
+            # died concurrently): never vote or mark a dead row.
+            summary["outcomes"].append(
+                {"old_id": old_id, "new_id": new_id,
+                 "relation": "unrelated", "action": "KEEP",
+                 "applied": False, "reason": "stale-target-skipped"})
+            continue
         if live_pair is not None:
             if rate_limiter is not None:
                 ok, _retry = rate_limiter.check(len(old_text)

@@ -233,7 +233,8 @@ class MemoryApp:
         action = self.store.admit(text, source, Gate(self.judge), user)
         if action == "STORE":
             return 200, {"action": "STORE", "user": user,
-                         "fact_id": self._live_id(user, text)}
+                         "fact_id": self._live_id(user, text),
+                         "autospot": self.store.last_autospot}
         if action == "DROP":
             return 200, {"action": "DROP", "user": user}
         found = self._latest_qid(user, text)
