@@ -379,7 +379,7 @@ Add `--no-auto-spot` to serve raw inserts (bridge off).
   conflict rewrite) are pinned in the same file
   (`tests/test_paraphrase_battery.py`); rewrites that drop the marker
   family or fall below two shared content tokens are documented misses.
-- **Suite size: 437 tests.** Collected offline with no key. The report
+- **Suite size: 438 tests.** Collected offline with no key. The report
   prints two numbers on every run, golden first: contract conformance
   (`CONTRACT CONFORMANCE (golden, hand-authored): 160/160 ok`) and the
   recorded independent rater agreement (`independent-rater agreement
