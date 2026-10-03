@@ -49,6 +49,14 @@ from .supersede import RelationJudge
 ENDPOINT = "https://opencode.ai/zen/v1/systemone"
 MODEL_ENV = "UNCLUTTER_JEV_MODEL"
 KEY_ENV = "HERMES_CUSTOM_OPENCODE_AI_API_KEY"
+#: Preferred key env. Either variable holds any Jev API key; the
+#: UNCLUTTER_ name is read first and KEY_ENV stays as the legacy
+#: fallback so existing operator setups keep working.
+KEY_ALIAS_ENV = "UNCLUTTER_JEV_API_KEY"
+#: Endpoint override. When set, the client talks to this URL instead
+#: of ENDPOINT, so any compatible Jev endpoint works with no code
+#: change. Same meaning as the endpoint constructor argument.
+URL_ENV = "UNCLUTTER_JEV_URL"
 SESSION = "hermes-go-static-7f3a9c2e"
 DEFAULT_MODEL = "jev-1.13-free"
 BLOCKED_COOLDOWN_S = 30.0
@@ -109,17 +117,31 @@ def rate_limited_message(e: RateLimited) -> str:
     return RATE_LIMITED_MSG
 
 
+def resolve_api_key(explicit: str = "") -> str:
+    """Explicit key wins, then UNCLUTTER_JEV_API_KEY, then the legacy name."""
+    if explicit:
+        return explicit
+    return os.environ.get(KEY_ALIAS_ENV, "") or os.environ.get(KEY_ENV, "")
+
+
+def resolve_endpoint(explicit: str = "") -> str:
+    """Explicit endpoint wins, then UNCLUTTER_JEV_URL, then ENDPOINT."""
+    if explicit:
+        return explicit
+    return os.environ.get(URL_ENV, "") or ENDPOINT
+
+
 class JevJudgeClient(JudgeClient):
     """Native Jev writer gate. Unit tests use the stub, never this."""
 
     def __init__(self, api_key: str = "", model: str = "",
-                 endpoint: str = ENDPOINT, timeout_s: int = 30,
+                 endpoint: str = "", timeout_s: int = 30,
                  prompt_style: str = "baseline"):
         if prompt_style not in PROMPT_STYLES:
             raise ValueError("prompt_style must be one of %r" % (PROMPT_STYLES,))
-        self.api_key = api_key or os.environ.get(KEY_ENV, "")
+        self.api_key = resolve_api_key(api_key)
         self.model = model or os.environ.get(MODEL_ENV, DEFAULT_MODEL)
-        self.endpoint = endpoint
+        self.endpoint = resolve_endpoint(endpoint)
         self.timeout_s = timeout_s
         self.prompt_style = prompt_style
         self.blocked_until = 0.0
@@ -212,7 +234,7 @@ class JevJudgeClient(JudgeClient):
     def evaluate(self, state: dict, questions: dict) -> dict:
         """One systemone call on the primary model. Raises RateLimited on 429."""
         if not self.api_key:
-            raise BadKey("no API key (set %s)" % KEY_ENV)
+            raise BadKey("no API key (set %s or %s)" % (KEY_ALIAS_ENV, KEY_ENV))
         body = {"model": self.model, "state": state, "questions": questions}
         return self._answer_map(self._ask_primary(body, self.model), questions)
 
@@ -339,7 +361,7 @@ class JevRelationJudge(RelationJudge):
     }
 
     def __init__(self, api_key: str = "", model: str = "",
-                 endpoint: str = ENDPOINT, timeout_s: int = 30,
+                 endpoint: str = "", timeout_s: int = 30,
                  variant: str = "direct"):
         if variant not in ("direct", "slot"):
             raise ValueError("variant must be direct or slot")
@@ -368,7 +390,7 @@ class JevRelationJudge(RelationJudge):
 
 
 def live_relation_pair(api_key: str = "", model: str = "",
-                       endpoint: str = ENDPOINT,
+                       endpoint: str = "",
                        timeout_s: int = 30) -> tuple:
     """Two live relation judges asking differently worded questions.
 

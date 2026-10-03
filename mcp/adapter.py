@@ -15,7 +15,7 @@ too, reported as {"isError": true, ...} with the HTTP-style status in
 
 Judge: offline RuleJudge by default (documented stub, same as the
 eval). A live Jev judge is only wired when the operator passes
---live-jev with HERMES_CUSTOM_OPENCODE_AI_API_KEY set; there is no
+--live-jev with a Jev API key set (UNCLUTTER_JEV_API_KEY); there is no
 fallback model on 429 in either mode.
 
 Run: python3 mcp/adapter.py [--db PATH] [--kill-file PATH]

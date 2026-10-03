@@ -13,8 +13,15 @@ committee agreement. Every number in this file is stated with its scope.
     python3 playground/demo.py        # six-line offline tour of every verdict
     unclutter serve --db memory.db --port 8765   # HTTP over the real store
 
-The live Jev check runs only when `HERMES_CUSTOM_OPENCODE_AI_API_KEY`
-is set; everything else is offline.
+The live Jev judge runs only when a Jev API key is set; everything
+else is offline:
+
+    export UNCLUTTER_JEV_API_KEY="your Jev key"
+    export UNCLUTTER_JEV_MODEL="jev-1.13"   # any Jev model; paid jev-1.13 graded importance 20/24 = 83.3%
+
+The legacy key name `HERMES_CUSTOM_OPENCODE_AI_API_KEY` is still
+read, and `UNCLUTTER_JEV_URL` points the client at any compatible
+Jev endpoint when set.
 
 ## Architecture overview
 
@@ -180,10 +187,14 @@ framing; passing one identical question twice raises ValueError). A
 TOMBSTONE or CONFLICT proceeds only when the live pair agrees with each
 other AND the offline pair agrees with each other AND both agreed
 relations match. Any disagreement vetoes to KEEP. `JevJudgeClient`
-talks native Jev at `https://opencode.ai/zen/v1/systemone` with one
-model, `jev-1.13-free`, set via `UNCLUTTER_JEV_MODEL`. The API key comes
-from `HERMES_CUSTOM_OPENCODE_AI_API_KEY`; the session header is
-`hermes-go-static-7f3a9c2e`.
+talks native Jev over HTTPS. Three settings control the wiring, and
+each has an env var and a constructor argument of the same meaning:
+the API key (`UNCLUTTER_JEV_API_KEY`, with the legacy
+`HERMES_CUSTOM_OPENCODE_AI_API_KEY` still read), the model
+(`UNCLUTTER_JEV_MODEL`), and the endpoint URL (`UNCLUTTER_JEV_URL`,
+defaulting to the built in Jev endpoint). Use any Jev API key with
+any Jev model on any compatible endpoint. The setup that graded best
+on importance used paid `jev-1.13` at 20/24 = 83.3% (see section 10).
 
 There is no fallback model anywhere. On HTTP 429 the client raises
 `RateLimited` and callers halt with a plain message. Pending items land
@@ -263,7 +274,7 @@ instead of deletes.
   `human-tombstone`.
 - Row provenance, exactly as stored: `gate_action` (the gate verdict,
   `STORE` on judged rows), `importance` (the voted 1 to 5), `judge`
-  (the judge identity: live model name such as `jev-1.13-free`, or
+  (the judge identity: live model name such as `jev-1.13`, or
   `stub:RuleJudge` / `stub:FakeJudge` offline), `decided_at` (unix time
   of the decision). `Store.admit` fills all four from the gate decision
   on STORE. `put` and `supersede` take them as keywords and write them
@@ -351,7 +362,84 @@ Serve it with:
 
 Add `--no-auto-spot` to serve raw inserts (bridge off).
 
-## 9. Honesty: what the numbers are
+## 9. Agent wiring recipe
+
+This is the whole integration: run the server (or the MCP adapter),
+then call it on every turn. The loop per message is recall, rank,
+pack, inject, then store back through the door:
+
+1. `recall` (or `inject` with a query): fetch scored live rows for
+   this user. Ranking is gate plus band plus cap at most 8, packing
+   is whole cards inside a 4000 char budget.
+2. Prepend the returned `context` string to the model prompt.
+3. `admit` what is worth keeping from the turn (user facts, model
+   commitments). Every write is judged at the door: STORE, DROP, or
+   QUARANTINE. Never insert around the door.
+
+HTTP sidecar (stdlib only, no new deps):
+
+    unclutter serve --db memory.db --port 8765
+
+    curl -s localhost:8765/admit \
+      -H 'Content-Type: application/json' \
+      -d '{"user": "alice", "text": "standup is 9am daily", "source": "chat"}'
+    # {"action": "STORE", "user": "alice", "fact_id": 1, ...}
+
+    curl -s localhost:8765/recall \
+      -H 'Content-Type: application/json' \
+      -d '{"user": "alice", "query": "when is standup?"}'
+    # {"texts": ["standup is 9am daily"], "packed": "standup is 9am daily", ...}
+
+    curl -s localhost:8765/inject \
+      -H 'Content-Type: application/json' \
+      -d '{"user": "alice", "query": "when is standup?"}'
+    # {"context": "standup is 9am daily", "cards_used": 1, "budget_chars": 4000}
+
+    curl -s 'localhost:8765/status?user=alice'
+    # {"live": 1, "quarantined": 0, "conflicts": 0, ...}
+
+Short example turn for user `alice` who just said standup moved:
+
+    # 1. fetch context for the reply
+    curl -s localhost:8765/inject \
+      -H 'Content-Type: application/json' \
+      -d '{"user": "alice", "query": "when is standup?"}'
+    # 2. answer with the context in the prompt ("standup is 9am daily")
+    # 3. store the update back through the door
+    curl -s localhost:8765/admit \
+      -H 'Content-Type: application/json' \
+      -d '{"user": "alice", "text": "standup moved to 10am daily", "source": "chat"}'
+
+The bridge screens the new row for free; if it suspects the same
+slot changed, the committee votes supersede (old row tombstoned) or
+keeps both live on any disagreement.
+
+MCP stdio (same handlers, one JSON object per stdin line):
+
+    python3 mcp/adapter.py --db memory.db
+
+    {"id": 1, "method": "tools/list"}
+    {"id": 2, "method": "tools/call",
+     "params": {"name": "admit",
+                "arguments": {"user": "alice", "text": "standup is 9am daily"}}}
+    {"id": 3, "method": "tools/call",
+     "params": {"name": "inject",
+                "arguments": {"user": "alice", "query": "when is standup?"}}}
+
+Hermes (or any MCP host) entry, stdio transport:
+
+    {"command": "python3",
+     "args": ["mcp/adapter.py", "--db", "memory.db"]}
+
+Rules that keep the wiring honest: every call carries a `user`
+(missing user is HTTP 400, nothing runs); a judge halt (bad key,
+rate limit, transport) answers 429 with the item quarantined for
+review, never voted by a stub; `UNCLUTTER_KILL_SWITCH=1` refuses
+every endpoint with 503. To grade with the live judge instead of
+the offline stub, set a Jev key and model as in the Quickstart
+(paid `jev-1.13` graded importance 20/24 = 83.3%).
+
+## 10. Honesty: what the numbers are
 
 - **Contract conformance (golden, hand authored): 160/160.** How often
   the offline stub reading matches the frozen human reading of the gate
@@ -379,7 +467,7 @@ Add `--no-auto-spot` to serve raw inserts (bridge off).
   conflict rewrite) are pinned in the same file
   (`tests/test_paraphrase_battery.py`); rewrites that drop the marker
   family or fall below two shared content tokens are documented misses.
-- **Suite size: 438 tests.** Collected offline with no key. The report
+- **Suite size: 446 tests.** Collected offline with no key. The report
   prints two numbers on every run, golden first: contract conformance
   (`CONTRACT CONFORMANCE (golden, hand-authored): 160/160 ok`) and the
   recorded independent rater agreement (`independent-rater agreement
@@ -400,7 +488,7 @@ synthetic bulk set (self consistency only); contamination checks
 disjoint from bulk, artifacts fail closed) run before anything is
 scored, and every contamination flag carries a machine readable reason.
 
-## 10. Eval, calibration, console
+## 11. Eval, calibration, console
 
 - `eval/run.py`: one command eval over two case sets (hand authored
   golden for the claim, synthetic bulk for self consistency). Per suite
@@ -432,7 +520,7 @@ scored, and every contamination flag carries a machine readable reason.
   the fixed 20 case sample drops below 0.40. Pass `--no-record` for dry
   runs so fake votes never overwrite the recording.
 
-## 11. File map
+## 12. File map
 
 - `src/uncluttered_memory/gate.py`: door guard plus 1 to 5 grader.
 - `src/uncluttered_memory/thresholds.py`: every cutoff default.
@@ -456,7 +544,7 @@ scored, and every contamination flag carries a machine readable reason.
   `eval/cases.py`: frozen eval.
 - `scripts/live_spotcheck.py`: information only live sample.
 
-## 12. Not built yet: gauntlet recorder
+## 13. Not built yet: gauntlet recorder
 
 `unclutter gauntlet` (recorded demo, P7) is a stub, not a feature. It
 prints `not built until its phase` and exits 2, pinned by
