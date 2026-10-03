@@ -387,8 +387,11 @@ HTTP sidecar (stdlib only, no new deps):
 
     curl -s localhost:8765/recall \
       -H 'Content-Type: application/json' \
-      -d '{"user": "alice", "query": "when is standup?"}'
+      -d '{"user": "alice", "query": "standup 9am daily"}'
     # {"texts": ["standup is 9am daily"], "packed": "standup is 9am daily", ...}
+    # Recall gates at 0.58 overlap: short vague queries ("when is
+    # standup?") score below it and return empty; inject below has no
+    # such gate and still packs the best cards.
 
     curl -s localhost:8765/inject \
       -H 'Content-Type: application/json' \
