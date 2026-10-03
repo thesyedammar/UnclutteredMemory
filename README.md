@@ -2,6 +2,9 @@
 
 Memory that proves itself: a tiny typed judge at the door of agent memory.
 
+Every write is judged before it is stored. Every destructive act needs
+committee agreement. Every number in this file is stated with its scope.
+
 ## Quickstart
 
     pip install -e .
@@ -13,425 +16,448 @@ Memory that proves itself: a tiny typed judge at the door of agent memory.
 The live Jev check runs only when `HERMES_CUSTOM_OPENCODE_AI_API_KEY`
 is set; everything else is offline.
 
-## Honesty: what the numbers are
+## Architecture overview
 
-- **Contract conformance (golden, hand-authored): 160/160.** How
-  often the offline stub's reading matches the frozen human reading
-  of the gate contract. NOT accuracy, NOT memory quality.
-- **Paid rubric (`jev-1.13`, live): importance 20/24 = 83.3%,
-  admit 40/56 = 71.4%.** Live-vs-label on the golden set with the
-  rubric prompt (see `docs/calibration-20261002-114232-rubric.md`).
-  Paid-key runs only; never a repo default.
-- **Free tier (`jev-1.13-free`, live): 10/24 = 41.7%.**
-  Independent-rater agreement with the golden labels, varies run to
-  run (see `docs/label-audit-20261002.md`). Information only; it
-  gates nothing.
-- **Limits.** Recall matches surface wording, not deep paraphrase;
-  the strongest importance-independence bound (feature pairs/triples)
-  is exceeded on the current labels and flagged for human review
-  (`eval/GOLDEN_CHANGELOG.md`); cost figures are ESTIMATE / NOT
-  VERIFIED. No benchmark numbers are claimed for the synthetic bulk
-  set (self-consistency only). The relation paraphrase battery
-  (`tests/test_paraphrase_battery.py`) catches 92/92 = 100% of 92
-  hand-written natural rewordings of the golden relation cases, with
-  a floor pinned at 90%; rewrites that drop the marker family or fall
-  below two shared content tokens are documented misses, pinned in
-  the same file.
+The write path and the read path are separate.
 
-- `src/uncluttered_memory/gate.py` - one batch of typed judge questions, code enforces drop / quarantine / store. Unseen input fails closed to quarantine, never an exception. RuleJudge is an offline heuristic stub keyed by text features; it is not Jev. Every decision cutoff (confidence, play, sensitive, stop, durable, importance) is a parameter whose default lives in `thresholds.py`.
-- `src/uncluttered_memory/thresholds.py` - the one home for every decision-threshold default and every RuleJudge vote level. Logic paths read cutoffs from here; no other module hardcodes a numeric decision boundary or vote literal. The per-task registry can override `admit.durable` only.
-- `src/uncluttered_memory/console.py` - report streams are forced to UTF-8 with a named error handler (`backslashreplace`), so a cp1252 console or pipe never mangles a report line.
-- `src/uncluttered_memory/store.py` - SQLite with two-stage dedupe (exact normalized content hash first, then token-set Jaccard at `DEDUP_JACCARD` = 0.85 over live same-user rows; the dead exact-text fallback branch was removed), judge provenance per row (`gate_action`, `importance`, `judge`, `decided_at`, all NULL on a ghostwriter direct insert), soft tombstones (never rewrites), a real quarantine table, an unresolved-conflict table, per-user scoping, and a per-user memory cap (`PER_USER_MEMORY_CAP`, constructor-parametrized): a fresh insert into a full scope is refused loudly, `put` raising `MemoryCapExceeded` and `admit` holding the item in quarantine with reason `per-user-memory-cap` (never counted as a coding bug; merges and exact-text hits add no row and never trip the cap). `Store.admit` quarantines only judge-halt exceptions (the JevError family: rate limit, bad key, transport, malformed judge answer); any other exception is a coding bug that increments an explicit `error_count`, emits one structured log line (time, op, input hash, error type), and propagates instead of vanishing as a quarantine. `Store.supersede` never inserts on a missing id: an unknown id raises `OrphanSupersedeError` (a `KeyError`) and writes nothing anywhere, so a typo in the id cannot read as success.
-- `src/uncluttered_memory/supersede.py` - code-ordered candidate pairs, relation vote via the judge protocol (supersede / coexist / conflict_unresolved / unrelated). Only an agreed supersede soft-tombstones the old fact; an agreed clash marks both facts conflict_unresolved and keeps both live, never a tombstone. Named-human override for restore / retire / tombstone, each documented in the CLI help (`unclutter override --help`) and tested end to end.
-- `src/uncluttered_memory/recall.py` - the read path: gate, band, and cap are parameters defaulting to `thresholds.py`; code packs.
-- `src/uncluttered_memory/inject.py` - card-first packing, whole-card truncation, exact-duplicate card texts packed once (first, best-scored occurrence wins), hard budget from `thresholds.py`.
-- `src/uncluttered_memory/calibrate.py` - per-task threshold registry fingerprinted to the task name, refuses mismatched files, UNCALIBRATED default, train-only tuning. The CLI `calibrate` and `conformal` commands default their output to the operator's current working directory (`<task>.thresholds.json`), outside the repo scan tree; pointing `--out` inside `thresholds/` or `eval/thresholds*` prints a loud warning, because the next `unclutter run` scans that tree as tuning artifacts and fails closed on a bad file there (`tests/test_calibration_footgun.py`).
-- `src/uncluttered_memory/jev_client.py` - judge protocol with a native Jev client, plus the heterogeneous offline relation pair (StrictRelationJudge + LenientRelationJudge). StrictRelationJudge requires at least two shared content tokens beyond stopwords and numbers before it reads a marker as being about the same slot.
-- `eval/run.py` - one-command eval over two case sets: the hand-authored golden set (the claim) and the synthetic bulk set (self-consistency). Per-suite tables, admit precision/recall/F1, latency, cost-per-1k estimate, contamination scans that fail closed. Every contamination flag carries a machine-readable reason (which check fired, similarity score, offending excerpt) and the report prints it.
-- `eval/golden.jsonl` - 160 hand-authored cases written as data (text plus expected label), provenance `hand-authored`, sharing no code path with the stubs. This is where the contract-conformance numbers come from: the number measures stub-vs-frozen-human-reading (how often the offline stub's reading matches the frozen human reading of the gate contract), NOT accuracy and NOT memory quality.
-- `eval/golden_labels_frozen.json` - the frozen label map (case id to frozen label), pinned at the 2026-10-02 freeze.
-- `eval/GOLDEN_CHANGELOG.md` - the freeze record (file hash, census, policy). A golden label changes only for documented human error with an entry here; undocumented edits fail the suite (`tests/test_golden_freeze.py`).
-- `eval/cases.py` - deterministic generator for the bulk `eval/frozen.jsonl` only (provenance `synthetic-rule`). It never reads or writes the golden set.
-- `scripts/live_spotcheck.py` - information-only live sample of 20 golden cases against `jev-1.13-free`. On full completion with the key present it refreshes `tests/fixtures/live_votes_20261002.json` (recorded live votes plus metadata), which the offline ratchet test reads; `--no-record` disables the refresh.
+Write path:
 
-Install and run:
+    text -> Gate.decide (door guard + importance grader)
+      -> STORE / QUARANTINE / DROP
+      -> Store.put (free math dedupe)
+      -> autospot bridge (suspicion screen + committee)
+      -> live row, tombstone, conflict mark, or quarantine row
 
-    pip install -e .
-    python3 -m pytest tests/
-    unclutter run
-    unclutter override --help   # restore | retire | tombstone
-    python3 scripts/live_spotcheck.py   # information only, skips without a key
+Read path:
 
-The live Jev test runs only when `HERMES_CUSTOM_OPENCODE_AI_API_KEY` is
-set; everything else is offline.
+    query -> Recall.select (rank, gate, band, cap at most 8)
+      -> Injector.pack (whole cards, hard char budget)
 
-## Eval: golden is contract conformance, bulk is self-consistency
+Serving:
 
-Two case sets, two jobs, reported separately on every run. The golden
-number is contract conformance: it measures
-stub-vs-frozen-human-reading, how often the offline stub's reading
-matches the frozen human reading of the gate contract. It is NOT
-accuracy and NOT memory quality. Beside it, every
-run prints the independent-rater number: recorded live
-`jev-1.13-free` votes against the golden labels, 10/24 = 41.7% on
-2026-10-02 (see `docs/label-audit-20261002.md`). Live Jev is an
-independent rater that agrees less than half the time and varies run
-to run; neither number gates the other.
+    Store + Gate behind server.py (HTTP) or mcp/adapter.py (stdio).
 
-- **Golden (`eval/golden.jsonl`, provenance `hand-authored`).** Cases
-  written by hand as data: a text and the label a careful reader of the
-  gate contract would give it, including tricky paraphrases and
-  near-misses across all six gates (admit, importance, dedupe,
-  contradict, supersede, rerank). The labels never come from stub code;
-  the generator does not touch this file, and a test proves the two
-  sets share no text. The runner refuses to start without it, refuses
-  fewer than 120 cases, refuses any suite missing, refuses any suite
-  below its per-suite floor (admit 40, importance 15, dedupe 12,
-  contradict 12, supersede 12, rerank 8), and refuses any
-  overlap with the bulk set. The current census is 160 cases: admit
-  56, importance 24, dedupe 20, contradict 23, supersede 23, rerank
-  14, pinned exactly by `tests/test_golden.py`. The conformance
-  numbers are the golden numbers, and the labels are frozen (see
-  `eval/GOLDEN_CHANGELOG.md`): the stub is changed to meet them,
-  a label changes only for documented human error with a changelog
-  entry, never to satisfy the scorer.
-- **Bulk (`eval/frozen.jsonl`, provenance `synthetic-rule`).** Templates
-  and paraphrase variants whose labels are pinned to the documented
-  stubs. This set is a self-consistency check of the frozen harness, not
-  a benchmark claim, and the report labels it that way.
+All decision cutoffs live in `src/uncluttered_memory/thresholds.py`.
+`Gate.decide` and `Recall.select` take every cutoff as a parameter
+defaulting to that file, so tests and calibration override values
+without editing logic. Reason strings echo the effective value (for
+example `stop>=0.58`), so an override is visible in the record. A test
+pins that no other logic module hardcodes a numeric decision boundary.
 
-Golden independence, stated plainly. The admit, dedupe, contradict,
-supersede, and rerank golden suites are fully independent of the
-stubs: their labels were written from the gate contract, they share
-no code path with `eval/cases.py`, and a test proves the two sets
-share no text. The importance suite was not: an earlier version
-mirrored the stub buckets (every 5 carried a hard marker token),
-so the hand-authored claim was overstated there. That suite has
-been rewritten from human judgment of what is actually worth
-remembering, deliberately breaking the buckets: vital facts with
-no marker words, trivial facts carrying marker words, and
-near-boundary judgments. Four checks pin it:
-`tests/test_importance_independence.py` proves labels live in the
-data file (stripping every marker token leaves stored labels
-unchanged while a stub-mimicking marker predictor misses widely),
-proves a coarse marker-only classifier trained on half the suite
-cannot reproduce the held-out labels (accuracy under 0.7), and
-proves the same at full resolution with a mirror-image classifier
-that extracts the FULL stub feature set (every list and signal the
-offline scorer reads, taken from the scorer's own lists and
-predicates) under the same strict 0.7 bound; it also proves the
-offline scorer earns at least 3 marker-free vitals and at least 3
-marker-bearing trivials. The scoring signals are documented as
-compositional pairings in `gate.py`, not marker lists. A label set
-tuned against the stub would score high on the mirror-image split
-and fail the test, so such a failure means the scoring signals must
-change, not the labels: labels are frozen and move only through a
-changelogged human-error correction (`eval/GOLDEN_CHANGELOG.md`),
-never to satisfy the scorer.
+## 1. Door guard: Gate.decide
 
-A fifth check, the strongest of them, is EXCEEDED on the current
-labels, stated plainly. An exhaustive conjunction search over all
-feature pairs (231) and triples (1540) of the full 22-signal set,
-trained on the even rows and scored on the held-out odd rows, reaches
-9/12 = 0.75 (best pair) and 10/12 = 0.833 (best triple), both above
-the 0.7 bound and above the fixed-seed label-permutation null (best
-pair 9/12 four times in 1000 permutations, best triple never above
-9/12), so the exceedance is genuine structure, not selection noise.
-Root cause: the direction of fit is fixed (the stub is changed to
-meet the frozen labels) and the stub reproduces every importance
-label exactly, which makes the labels a function of the tuned
-scorer's signals by construction; any learner strong enough to
-approximate the tuned scorer's categories (vital, routine) exceeds
-the bound at pair resolution. This does not show the labels were
-derived from the stub at authoring time, and it does not show the
-labels are wrong; it does mean the independence claim is NOT made at
-pair or triple resolution, and per the changelog flow the exceedance
-reveals pair-level derivability of the frozen labels from the tuned
-scorer's signals and the labels need human review
-(`eval/GOLDEN_CHANGELOG.md`). The two checks are strict xfails
-(`tests/test_importance_independence.py`): they fail today, and they
-flip to failures if a changelogged review ever makes the bound hold,
-so nothing resolves silently.
+File: `src/uncluttered_memory/gate.py`.
 
-The report prints two numbers on every run, golden first: contract
-conformance (`CONTRACT CONFORMANCE (golden, hand-authored): 160/160
-ok`) and the recorded independent-rater agreement (`independent-rater
-agreement (recorded live jev-1.13-free vs golden labels,
-2026-10-02): 10/24 = 41.7%`). Neither gates the other. The final
-status line names both failure counts, for example:
-`PASS: golden 0 failures, bulk 0 failures`. Exit code 1 means a golden
-or bulk case failed (the conformance number is golden), 2 means the
-split, provenance, golden, or contamination checks failed closed,
-3 means the Jev free window rate-limited and the run halted.
+The judge answers one batch of typed questions per line (durable,
+importance, stop, play, sensitive, plus confidence). Code owns every
+decision after that. Unseen or low confidence input fails closed to
+quarantine, never an exception.
 
-The report prints the case-file hash, the golden-file hash, the
-provenance of both sets, and its own measured numbers on every run.
+Branch order is fixed policy, first match wins:
 
-## Judge wiring
+1. `conf < MIN_CONF (0.6)` -> QUARANTINE. Abstention. A judge that
+   cannot answer never reaches a content branch.
+2. `play > 0.7` -> DROP. High precision junk (word boundary laugh
+   tokens, whole line identity claims) is disposed of first.
+3. `sensitive > 0.7` -> DROP. Privacy outranks review. A private line
+   must not be stored and must not sit in quarantine either, so it
+   takes the one disposition that retains nothing. This is why it
+   outranks stop: quarantine would still retain the text.
+4. `stop >= 0.58` -> QUARANTINE. The strongest deny among the
+   remaining branches. An over held line waits for review; a wrongly
+   admitted line is already stored.
+5. `durable >= 0.58 and importance >= 3` -> STORE. The only admitting
+   branch, so it runs last. Every deny gets the first chance.
+6. Anything else -> DROP (not durable or trivial).
 
-The judge protocol is Jev-shaped: typed calls (noul / choice / score)
-that each return a verdict plus a confidence value. The offline stubs
-(RuleJudge, FakeJudge, StrictRelationJudge, LenientRelationJudge) are
-for unit tests and the offline eval only and are never labeled as Jev.
+`tests/test_gate_precedence.py` pins the exact action and reason string
+for every pair of branches firing at once, plus headline multi signal
+inputs and boundary comparisons.
 
-Offline relation judging is heterogeneous by construction. Every
-offline `decide()` call in the eval and the tests runs through
-`offline_relation_pair()`: StrictRelationJudge (conservative) paired
-with LenientRelationJudge (permissive, marker-driven). The strict
-judge reads a marker as being about the same slot only with at least
-`RELATION_SHARED_TOKENS_MIN` (2) shared content tokens beyond
-stopwords and numbers: one shared token, a shared number, a
-near-homonym subject, or an address/number near-miss reads as
-unrelated, so the pair vetoes and both facts stay live. The two
-heuristics genuinely disagree on crafted near-misses (pinned in
-`tests/test_judge_pairs.py` and `tests/test_relation_boundary.py`), so
-a destructive act only proceeds when two distinct readings agree. Two
-copies of one stub used to agree by construction, and that theater is
-gone: a test shows the copied pair would tombstone a case the
-heterogeneous pair vetoes.
+RuleJudge is the offline heuristic stub used by tests and the offline
+eval. It is not Jev and is never labeled as Jev. Its vote levels live in
+`thresholds.py` (for example `FILLER_LEVELS`, `PLAY_SIGNAL`,
+`DURABLE_DURABLE`); the cutoffs that read those votes are the gate
+values above.
+
+## 2. Importance grader: 1 to 5
+
+The importance vote is an integer from 1 to 5 on every gate decision.
+The store threshold is `IMPORTANCE_MIN = 3`: a durable line with
+importance 1 or 2 drops as trivial.
+
+The offline rubric earns 4 and 5 from compositional signals documented
+in `gate.py`, not from marker word lists. The golden importance suite
+was rewritten from human judgment of what is actually worth
+remembering, deliberately breaking the old marker buckets: vital facts
+with no marker words, trivial facts carrying marker words, and near
+boundary judgments.
+
+Four checks pin this in `tests/test_importance_independence.py`:
+labels live in the data file (stripping every marker token leaves
+stored labels unchanged while a stub mimicking marker predictor misses
+widely); a coarse marker only classifier trained on half the suite
+cannot reproduce held out labels (accuracy under 0.7); the same holds
+at full resolution with a mirror image classifier that extracts the
+full stub feature set under the same 0.7 bound; and the offline scorer
+earns at least 3 marker free vitals and at least 3 marker bearing
+trivials.
+
+A fifth check, the strongest one, is EXCEEDED on the current labels
+and flagged for human review (`eval/GOLDEN_CHANGELOG.md`). An
+exhaustive conjunction search over all feature pairs (231) and triples
+(1540) of the full 22 signal set, trained on even rows and scored on
+held out odd rows, reaches 9/12 = 0.75 (best pair) and 10/12 = 0.833
+(best triple), both above the 0.7 bound and above the fixed seed label
+permutation null. Root cause is stated plainly: the direction of fit is
+fixed (the stub is changed to meet the frozen labels) and the stub
+reproduces every importance label exactly, so the labels are a function
+of the tuned scorer signals by construction. This does not show the
+labels were derived from the stub at authoring time and does not show
+the labels are wrong; it means the independence claim is NOT made at
+pair or triple resolution. The two checks are strict xfails: they fail
+today and flip to failures if a changelogged review ever makes the
+bound hold, so nothing resolves silently.
+
+## 3. Free math: exact hash plus Jaccard 0.85
+
+File: `src/uncluttered_memory/store.py`, threshold `DEDUP_JACCARD`.
+
+`Store.put` dedupes in two stages, both free (no judge call), over live
+rows in the same user scope:
+
+1. Exact normalized content hash. Same text merges first.
+2. Token set Jaccard at or above 0.85. Tokens are whitespace splits of
+   the normalized text, case and punctuation sensitive, matching the
+   contract that case and punctuation are content.
+
+What 0.85 catches and what it does not: token reorderings score 1.0 and
+merge; a dropped or added word merges once the fact is long enough
+(7 tokens: 6/7 = 0.857). A single word change in a short fact stays
+DISTINCT (`ship today the build` vs `ship the build` scores 3/4 =
+0.75). Heavily reworded paraphrases with little token overlap stay
+DISTINCT. The boundary is pinned: a pair scoring exactly 0.85 merges
+(at or above), a pair just under it stays separate. Resurrection stays
+exact only (a fuzzy match against tombstoned text inserts a fresh row).
+The dead exact text fallback branch was removed; exact dedupe is by
+normalized content hash. This stage catches near duplicates, not deep
+semantic equivalence.
+
+## 4. Four voter committee: 2 Jev votes plus Strict plus Lenient
+
+Files: `src/uncluttered_memory/jev_client.py`,
+`src/uncluttered_memory/supersede.py`.
+
+Relation votes are one of: supersede, coexist, conflict_unresolved,
+unrelated (plus the internal same marker for identical text). Only an
+agreed supersede soft tombstones the old fact; an agreed clash marks
+both facts conflict_unresolved and keeps both live, never a tombstone.
+
+Offline pair: `offline_relation_pair()` returns StrictRelationJudge
+(conservative) plus LenientRelationJudge (permissive). Strict requires
+at least `RELATION_SHARED_TOKENS_MIN` (2) shared content tokens beyond
+stopwords and numbers before it reads a marker as being about the same
+slot. One shared token, a shared number, a near homonym subject, or an
+address or number near miss reads as unrelated, so the pair vetoes and
+both facts stay live. Lenient reads any update wording as a supersede
+claim and any negation as a clash without checking the slot. The two
+heuristics genuinely disagree on crafted near misses (pinned in
+`tests/test_judge_pairs.py` and `tests/test_relation_boundary.py`), so a
+destructive act only proceeds when two distinct readings agree. Two
+copies of one stub used to agree by construction; a test shows the
+copied pair would tombstone a case the heterogeneous pair vetoes.
 
 When the strict minimum rose to two tokens, five golden cases whose
-texts shared a single content token were reworded so the shared slot
-is unambiguous (labels unchanged, same claims), and two single-token
-near-miss cases that must KEEP were added. A test pins that every
+texts shared a single content token were reworded so the shared slot is
+unambiguous (labels unchanged, same claims), and two single token near
+miss cases that must KEEP were added. A test pins that every
 destructive or marking golden claim meets the strict minimum.
 
-`JevJudgeClient` talks native Jev at `https://opencode.ai/zen/v1/systemone`
-with one model, `jev-1.13-free`, set via `UNCLUTTER_JEV_MODEL` (default
-`jev-1.13-free`). It sends the request shape from the Tracky direct-mode
-pattern (id-keyed `questions`, `state`, `answers`), reimplemented here in
-Python. The API key comes from `HERMES_CUSTOM_OPENCODE_AI_API_KEY`, the
-session header is `hermes-go-static-7f3a9c2e`.
+Live path: `live_confirmed_decide()` takes two live Jev judges plus the
+offline pair, four voters total. The two live judges must ask
+differently worded questions (distinct instructions and criteria
+framing; passing one identical question twice raises ValueError). A
+TOMBSTONE or CONFLICT proceeds only when the live pair agrees with each
+other AND the offline pair agrees with each other AND both agreed
+relations match. Any disagreement vetoes to KEEP. `JevJudgeClient`
+talks native Jev at `https://opencode.ai/zen/v1/systemone` with one
+model, `jev-1.13-free`, set via `UNCLUTTER_JEV_MODEL`. The API key comes
+from `HERMES_CUSTOM_OPENCODE_AI_API_KEY`; the session header is
+`hermes-go-static-7f3a9c2e`.
 
-There is no fallback model anywhere in this project. On HTTP 429 the
-client raises `RateLimited` (with retry-after when present) and callers
-halt with a plain message telling the operator the free window is
-rate-limited. Pending items land in the quarantine table
-(`Store.admit`), never voted by a stub, never redirected to another
-model.
+There is no fallback model anywhere. On HTTP 429 the client raises
+`RateLimited` and callers halt with a plain message. Pending items land
+in the quarantine table, never voted by a stub, never redirected to
+another model. Response parsing is pinned by recorded native fixtures
+under `tests/fixtures/` replayed offline through the real parser.
 
-Response parsing is pinned by recorded native fixtures under
-`tests/fixtures/` (replayed offline through the real parser; derived
-failure variants are labeled as such in the fixtures README).
+## 5. Auto activation bridge: autospot.py
 
-## Thresholds
+File: `src/uncluttered_memory/autospot.py`, wired through `Store.put`.
 
-Every decision cutoff lives in `src/uncluttered_memory/thresholds.py`
-and every `Gate.decide` / `Recall.select` cutoff is a parameter
-defaulting to it, so tests and calibration can override any of them
-without touching logic. Reason strings echo the effective value (for
-example `stop>=0.58`, or `stop>=0.9` when overridden). A test pins the
-parametrization and checks that the logic modules contain no hardcoded
-decision cutoff.
+Every fresh `Store.put` insert runs the bridge (on by default). The
+eval harness uses raw inserts (`auto_spot=False`) so the
+contradict and supersede suites keep measuring committee votes in
+isolation.
 
-The branch order in `Gate.decide` (confidence, play, sensitive, stop,
-durable plus importance, else drop) is documented policy, not an
-accident: confidence fails closed before any content branch is read,
-play disposes of high-precision junk first, sensitive takes the one
-disposition that retains nothing, stop is the strongest deny among the
-remaining branches, and the only admitting branch runs last so every
-deny gets the first chance. The rationale is stated in `gate.py` and
-`thresholds.py`, and `tests/test_gate_precedence.py` pins the exact
-action and reason string for every pair of branches firing at once,
-the headline multi-signal inputs, and the boundary comparisons.
+Two stages:
 
-## Console encoding
+1. Free suspicion screen. Token overlap at `AUTOSPOT_MIN_JACCARD` =
+   0.30 plus one change signal: a change marker in the new text, a
+   differing content detail, or a changed number detail such as a moved
+   time. Same user live rows only. The screen nominates, never decides.
+   It sits well below the 0.85 dedupe line so reworded same slot
+   updates are caught; the weakest genuine same slot update in the
+   frozen fixtures scores 0.40. Deep paraphrases with little token
+   overlap stay below it by construction, same as dedupe.
+2. Committee verdict. Offline Strict plus Lenient pair by default (no
+   network); the live dual Jev path where the operator wired a live
+   pair (live plus offline agreement required for any destructive act).
+   An agreed supersede tombstones with reason `supersede-auto-spot`;
+   an agreed clash conflict marks with reason
+   `conflict_unresolved-auto-spot`; both write actor `auto-spot`, so
+   auto rows read apart from manual (`code`) and human rows. Vetoes and
+   KEEP write nothing.
 
-`eval/run.py` and the CLI call `configure_console()`, which explicitly
-reconfigures stdout and stderr to UTF-8 with `errors="backslashreplace"`.
-A cp1252 console cannot mangle the report, and unencodable characters
-degrade to visible escapes instead of mojibake or a crash. The success
-line is pinned byte for byte by `tests/test_encoding.py`, including a
-run under a forced cp1252 environment and a run whose case text carries
-a non-ASCII character.
+Caps and toggles:
 
-## Live spotcheck (information only)
+- At most `AUTOSPOT_MAX_PAIRS_PER_WRITE` (5) flagged pairs reach the
+  committee per write, strongest suspicion first. The live path asks two
+  differently worded Jev questions per pair, so the worst case is twice
+  that many live calls per write, inside the per minute server budget.
+- The live path shares the server rate limiter (offline votes spend no
+  budget; an exhausted budget stops the run; a halted judge keeps both
+  facts live and reports it).
+- Opt out at three levels: `Store(auto_spot=False)` for a store,
+  `put(auto_spot=False)` for one call, `unclutter serve --no-auto-spot`
+  for the server (raw inserts instead of screened ones).
 
-`scripts/live_spotcheck.py` samples 20 golden cases deterministically
-and asks live `jev-1.13-free` the same questions the offline stub
-answers, then prints the stub-vs-live agreement rate. The rate gates
-nothing: no test, eval, or CI depends on it. Without the API key the
-script skips cleanly with no network calls. On full completion with
-the key present it refreshes `tests/fixtures/live_votes_20261002.json`
-with the recorded live votes; the offline ratchet test
-(`tests/test_live_ratchet.py`) reads that fixture and fails when
-stub-vs-live agreement on the fixed 20-case sample drops below 0.40
-(the recorded importance-audit 0.417 truncated down to the n=20 grid:
-with 20 cases the floor moves in 0.05 steps, so 0.40 = 8/20 is the
-tightest on-grid value at or below the measurement), so live drift is
-a failing test instead of a footnote. On HTTP 429 it halts
-honestly with the rate-limit message, never falls back to another
-model, and never lets a stub answer in Jev's place. Pass
-`--no-record` for dry runs with non-live judges so fake votes never
-overwrite the recording.
+Failure mode, argued as accepted risk: the offline default lets two
+heuristics tombstone a live fact with no human in the loop, at the same
+heterogeneous agreement bar as the manual committee (any disagreement
+vetoes to KEEP). A wrong but agreed verdict costs one soft, restorable
+row with auto spot provenance pointing at the cause. `auto_spot=False`
+keeps a human in the loop.
 
-## Lifecycle and store honesty
+## 6. Store: tombstones, provenance, per user cap
 
-`human_override` documents and tests every action:
+File: `src/uncluttered_memory/store.py`.
 
-- `restore` clears the tombstone fields on the fact and clears
-  conflict marks on both sides (own `conflict_with`, the counterpart
-  fact mark where it still points back, and any `conflicts`-table
-  rows naming the fact); it goes live again fully clean.
-- `retire` soft-tombstones the fact toward `--target-id` (required),
-  records the reason, and stores the actor as `human`.
-- `tombstone` is the explicit alias of `retire`: the same soft
-  tombstone toward `--target-id` (required), with the default reason
+SQLite with per user scoping on every row. Tables: facts, quarantine,
+conflicts (unresolved pairs), plus tombstone fields on the facts row
+instead of deletes.
+
+- Soft tombstones, never rewrites. `supersede` never inserts on a
+  missing id: an unknown id raises `OrphanSupersedeError` (a `KeyError`)
+  and writes nothing anywhere, so a typo cannot read as success.
+  Supersede is scope explicit: a caller scope that differs from the row
+  owner raises ValueError with nothing written. A repeat put of
+  tombstoned text resurrects the row as live with fresh
+  source and created provenance (new put is new life).
+- Human override (`unclutter override --help`, three actions):
+  `restore` clears tombstone fields and clears conflict marks on both
+  sides (own `conflict_with`, the counterpart mark, and any
+  `conflicts` table rows naming the fact); `retire` soft tombstones
+  toward `--target-id` (required) with actor `human`; `tombstone` is
+  the explicit alias of `retire` with default reason
   `human-tombstone`.
+- Row provenance, exactly as stored: `gate_action` (the gate verdict,
+  `STORE` on judged rows), `importance` (the voted 1 to 5), `judge`
+  (the judge identity: live model name such as `jev-1.13-free`, or
+  `stub:RuleJudge` / `stub:FakeJudge` offline), `decided_at` (unix time
+  of the decision). `Store.admit` fills all four from the gate decision
+  on STORE. `put` and `supersede` take them as keywords and write them
+  on inserts, resurrections, and merges (a plain re put refreshes only
+  provided fields, never NULLs over judged provenance). A ghostwriter
+  direct SQL insert leaves all four NULL, so `get()` and `live()` both
+  tell a judged row from an unjudged one at read time. Operator bypass
+  rows (`release`, `approve_quarantine`) go through `put` with no gate
+  vote and read NULL like direct inserts: only `admit` rows claim a
+  judge. Databases created before these columns migrate on open.
+- Per user memory cap: `PER_USER_MEMORY_CAP` (10000),
+  constructor parametrized (`None` means unbounded). Counts live rows
+  in one user scope. A fresh insert into a full scope is refused loudly:
+  `put` raises `MemoryCapExceeded`; `admit` holds the item in
+  quarantine with reason `per-user-memory-cap`. Merges and exact text
+  hits add no row and never trip the cap. Never counted as a coding bug.
+- Error honesty: `Store.admit` quarantines only judge halt exceptions
+  (the JevError family: rate limit, bad key, transport, malformed judge
+  answer). Any other exception is a coding bug that increments an
+  explicit `error_count`, emits one structured log line (time, op,
+  input hash, error type), and propagates instead of vanishing as a
+  quarantine.
 
-All three are reachable from the CLI and documented in its help:
+## 7. Recall and inject: rank, pack at most 8
 
-    unclutter override --db memory.db --fact-id 3 --action restore
-    unclutter override --db memory.db --fact-id 3 --action retire \
-        --target-id 5 --reason "user said so"
-    unclutter override --db memory.db --fact-id 3 --action tombstone \
-        --target-id 5
+Files: `src/uncluttered_memory/recall.py`,
+`src/uncluttered_memory/inject.py`.
 
-`Store.restore` is covered by tests including override-then-read-back,
-restore-of-tombstone, and restore-of-conflict (both sides read fully
-clean, conflicts rows removed). `Store.put` dedupes in two stages:
-exact normalized content hash first (unchanged), then token-set
-Jaccard at `DEDUP_JACCARD` (0.85) over live rows in the same user
-scope, so same-fact near-duplicates (reordered words, a dropped word
-in a long fact) merge while near-miss distinct facts stay separate.
-Tokens are case- and punctuation-sensitive, matching the contract that
-case and punctuation are content; resurrection stays exact-only (a
-fuzzy match against tombstoned text inserts a fresh row); the
-threshold is a `put` parameter tests can override. Limits, stated
-plainly: a single-word change in a short fact still reads DISTINCT
-(`ship today the build` vs `ship the build` scores 3/4 = 0.75),
-and heavily reworded paraphrases with little token overlap stay
-DISTINCT. The boundary is pinned at the default: a pair scoring
-exactly 0.85 merges (at-or-above), a pair just under it stays
-separate. This stage catches near-duplicates, not deep semantic
-equivalence. A repeat put of tombstoned text resurrects the
-row as live with fresh source/created provenance (new put is new
-life), pinned by put-after-tombstone tests; `Store.supersede` routes
-its same-text path through `put` so it cannot silently return a dead
-id. Supersede is scope-explicit: the caller user threads every path,
-a caller scope that differs from the row owner raises ValueError
-with nothing written, and a missing id raises `OrphanSupersedeError`
-(a `KeyError`) with nothing written anywhere, so the caller
-re-issues the write as an explicit `put` once the id is confirmed.
-The exact-text fallback branch in `Store.put`
-was dead code (a row whose text matches also carries the hash of that
-text) and was removed; exact dedupe is by normalized content
-hash, with the token-set near-duplicate stage above it, both pinned
-by tests.
+`Recall.select` takes scored `(text, score)` pairs and returns at most
+`RECALL_CAP` (8) texts. Steps: keep scores at or above `RECALL_GATE`
+(0.58); if none, return empty; set floor at best score times
+`(1 - RECALL_BAND)` with `RECALL_BAND` (0.45); keep scores at or above
+the floor; sort best first; cut at cap. Gate, band, and cap are
+parameters defaulting to `thresholds.py`. Per task calibration can
+lower the gate, which is when the band does its cutting (at the default
+gate the gate dominates, by design).
 
-Auto-activation bridge (`src/uncluttered_memory/autospot.py`): every
-fresh `Store.put` insert runs it (on by default; `auto_spot=False`
-for a raw insert, and the eval harness uses raw inserts so the
-contradict/supersede suites keep measuring committee votes in
-isolation). A free suspicion screen (token overlap at
-`AUTOSPOT_MIN_JACCARD` = 0.30 plus a change marker, a differing
-content detail, or a changed number detail such as a moved time,
-same-user live rows only) nominates pairs, and the
-existing committee decides: the offline Strict+Lenient pair by
-default (no network), the live dual-Jev path where the operator
-wired a live pair (live plus offline agreement required for any
-destructive act). An agreed supersede tombstones with reason
-`supersede-auto-spot`, an agreed clash conflict-marks with reason
-`conflict_unresolved-auto-spot`, both with actor `auto-spot`, so
-auto rows read apart from manual (`code`) and human rows; vetoes
-and KEEP write nothing. At most `AUTOSPOT_MAX_PAIRS_PER_WRITE` (5)
-flagged pairs reach the committee per write, strongest first, and
-the live path shares the server rate limiter (offline votes spend
-no budget; an exhausted budget stops the run, and a halted judge
-keeps both facts live and reports it). Limits, stated plainly: the
-screen nominates, never decides; deep paraphrases with little token
-overlap stay below it by construction, same as dedupe. Failure
-modes, argued: the offline default lets two heuristics tombstone a
-live fact with no human in the loop, at the same
-heterogeneous-agreement bar as the manual committee (any
-disagreement vetoes to KEEP); a wrong-but-agreed verdict costs one
-soft, restorable row with auto-spot provenance pointing at the
-cause, and `auto_spot=False` keeps a human in the loop.
+Packing is whole card only with a hard char budget used as a cheap
+proxy for model tokens (about 4 chars per token, so 4000 chars is
+roughly 1000 tokens; chars are exact and dependency free while real
+tokenizers differ per model). `Recall.pack` and `Injector.pack` never
+emit a partial card; the cut lands on a card boundary. `Injector.pack`
+sorts cards best first, packs exact duplicate card texts once (first,
+best scored occurrence wins), and stops before exceeding
+`INJECT_BUDGET_CHARS` (4000). Limits, stated plainly: recall matches
+surface wording, not deep paraphrase; a heavily reworded query can miss
+a stored fact and return fewer results or an empty list. That miss is
+loud by design (visible empty list, vetoed pairs stay live and
+inspectable, low confidence input quarantines instead of storing
+silently). `tests/test_recall_robust.py` pins 20 novel paraphrases,
+disjoint from both eval sets, that must return without raising and with
+sane output shape.
 
-Row provenance, exactly as stored: each facts row carries
-`gate_action` (the gate verdict, `STORE` on judged rows),
-`importance` (the voted 1-5 importance), `judge` (the judge
-identity: the live model name such as `jev-1.13-free`, or
-`stub:RuleJudge` / `stub:FakeJudge` offline), and `decided_at`
-(unix time of the decision). `Store.admit` fills all four from the
-gate decision on STORE; `put` and `supersede` take them as keywords
-and write them on inserts, resurrections, and merges (a plain
-re-put refreshes only provided fields, never NULLs over judged
-provenance). A ghostwriter direct SQL insert leaves all four NULL,
-so `get()` and `live()` both tell a judged row from an unjudged
-one at read time. Operator bypass rows (`release`,
-`approve_quarantine`) go through `put` with no gate vote and read
-NULL like direct inserts: only `admit` rows claim a judge.
-Databases created before these columns migrate on open (missing
-columns added, old rows read NULL provenance).
+## 8. Server and MCP transport
 
-## Honesty
+Files: `src/uncluttered_memory/server.py`, `mcp/tools.json`,
+`mcp/adapter.py`.
 
-No benchmark numbers are claimed for the bulk labels: they are
-rule-generated (provenance `synthetic-rule`), not human labels, and
-this README quotes none of the eval numbers. The golden number is
-contract conformance (stub-vs-frozen-human-reading: how often the
-offline stub's reading matches the frozen human reading of the gate
-contract), NOT accuracy and NOT memory quality, printed with both file
-hashes on every run beside the recorded independent-rater agreement
-(10/24 = 41.7%). The strongest independence bound (the pair/triple
-conjunction search) is exceeded on the current labels and flagged for
-human review; the independence claim is scoped to the resolutions
-where the bound holds (see the eval section). Cost is marked ESTIMATE /
-NOT VERIFIED, and contamination
-checks run before anything is scored (train/test disjointness by case
-hash and normalized text, golden disjoint from bulk, artifacts fail
-closed).
+`server.py` is a stdlib only HTTP server over the real Store and Gate:
 
-## Known limit: paraphrase coverage on the read path
+- `POST /admit` `{user, text, source}`: STORE, DROP, or QUARANTINE.
+- `POST /recall` `{user, query}`: scored live rows for that user,
+  packed.
+- `POST /inject` `{user, query}` or `{user, cards}`: packed context
+  string within budget.
+- `GET /status` (or `POST /status`): scoped counts.
+- Every call requires a `user` it is scoped to.
 
-The offline recall and rerank path matches on surface text signals
-(token overlap plus the documented stub features), not on deep semantic
-equivalence. A heavily reworded query can therefore miss a stored fact:
-recall returns fewer results or an empty list, and a supersede or
-conflict vote over a paraphrased pair vetoes to KEEP with both facts
-staying live. That miss is loud by design. An empty recall list is
-visible to the caller, a vetoed pair leaves both rows live and
-inspectable, and low-confidence gate input lands in the quarantine table
-instead of being stored or dropped silently. Nothing on this path raises
-on unseen input. `tests/test_recall_robust.py` pins it: 20 novel
-paraphrases, disjoint from both eval sets, run through the offline read
-path and must return without raising and with sane output shape (a list
-of stored texts within cap, a pack string within budget). Raising
-paraphrase catch rate without breaking frozen golden labels is future
-work, tracked as a residual in `docs/master-plan.md`.
-
-The relation path is bounded too:
-`tests/test_paraphrase_battery.py` carries two hand-written paraphrase
-pairs per golden contradict/supersede case (92 pairs) and measures how
-often the offline pair reaches the same disposition as the frozen
-label. Measured rate: 92/92 = 100%, floor pinned at 90% so a
-regression fails the suite; two boundary rewrites the pair is
-documented NOT to catch (a deep tombstone rewrite that drops the
-strong update marker, and a marker-free conflict rewrite) are pinned
-in the same file, so the limit is stated in code, not just prose.
-
-## Server and MCP transport (P3, built)
-
-`src/uncluttered_memory/server.py` is a stdlib-only HTTP server over
-the real Store/Gate: `POST /admit`, `POST /recall`, `POST /inject`,
-`GET /status`, every call requiring a `user` it is scoped to.
-Per-minute call and char budgets refuse with HTTP 429 plus one
-structured log line (defaults in `thresholds.py`); env
+Guards: per minute call and char budgets refuse with HTTP 429 plus one
+structured log line (defaults `RATE_LIMIT_CALLS_PER_MIN` 120 and
+`RATE_LIMIT_CHARS_PER_MIN` 200000 in `thresholds.py`); env
 `UNCLUTTER_KILL_SWITCH=1` or a kill file refuses every endpoint with
 HTTP 503. When the judge halts (the JevError family, including 429),
-the admit path quarantines and answers 429 with `quarantined: true`;
-a gate-decided quarantine answers 200. There is no fallback model on
-this path. `mcp/tools.json` defines the admit/recall/inject/review
-tools and `mcp/adapter.py` serves them over stdio. Serve it with:
+admit quarantines and answers 429 with `quarantined: true`; a gate
+decided quarantine answers 200. No fallback model on this path.
+
+MCP: `mcp/tools.json` defines the admit, recall, inject, and review
+tools; `mcp/adapter.py` serves them over stdio (`tools/list`,
+`tools/call`), sharing the `MemoryApp` handlers with the server. Every
+tool requires a user.
+
+Serve it with:
 
     unclutter serve --db memory.db --port 8765   # offline RuleJudge
 
-## Not built yet: gauntlet recorder
+Add `--no-auto-spot` to serve raw inserts (bridge off).
+
+## 9. Honesty: what the numbers are
+
+- **Contract conformance (golden, hand authored): 160/160.** How often
+  the offline stub reading matches the frozen human reading of the gate
+  contract. NOT accuracy, NOT memory quality. Census: admit 56,
+  importance 24, dedupe 20, contradict 23, supersede 23, rerank 14,
+  pinned exactly by `tests/test_golden.py`. Labels frozen at the
+  2026-10-02 freeze (`eval/golden_labels_frozen.json`,
+  `eval/GOLDEN_CHANGELOG.md`): the stub is changed to meet them; a
+  label changes only for documented human error with a changelog entry,
+  never to satisfy the scorer. Undocumented edits fail the suite
+  (`tests/test_golden_freeze.py`).
+- **Paid rubric (`jev-1.13`, live): importance 20/24 = 83.3%, admit
+  40/56 = 71.4%.** Live vs label on the golden set with the rubric
+  prompt (see `docs/calibration-20261002-114232-rubric.md`). Paid key
+  runs only; never a repo default.
+- **Free tier (`jev-1.13-free`, live): 10/24 = 41.7%.** Independent
+  rater agreement with the golden labels; varies run to run (see
+  `docs/label-audit-20261002.md`). Information only; it gates nothing.
+- **Paraphrase battery: 92/92 = 100%.** Two hand written paraphrase
+  pairs per golden contradict and supersede case, measuring how often
+  the offline pair reaches the same disposition as the frozen label.
+  Floor pinned at 90% so a regression fails the suite. Two boundary
+  rewrites the pair is documented NOT to catch (a deep tombstone
+  rewrite that drops the strong update marker, and a marker free
+  conflict rewrite) are pinned in the same file
+  (`tests/test_paraphrase_battery.py`); rewrites that drop the marker
+  family or fall below two shared content tokens are documented misses.
+- **Suite size: 437 tests.** Collected offline with no key. The report
+  prints two numbers on every run, golden first: contract conformance
+  (`CONTRACT CONFORMANCE (golden, hand-authored): 160/160 ok`) and the
+  recorded independent rater agreement (`independent-rater agreement
+  (recorded live jev-1.13-free vs golden labels, 2026-10-02): 10/24 =
+  41.7%`). Neither gates the other. Exit codes: 1 means a golden or
+  bulk case failed, 2 means the split, provenance, golden, or
+  contamination checks failed closed, 3 means the Jev free window rate
+  limited and the run halted. The report prints the case file hash, the
+  golden file hash, the provenance of both sets, and its own measured
+  numbers on every run.
+
+Limits, stated plainly with the numbers: the strongest
+importance independence bound (feature pairs and triples) is exceeded
+on the current labels and flagged for human review; cost figures are
+ESTIMATE and NOT VERIFIED; no benchmark numbers are claimed for the
+synthetic bulk set (self consistency only); contamination checks
+(train and test disjointness by case hash and normalized text, golden
+disjoint from bulk, artifacts fail closed) run before anything is
+scored, and every contamination flag carries a machine readable reason.
+
+## 10. Eval, calibration, console
+
+- `eval/run.py`: one command eval over two case sets (hand authored
+  golden for the claim, synthetic bulk for self consistency). Per suite
+  tables, admit precision, recall, F1, latency, cost per 1k estimate,
+  contamination scans that fail closed. `eval/golden.jsonl`
+  (provenance `hand-authored`) shares no code path with the stubs and
+  no text with the bulk set (a test proves it); `eval/cases.py`
+  generates the bulk `eval/frozen.jsonl` only (provenance
+  `synthetic-rule`).
+- `src/uncluttered_memory/calibrate.py`: per task threshold registry
+  fingerprinted to the task name, refuses mismatched files,
+  UNCALIBRATED default, train only tuning. CLI `calibrate` and
+  `conformal` commands default output to the operator current working
+  directory, outside the repo scan tree; pointing `--out` inside
+  `thresholds/` or `eval/thresholds*` prints a loud warning, because
+  the next `unclutter run` scans that tree and fails closed on a bad
+  file there (`tests/test_calibration_footgun.py`).
+- Console: `eval/run.py` and the CLI call `configure_console()`, which
+  reconfigures stdout and stderr to UTF-8 with
+  `errors="backslashreplace"`. A cp1252 console cannot mangle the
+  report; unencodable characters degrade to visible escapes. The
+  success line is pinned byte for byte by `tests/test_encoding.py`.
+- Live spotcheck (`scripts/live_spotcheck.py`, information only):
+  samples 20 golden cases deterministically against live
+  `jev-1.13-free` and prints stub vs live agreement. Gates nothing. On
+  full completion with the key present it refreshes
+  `tests/fixtures/live_votes_20261002.json`; the offline ratchet test
+  (`tests/test_live_ratchet.py`) fails when stub vs live agreement on
+  the fixed 20 case sample drops below 0.40. Pass `--no-record` for dry
+  runs so fake votes never overwrite the recording.
+
+## 11. File map
+
+- `src/uncluttered_memory/gate.py`: door guard plus 1 to 5 grader.
+- `src/uncluttered_memory/thresholds.py`: every cutoff default.
+- `src/uncluttered_memory/store.py`: SQLite, dedupe math, tombstones,
+  provenance, per user cap.
+- `src/uncluttered_memory/supersede.py`: code ordered candidate pairs,
+  committee verdict application.
+- `src/uncluttered_memory/jev_client.py`: native Jev client plus
+  Strict and Lenient offline relation judges.
+- `src/uncluttered_memory/autospot.py`: auto activation bridge.
+- `src/uncluttered_memory/recall.py`: rank, gate, band, cap at most 8.
+- `src/uncluttered_memory/inject.py`: card first packing.
+- `src/uncluttered_memory/server.py`: HTTP over the real store.
+- `src/uncluttered_memory/cli.py`: `run`, `serve` (with
+  `--no-auto-spot`), `override`, `calibrate`, `conformal`.
+- `src/uncluttered_memory/calibrate.py`: per task registry.
+- `src/uncluttered_memory/console.py`: UTF-8 forced streams.
+- `mcp/tools.json`, `mcp/adapter.py`: MCP stdio transport.
+- `eval/run.py`, `eval/golden.jsonl`,
+  `eval/golden_labels_frozen.json`, `eval/GOLDEN_CHANGELOG.md`,
+  `eval/cases.py`: frozen eval.
+- `scripts/live_spotcheck.py`: information only live sample.
+
+## 12. Not built yet: gauntlet recorder
 
 `unclutter gauntlet` (recorded demo, P7) is a stub, not a feature. It
 prints `not built until its phase` and exits 2, pinned by
 `tests/test_cli.py`. There is no gauntlet recorder in this repo.
-Server and MCP transport was a later phase per
-`research/track-S3-server.md` and `docs/master-plan.md`, and it has
-now landed as P3 above; nothing else in this README claims otherwise.
